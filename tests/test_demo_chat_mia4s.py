@@ -214,7 +214,29 @@ def test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule() -> None
         assert token in scope, "the rule must name the vocabulary it forbids repeating"
     # And the set stays bounded — a new source dragging in more triggers is a
     # decision, not an accident.
-    assert present <= {"acheter", "vendre", "trader", "risqué", "garantie"}, sorted(present)
+    # (« risqués » est l'accord pluriel de « risqué », ajouté au jeu de jetons par
+    # MIA-5 : c'est le même mot, dans la même citation déjà acceptée — pas une
+    # nouvelle source de vocabulaire.)
+    assert present <= {
+        "acheter", "vendre", "trader", "risqué", "risqués", "garantie",
+    }, sorted(present)
+
+
+@pytest.mark.parametrize("locale", ["fr", "en", "de"])
+def test_no_contact_address_is_ever_fed_to_the_demo_agent(locale: str) -> None:
+    """The showcase must not become an address-harvesting endpoint.
+
+    The terms of use carry the operator's personal e-mail — required on the
+    page, public there. A live probe caught the agent volunteering it to an
+    anonymous visitor who had only asked how volatility is computed. Redacted at
+    the source: what the agent is never told, it can never repeat.
+    """
+    import re
+
+    knowledge = load_product_knowledge(locale)
+    found = re.findall(r"[\w.+-]+@[\w-]+\.[\w.-]+", knowledge)
+    assert not found, f"contact address(es) reachable by the demo agent: {found}"
+    assert "/conditions" in knowledge, "the pointer to the real page must remain"
 
 
 def test_scope_block_names_the_illustration_and_denies_live_data() -> None:

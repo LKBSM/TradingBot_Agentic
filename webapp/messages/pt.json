@@ -1620,7 +1620,16 @@
       "unpin": "Desafixar",
       "pinAria": "Fixar {combo}",
       "unpinAria": "Desafixar {combo}",
-      "notSynced": "Não sincronizado"
+      "notSynced": "Não sincronizado",
+      "followedByEngine": "Acompanhados pelo motor",
+      "uxTestBadge": "Modo teste UX",
+      "uxTestNote": "{count} mercados listados apenas para exibição. O motor acompanha somente {real}.",
+      "groupFxMajor": "Divisas principais",
+      "groupFxMinor": "Divisas secundárias",
+      "groupFxExotic": "Divisas exóticas",
+      "groupMetal": "Metais",
+      "groupIndex": "Índices",
+      "groupCrypto": "Cripto"
     },
     "mobile": {
       "workspaceTitle": "Espaço de leitura",
@@ -1721,7 +1730,10 @@
       "errorNoData": "Ainda não há dados disponíveis para esta combinação.",
       "slowLoading": "O carregamento está a demorar mais do que o previsto — a obter os dados.",
       "chartUnavailableTitle": "Gráfico indisponível",
-      "chartUnavailableBody": "O fluxo de velas não está ligado para esta combinação. A leitura abaixo permanece disponível."
+      "chartUnavailableBody": "O fluxo de velas não está ligado para esta combinação. A leitura abaixo permanece disponível.",
+      "marketNotCoveredTitle": "Ainda não disponível neste mercado",
+      "marketNotCoveredBody": "O motor ainda não acompanha {market}. Não existe qualquer leitura, gráfico ou preço para ele — nada é simulado entretanto.",
+      "marketNotCoveredChart": "Não existe qualquer vela para {market}: o motor não acompanha este mercado. Nada é desenhado no seu lugar."
     },
     "chart": {
       "recent": "Go to the most recent candle",
@@ -2276,7 +2288,7 @@
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
-    "sortLabel": "Sort",
+    "sortLabel": "Sorted by",
     "sortAria": "Sort the zones",
     "loading": "Loading the zones…",
     "errorMessage": "The zones are not available for this combination.",
@@ -2430,7 +2442,7 @@
       "unhide": "Show"
     },
     "badge": {
-      "count": "{count, plural, one {# zone} other {# zones}}"
+      "count": "{count, plural, one {<n>#</n> zone tracked} other {<n>#</n> zones tracked}}"
     },
     "deeplink": {
       "staleNotice": "This zone is no longer detected in the current reading."

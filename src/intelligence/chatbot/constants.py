@@ -53,6 +53,7 @@ import re
 import unicodedata
 from typing import Optional
 
+from src.intelligence.chatbot import adversarial_i18n as _adv_i18n
 from src.intelligence.chatbot import templates_i18n as _i18n
 
 # --------------------------------------------------------------------------- #
@@ -69,12 +70,21 @@ def normalize_text(text: str) -> str:
     vs straight apostrophes — the two most common evasion / noise vectors in
     French user input and LLM output.
     """
+    decomposed = unicodedata.normalize("NFKD", fold_case(text))
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+
+
+def fold_case(text: str) -> str:
+    """Lower-case and normalise apostrophes, but KEEP the accents.
+
+    Used by the output filter for the handful of tokens whose accent is the only
+    thing that separates a value judgement from an ordinary French word
+    (``risqué`` the adjective vs ``risque`` the noun) — see
+    :data:`ACCENT_SENSITIVE_TOKENS`.
+    """
     lowered = text.lower().strip()
     # Curly / modifier apostrophes → straight ASCII apostrophe.
-    lowered = lowered.replace("’", "'").replace("ʼ", "'").replace("‘", "'")
-    # Strip combining accents (NFKD decompose, drop combining marks).
-    decomposed = unicodedata.normalize("NFKD", lowered)
-    return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return lowered.replace("’", "'").replace("ʼ", "'").replace("‘", "'")
 
 
 # --------------------------------------------------------------------------- #
@@ -125,9 +135,21 @@ FORBIDDEN_TOKENS_JUGEMENT_MOMENT: frozenset[str] = frozenset({
 })
 
 # Catégorie D — Jugements de valeur sur risque (+ garanties / urgence repliées ici).
+# NB (MIA-5) : le jeton nu ``risqué`` est ACCENT-SENSIBLE côté sortie (voir
+# ``ACCENT_SENSITIVE_TOKENS``) — sans quoi « la gestion du risque » ou « le risque
+# de volatilité », qui sont des noms communs descriptifs, faisaient tomber une
+# réponse légitime sur le gabarit de contamination. L'adjectif reste bloqué sous
+# toutes ses formes : accentué en tant que jeton nu, et NON accentué via les
+# tournures adverbiales/comparatives ci-dessous, ajoutées pour ne rien perdre.
 FORBIDDEN_TOKENS_JUGEMENT_RISQUE: frozenset[str] = frozenset({
     "c'est risqué", "c'est risque", "trop risqué", "trop risque",
     "peu risqué", "peu risque", "risqué",
+    # Accords de l'adjectif : « une position risquée » n'était bloquée par AUCUN
+    # jeton avant MIA-5 (le jeton nu ne couvrait que le masculin singulier).
+    "risquée", "risqués", "risquées",
+    "très risqué", "tres risque", "assez risqué", "assez risque",
+    "plutôt risqué", "plutot risque", "moins risqué", "moins risque",
+    "plus risqué", "plus risque",
     "dangereux", "dangereuse", "c'est dangereux",
     "c'est sûr", "c'est sur", "c'est sécurisé", "c'est securise",
     "sécurisé", "securise",
@@ -150,6 +172,37 @@ ALL_FORBIDDEN_TOKENS: frozenset[str] = (
     | FORBIDDEN_TOKENS_JUGEMENT_MOMENT
     | FORBIDDEN_TOKENS_JUGEMENT_RISQUE
 )
+
+
+# --------------------------------------------------------------------------- #
+# MIA-5 — précision de la Couche 3 : deux faux positifs PROUVÉS
+# --------------------------------------------------------------------------- #
+# Aucun jeton n'est retiré : on retire uniquement DEUX collisions mesurées, qui
+# faisaient remplacer une réponse factuelle correcte par le gabarit « Je ne peux
+# pas formuler cette réponse de cette manière » (le client voyait un refus
+# incompréhensible). Les deux cas ont été capturés sur des réponses réelles.
+
+# 1. Jetons dont SEUL l'accent sépare le jugement de valeur du mot courant.
+#    Ils sont cherchés dans le texte accentué (``fold_case``) au lieu du texte
+#    normalisé. Même raisonnement que l'exclusion déjà faite pour ``sûr`` côté
+#    entrée (« bien sûr ») — appliqué ici au couple ``risqué`` / ``risque`` :
+#      bloqué   : « c'est risqué », « trop risqué », « très risque », « risqué »
+#      laissé   : « la gestion du risque », « le risque de volatilité »
+ACCENT_SENSITIVE_TOKENS: frozenset[str] = frozenset({
+    "risqué", "risquée", "risqués", "risquées",
+})
+
+# 2. Expressions FIGÉES dans lesquelles un jeton interdit n'est pas un jugement.
+#    « coût d'opportunité » est le terme macro-économique standard pour un actif
+#    sans rendement (l'or) : le mesurer n'est pas juger d'un moment d'entrée.
+#    Neutralisées AVANT la recherche, et rien d'autre ne l'est.
+#    « c'est le moment OÙ … » est une subordonnée temporelle descriptive (« c'est
+#    le moment où les ordres se manifestent ») : le jugement interdit est « c'est
+#    le moment DE / POUR agir », qui reste bloqué, comme « c'est le bon moment ».
+HOMONYM_SAFE_EXPRESSIONS: frozenset[str] = frozenset({
+    "coût d'opportunité", "coûts d'opportunité",
+    "c'est le moment où",
+})
 
 
 # --------------------------------------------------------------------------- #
@@ -285,7 +338,7 @@ _PREDICTION_RAW: list[str] = [
     # légitime et doit atteindre le modèle.
     r"\b(predis|predit|predire|prevois|prevoir|anticipes?|anticiper|pronostique)\b"
     r"|\b(prediction|predictions|prevision|previsions|pronostic|anticipation)\b"
-    r"(?!\s+(de\s+|d'|sur\s+)?(la\s+)?volatilite)",
+    + _adv_i18n.NO_VOLATILITY,
     # "quel est ton objectif / ta cible" · "objectif de prix" · "price target"
     r"\b(ton|ta|votre|vos)\s+(objectif|cible|prevision|pronostic|anticipation)\b|"
     r"\bobjectif\s+de\s+prix\b|\bprice\s+target\b",
@@ -304,11 +357,35 @@ def _compile(raw_patterns: list[str]) -> list[re.Pattern[str]]:
     return [re.compile(p, re.IGNORECASE) for p in raw_patterns]
 
 
-ADVERSARIAL_PATTERNS_JAILBREAK: list[re.Pattern[str]] = _compile(_JAILBREAK_RAW)
-ADVERSARIAL_PATTERNS_TRADE_REQUEST: list[re.Pattern[str]] = _compile(_TRADE_REQUEST_RAW)
-ADVERSARIAL_PATTERNS_PERSONA_HIJACK: list[re.Pattern[str]] = _compile(_PERSONA_HIJACK_RAW)
-ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE: list[re.Pattern[str]] = _compile(_FINANCIAL_ADVICE_RAW)
-ADVERSARIAL_PATTERNS_PREDICTION: list[re.Pattern[str]] = _compile(_PREDICTION_RAW)
+# The FRENCH core, kept as its own object: it is the founder-validated set, it
+# is what the "5-10 patterns per bucket" review rule applies to, and it must
+# stay readable without scrolling past a hundred lines of other languages.
+FRENCH_PATTERNS_BY_CATEGORY: dict[str, list[re.Pattern[str]]] = {
+    "jailbreak": _compile(_JAILBREAK_RAW),
+    "trade_request": _compile(_TRADE_REQUEST_RAW),
+    "persona_hijack": _compile(_PERSONA_HIJACK_RAW),
+    "financial_advice": _compile(_FINANCIAL_ADVICE_RAW),
+    "prediction": _compile(_PREDICTION_RAW),
+}
+
+
+def _bucket(category: str) -> list[re.Pattern[str]]:
+    """French core first, then the seven other locales (stable order).
+
+    Every pattern runs against EVERY message: Couche 1 sees the text before
+    anything identifies a locale, and a French user may type English. The
+    extension is therefore written for precision — see adversarial_i18n.
+    """
+    return FRENCH_PATTERNS_BY_CATEGORY[category] + _compile(
+        _adv_i18n.raw_patterns_for(category)
+    )
+
+
+ADVERSARIAL_PATTERNS_JAILBREAK: list[re.Pattern[str]] = _bucket("jailbreak")
+ADVERSARIAL_PATTERNS_TRADE_REQUEST: list[re.Pattern[str]] = _bucket("trade_request")
+ADVERSARIAL_PATTERNS_PERSONA_HIJACK: list[re.Pattern[str]] = _bucket("persona_hijack")
+ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE: list[re.Pattern[str]] = _bucket("financial_advice")
+ADVERSARIAL_PATTERNS_PREDICTION: list[re.Pattern[str]] = _bucket("prediction")
 
 # Ordered so the most security-critical bucket (jailbreak) is checked first, and
 # the FIRST match wins. ``prediction`` is deliberately LAST: a message that is
@@ -406,6 +483,7 @@ VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE: str = _i18n.VIEW_ACTION_EMPTY_CATEGORY[
 
 
 __all__ = [
+    "ACCENT_SENSITIVE_TOKENS",
     "ADVERSARIAL_PATTERNS_BY_CATEGORY",
     "ADVERSARIAL_PATTERNS_FINANCIAL_ADVICE",
     "ADVERSARIAL_PATTERNS_JAILBREAK",
@@ -414,12 +492,15 @@ __all__ = [
     "ADVERSARIAL_PATTERNS_TRADE_REQUEST",
     "ALL_ADVERSARIAL_PATTERNS",
     "ALL_FORBIDDEN_TOKENS",
+    "FRENCH_PATTERNS_BY_CATEGORY",
     "FORBIDDEN_TOKENS_ACTION_TRADING",
     "FORBIDDEN_TOKENS_BY_CATEGORY",
     "FORBIDDEN_TOKENS_JUGEMENT_MOMENT",
     "FORBIDDEN_TOKENS_JUGEMENT_RISQUE",
     "FORBIDDEN_TOKENS_RECOMMANDATION",
+    "HOMONYM_SAFE_EXPRESSIONS",
     "INSIST_REDIRECT_TEMPLATE",
+    "fold_case",
     "LLM_ERROR_TEMPLATE",
     "OUTPUT_CONTAMINATED_TEMPLATE",
     "PREDICTION_REFUSAL_TEMPLATE",

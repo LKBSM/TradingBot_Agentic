@@ -241,6 +241,19 @@ def trigger_measures_backfill(
 
     target_bars = int(months) * 2200  # ~M15 bars per trading month (5d/wk)
 
+    # PERF-3 (A-5): reuse the assembler's provider + store rather than building a
+    # second pair here. A second TwelveDataProvider carries its OWN rate limiter
+    # and its own empty TTL cache, so the two together could exceed the plan's
+    # real 8/min and 800/day while each believed itself inside budget — and the
+    # /health credit counter would only ever see one of them. Resolved on the
+    # request thread (app_state is reachable here) and closed over by the worker.
+    app_state = getattr(request.app.state, "app_state", None)
+    shared_assembler = (
+        getattr(app_state, "market_reading_assembler", None) if app_state else None
+    )
+    shared_provider = getattr(shared_assembler, "_data_provider", None)
+    shared_store = getattr(shared_assembler, "candles_store", None)
+
     def _run() -> None:
         _BACKFILL_STATE["running"] = True
         try:
@@ -248,8 +261,10 @@ def trigger_measures_backfill(
             from src.intelligence.history_backfill import deep_backfill_combo
             from src.storage.candles_cache_store import CandlesCacheStore
 
-            provider = TwelveDataProvider()  # reads TWELVE_DATA_API_KEY from env
-            store = CandlesCacheStore()      # reads CANDLES_DB_PATH (mounted disk)
+            # Private pair only as a fallback, when the assembler is not wired
+            # (bootstrap disabled) — otherwise the shared budget is authoritative.
+            provider = shared_provider or TwelveDataProvider()
+            store = shared_store or CandlesCacheStore()
             res = deep_backfill_combo(
                 provider, store, market, "M15", target_bars=target_bars
             )

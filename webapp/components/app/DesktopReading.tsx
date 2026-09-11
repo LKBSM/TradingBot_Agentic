@@ -13,7 +13,7 @@ import {
 } from './ReadingPlaceholders';
 import { ReadingSkeleton } from './ReadingSkeleton';
 import { READING_DATA_SOURCE } from '@/lib/mockReadings';
-import { CandlesError } from '@/lib/market-reading/api-client';
+import { CandlesError, MarketNotCoveredError } from '@/lib/market-reading/api-client';
 import { useRouter } from 'next/navigation';
 import {
   useCandles,
@@ -249,6 +249,9 @@ export function DesktopReading({
       <ChartUnavailable
         onRetry={refreshCandles}
         reason={candlesError instanceof CandlesError ? candlesError.reason : undefined}
+        notCoveredMarket={
+          candlesError instanceof MarketNotCoveredError ? candlesError.market : null
+        }
       />
     );
 

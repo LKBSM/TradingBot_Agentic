@@ -36,6 +36,30 @@ export class MarketReadingValidationError extends Error {
   }
 }
 
+/**
+ * NOT an HTTP failure — the market is listed by the MKT-1 UX-test catalogue and
+ * the engine does not follow it, so no request is ever sent for it.
+ *
+ * Distinct from every error above on purpose. A 400 says "this combination is
+ * not supported" (a combo problem, worth a retry); this says "this market has
+ * never been followed" — a different fact, with no retry that could change it.
+ * Conflating them is exactly the vagueness the placeholders were built to avoid
+ * (cf. ReadingPlaceholders, PERF-1).
+ *
+ * Raised client-side by the hooks BEFORE any fetch, so a catalogue market
+ * produces no network call at all and nothing can be rendered from a response.
+ */
+export class MarketNotCoveredError extends Error {
+  readonly code = 'market_not_covered';
+  /** The market id, so the placeholder can name it. */
+  readonly market: string;
+  constructor(market: string) {
+    super(`Market ${market} is listed for display only — the engine does not follow it.`);
+    this.name = 'MarketNotCoveredError';
+    this.market = market;
+  }
+}
+
 /** 404 — valid combo, but no data anywhere yet (feed down + cache empty). PERF-1:
  *  a distinct signal so the UI says "no data for this combo" — not "it broke". */
 export class MarketReadingNoDataError extends Error {

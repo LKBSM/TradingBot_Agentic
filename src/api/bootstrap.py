@@ -322,6 +322,15 @@ def build_market_reading_scheduler(assembler: Any) -> Any:
         tick_interval_seconds=env_int("SCHEDULER_TICK_INTERVAL_SECONDS", 60),
         auto_stop_hours=env_int("SCHEDULER_AUTO_STOP_HOURS", 24),
         always_warm=always_warm,
+        # PERF-3 quota guard: a combo kept alive only by recent user ACCESS — M5
+        # today, which live_warm_combos() excludes on purpose — is refreshed at
+        # this floor cadence instead of at every closed candle. Without it a
+        # single visit to M5 pushed the day over the 800-request free cap for the
+        # next auto_stop_hours (254 + 576 = 830/day). 0 restores the previous
+        # native-cadence behaviour.
+        on_demand_min_interval_seconds=env_int(
+            "SCHEDULER_ON_DEMAND_MIN_INTERVAL_S", 900
+        ),
     )
 
 

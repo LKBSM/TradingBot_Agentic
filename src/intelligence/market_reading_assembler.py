@@ -28,7 +28,9 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
+
+from pydantic import ValidationError
 
 # Version of the reading-derivation LOGIC (SMC mapping / lifecycle rules).
 # The store keeps a computed MarketReading payload keyed by candle_close_ts; the
@@ -344,6 +346,38 @@ class MarketReadingAssembler:
         return self._candles_store
 
     # ------------------------------------------------------------------ #
+    # Stored-payload validation
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _validated_stored(payload: Optional[Dict[str, Any]]) -> Optional[MarketReading]:
+        """Parse a STORED payload, or ``None`` when it no longer fits the schema.
+
+        A stored reading can outlive the schema that produced it. It happened in
+        production: the narrated-reading mission narrowed
+        ``conditions.description_source`` to ``Literal['engine_template']``
+        without bumping :data:`READING_LOGIC_VERSION`, so rows written by the old
+        Haiku path stayed « current version » on paper and raised on
+        ``model_validate`` — XAUUSD H1/H4 and EURUSD H1 served nothing at all,
+        and M.I.A fell back to its error template on every question about them.
+
+        A payload we cannot parse is therefore treated as a cache MISS (rebuild),
+        never as a crash: the freshest thing we can serve is a new reading, and
+        the poisoned row is replaced on the next persist. Structural — it covers
+        any future schema narrowing, not just that one field.
+        """
+        if payload is None:
+            return None
+        try:
+            return MarketReading.model_validate(payload)
+        except ValidationError as exc:
+            logger.warning(
+                "stored reading no longer matches the schema — treated as a cache "
+                "miss (rebuild): %s",
+                exc,
+            )
+            return None
+
+    # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
     def get_or_generate(
@@ -372,6 +406,13 @@ class MarketReadingAssembler:
         expected_close = market_aware_expected_close(instrument, timeframe, self._clock())
 
         existing = self._readings_store.get_latest_reading(instrument, timeframe)
+        # A stored payload that no longer fits the schema is a cache MISS, not an
+        # exception: ``_validated_stored`` returns None and every branch below
+        # falls through to a rebuild (see its docstring for the production
+        # incident this prevents).
+        existing_reading = self._validated_stored(existing)
+        if existing_reading is None:
+            existing = None
         if (
             existing is not None
             and existing.get("_logic_version") == READING_LOGIC_VERSION
@@ -379,9 +420,7 @@ class MarketReadingAssembler:
         ):
             # True warm hit: the stored reading is for the current closed candle.
             self._readings_store.mark_combination_active(instrument, timeframe)
-            return self._with_status(
-                MarketReading.model_validate(existing), instrument, timeframe
-            )
+            return self._with_status(existing_reading, instrument, timeframe)
 
         # PERF-2 — interactive serving path (/app): NEVER rebuild-and-wait on a
         # cache miss when a CURRENT-logic reading is already stored. This is the
@@ -406,9 +445,7 @@ class MarketReadingAssembler:
             and existing.get("_logic_version") == READING_LOGIC_VERSION
         ):
             self._readings_store.mark_combination_active(instrument, timeframe)
-            return self._with_status(
-                MarketReading.model_validate(existing), instrument, timeframe
-            )
+            return self._with_status(existing_reading, instrument, timeframe)
 
         # Synchronous build: the background scheduler (bound_provider=False, patient)
         # and the genuine cold-start / version-bump interactive rebuild. The provider
@@ -428,11 +465,11 @@ class MarketReadingAssembler:
             # when there is NOTHING stored do we surface the failure.
             logger.exception("build_fresh failed for %s/%s — serving stored reading if any",
                              instrument, timeframe)
-            if existing is not None:
+            if existing_reading is not None:
                 self._readings_store.mark_combination_active(instrument, timeframe)
-                return self._with_status(
-                    MarketReading.model_validate(existing), instrument, timeframe
-                )
+                return self._with_status(existing_reading, instrument, timeframe)
+            # Nothing stored, or nothing PARSEABLE stored: surface the failure
+            # rather than a half-reading.
             raise
         self._persist_reading(instrument, timeframe, expected_close, reading)
         self._readings_store.mark_combination_active(instrument, timeframe)
@@ -520,7 +557,16 @@ class MarketReadingAssembler:
         if clock_expected <= frozen:
             return False
 
-        raw = self._data_provider.fetch_candles(instrument, timeframe, self._lookback)
+        # PERF-3: ask for the SAME window a build would (``_window_bars``), not the
+        # flat configured lookback. The provider's TTL cache is keyed on
+        # (symbol, timeframe, lookback), so a different size here could never share
+        # an entry with the build path — this probe was guaranteed to spend a fresh
+        # request. Same window ⇒ same key ⇒ the probe and the rebuild it triggers
+        # cost one request between them instead of two. It is also the more correct
+        # window: ``_build_fresh`` below is handed exactly these candles.
+        raw = self._data_provider.fetch_candles(
+            instrument, timeframe, self._window_bars(timeframe)
+        )
         candles = drop_unclosed_candles(raw, timeframe, clock_expected)
         if not candles:
             return False
@@ -583,7 +629,13 @@ class MarketReadingAssembler:
                     newest = newest.replace(tzinfo=timezone.utc)
                 if newest >= expected_close:
                     return 1  # cache already has the last traded bar — no fetch
-            raw = self._data_provider.fetch_candles(instrument, timeframe, self._lookback)
+            # PERF-3: same window as a build (see refresh_if_reopened) so this warm
+            # shares the provider's TTL cache entry instead of forcing its own.
+            # ``_window_bars`` falls back to the configured lookback on a unit it
+            # does not know (W1), so the reference series keep their current size.
+            raw = self._data_provider.fetch_candles(
+                instrument, timeframe, self._window_bars(timeframe)
+            )
             candles = drop_unclosed_candles(raw, timeframe, expected_close)
             if candles:
                 self._candles_store.upsert_candles(instrument, timeframe, candles)

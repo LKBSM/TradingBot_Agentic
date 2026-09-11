@@ -1,5 +1,6 @@
 import { DEFAULT_LOCALE } from '@/i18n';
 import { SUPPORTED_INSTRUMENTS, SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/perimeter';
+import { isCatalogOnly } from '@/lib/market-catalog';
 
 /**
  * Deep-link from a scan match to the /app reading view for the same combo.
@@ -30,13 +31,23 @@ export function buildAppHref(
  * Resolve an (instrument, timeframe) pair from URL query into a valid Combo,
  * or null when absent/out-of-perimeter. Used by the /app page to honour the
  * deep-link without ever trusting arbitrary query values.
+ *
+ * MKT-1 test UX: a catalogue market is a VALID target while the flag is on —
+ * otherwise picking one in the column silently fell back to the default combo
+ * and the honest empty state was unreachable in the real product (caught by the
+ * Playwright run, not by the unit tests). It resolves so the view can SAY the
+ * market is not followed; no data path opens, since every hook still refuses it
+ * before fetching. With the flag off, isCatalogOnly() is false and this is the
+ * strict perimeter check it has always been.
  */
 export function resolveComboFromQuery(
   instrument: string | undefined,
   timeframe: string | undefined,
 ): { instrument: string; timeframe: string } | null {
   if (!instrument || !timeframe) return null;
-  const okInstrument = (SUPPORTED_INSTRUMENTS as readonly string[]).includes(instrument);
+  const okInstrument =
+    (SUPPORTED_INSTRUMENTS as readonly string[]).includes(instrument) ||
+    isCatalogOnly(instrument);
   const okTimeframe = (SUPPORTED_TIMEFRAMES as readonly string[]).includes(timeframe);
   if (!okInstrument || !okTimeframe) return null;
   return { instrument, timeframe };

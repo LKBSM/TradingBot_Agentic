@@ -1620,7 +1620,16 @@
       "unpin": "إلغاء التثبيت",
       "pinAria": "تثبيت {combo}",
       "unpinAria": "إلغاء تثبيت {combo}",
-      "notSynced": "غير متزامن"
+      "notSynced": "غير متزامن",
+      "followedByEngine": "متابَعة من المحرّك",
+      "uxTestBadge": "وضع اختبار الواجهة",
+      "uxTestNote": "{count} سوقًا مدرجة للعرض فقط. المحرّك يتابع {real} منها فقط.",
+      "groupFxMajor": "العملات الرئيسية",
+      "groupFxMinor": "العملات الثانوية",
+      "groupFxExotic": "العملات النادرة",
+      "groupMetal": "المعادن",
+      "groupIndex": "المؤشرات",
+      "groupCrypto": "العملات المشفّرة"
     },
     "mobile": {
       "workspaceTitle": "فضاء القراءة",
@@ -1721,7 +1730,10 @@
       "errorNoData": "لا تتوفر بيانات لهذه التركيبة حتى الآن.",
       "slowLoading": "التحميل يستغرق وقتًا أطول من المتوقع — لا يزال يجري جلب البيانات.",
       "chartUnavailableTitle": "الرسم البياني غير متاح",
-      "chartUnavailableBody": "تدفّق الشموع غير متصل لهذا التركيب. تبقى القراءة أدناه متاحة."
+      "chartUnavailableBody": "تدفّق الشموع غير متصل لهذا التركيب. تبقى القراءة أدناه متاحة.",
+      "marketNotCoveredTitle": "غير متاح بعد على هذا السوق",
+      "marketNotCoveredBody": "المحرّك لا يتابع {market} بعد. لا توجد له أي قراءة ولا رسم بياني ولا سعر — ولا شيء يُحاكى في هذه الأثناء.",
+      "marketNotCoveredChart": "لا توجد أي شمعة لـ {market}: المحرّك لا يتابع هذا السوق. ولا يُرسم أي شيء بدلاً منها."
     },
     "chart": {
       "recent": "Go to the most recent candle",
@@ -2276,7 +2288,7 @@
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
-    "sortLabel": "Sort",
+    "sortLabel": "Sorted by",
     "sortAria": "Sort the zones",
     "loading": "Loading the zones…",
     "errorMessage": "The zones are not available for this combination.",
@@ -2430,7 +2442,7 @@
       "unhide": "Show"
     },
     "badge": {
-      "count": "{count, plural, one {# zone} other {# zones}}"
+      "count": "{count, plural, one {<n>#</n> zone tracked} other {<n>#</n> zones tracked}}"
     },
     "deeplink": {
       "staleNotice": "This zone is no longer detected in the current reading."
