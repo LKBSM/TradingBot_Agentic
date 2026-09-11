@@ -366,8 +366,6 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   );
 
 
-  const badgeSummary = `${fmt.instrument(instrument)} · ${fmt.timeframe(timeframe)} · ${t('badge.count', { count: renderedZones.length })}`;
-
   // VZ-4 — the zone's own page. The REAL engine id goes in the path; the combo
   // travels as query so the sheet reads the same reading (mission §4 id lock).
   const detailHref = React.useCallback(
@@ -412,40 +410,59 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
               · zone count · price time) stays — it carries facts. */}
         </div>
         <span className="hsp" />
-        <div className="flex flex-col items-end gap-1">
-          <div className="livebadge">
-            {isRefreshing ? (
-              <span aria-live="polite">{t('refreshing')}</span>
-            ) : (
-              <span className="dot" aria-hidden />
-            )}
-            <span className="mono">{badgeSummary}</span>
-          </div>
-          {/* Freshness of the REFERENCE price feeding every card's proximity/gauge
-              (the unified last-CLOSED price, not a live tick) — makes an apparent
-              gap with the chart's live line read as elapsed time, not an error. */}
-          <PriceFreshnessBadge tsSec={change?.priceTs ?? null} />
+        {/* VZ-5 — the framed status pill is gone: it repeated the market and the
+            timeframe the selector already states one row below. Only the zone
+            count was NEW information, so only it stays, as plain text. The live
+            dot / refreshing mention is a STATE, not a repeat — it stays too. */}
+        <div className="zstatus" data-testid="zones-status">
+          {isRefreshing ? (
+            <span aria-live="polite">{t('refreshing')}</span>
+          ) : (
+            <span className="dot" aria-hidden />
+          )}
+          <span>
+            {t.rich('badge.count', {
+              count: renderedZones.length,
+              n: (chunks) => <span className="num">{chunks}</span>,
+            })}
+          </span>
         </div>
       </div>
 
-      {/* Controls — combo selector + filter + sort on a single wrapping row
-          (UI-1b density: one row instead of two reclaims a full row of chrome
-          above the list, so a second card reaches the fold). */}
-      <div className="mb-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      {/* Controls — one row: market + timeframe, a rule, the filters, and the
+          sort pushed to the far end. No étiquette above any group (VZ-5): the
+          filters and the timeframes are the SAME segmented control, and the sort
+          is a discreet dropdown rather than a third row of equal-weight pills. */}
+      <div className="zbar">
         <MarketSelector
           variant="bar"
           active={{ instrument, timeframe }}
           onSelect={selectCombo}
         />
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('filterLabel')}</span>
-          <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel={t('filterAria')} />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-semibold uppercase tracking-wide text-[var(--faint)]">{t('sortLabel')}</span>
-          <Segmented<ZoneSort> options={SORTS} value={sort} onChange={setSort} ariaLabel={t('sortAria')} />
+        <span className="zbar-div" aria-hidden />
+        <Segmented<ZoneFilter> options={FILTERS} value={filter} onChange={setFilter} ariaLabel={t('filterAria')} />
+        <div className="zbar-sort">
+          <label htmlFor="zones-sort">{t('sortLabel')}</label>
+          <select
+            id="zones-sort"
+            value={sort}
+            title={t('sortAria')}
+            onChange={(e) => setSort(e.target.value as ZoneSort)}
+          >
+            {SORTS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
+
+      {/* Freshness of the REFERENCE price feeding every card's proximity/gauge
+          (the unified last-CLOSED price, not a live tick) — makes an apparent gap
+          with the chart's live line read as elapsed time, not an error. VZ-5 moved
+          it out of the header stack: it belongs under the controls, secondary. */}
+      <PriceFreshnessBadge tsSec={change?.priceTs ?? null} className="zfresh" showIcon={false} />
 
       {showStaleNotice && (
         <div role="status" className="zdeeplink-stale mb-4 flex items-center gap-3 rounded-md border px-3 py-2 text-[12px] text-[var(--txt)]">

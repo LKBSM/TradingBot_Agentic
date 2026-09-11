@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root{
+    --bg:#0C0D0F; --panel:#141518; --panel-2:#1C1E22; --panel-3:#26282D;
+    --txt:#E8E8E9; --dim:#97999E; --faint:#5F6167;
+    --acc:#C9A14A; --acc-dim:rgba(201,161,74,.14); --acc-txt:#14100A;
+    --bull:#37b98c;
+    --sans: -apple-system,"Inter","Segoe UI",ui-sans-serif,system-ui,sans-serif;
+    --mono: "JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--txt); font-family:var(--sans); font-size:15px; padding:28px; }
+  .num{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+  .head-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:18px; }
+  h1{ font-size:26px; font-weight:600; margin:0; }
+  .status{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--dim); }
+  .status .live{ width:6px; height:6px; border-radius:50%; background:var(--bull); }
+  .status .num{ color:var(--txt); }
+
+  .bar{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:10px; }
+  .market-select{ display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--panel-3); border-radius:8px; padding:8px 12px; font-weight:600; font-size:14px; }
+  .market-select .flag{ width:20px; height:20px; border-radius:5px; background:var(--acc-dim); color:var(--acc); font-size:11px; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+  .seg{ display:flex; background:var(--panel-2); border:1px solid var(--panel-3); border-radius:8px; padding:3px; gap:2px; }
+  .seg button{ background:none; border:none; color:var(--dim); font-size:13px; font-weight:600; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .seg button.active{ background:var(--panel-3); color:var(--txt); }
+
+  .divider{ width:1px; height:22px; background:var(--panel-3); }
+
+  .sort{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--dim); margin-left:auto; }
+  .sort select{ background:none; border:none; color:var(--txt); font-weight:600; font-size:13px; }
+
+  .fresh{ font-size:12px; color:var(--faint); margin-bottom:20px; }
+
+  .section-title{ font-size:15px; font-weight:600; color:var(--txt); margin:0 0 10px; }
+</style>
+</head>
+<body>
+
+  <div class="head-row">
+    <h1>Zones</h1>
+    <div class="status"><span class="live"></span><span class="num">36</span> zones suivies</div>
+  </div>
+
+  <div class="bar">
+    <div class="market-select"><span class="flag">Au</span>Or (XAU/USD)</div>
+    <div class="seg">
+      <button>M5</button><button class="active">M15</button><button>H1</button><button>H4</button><button>D1</button>
+    </div>
+    <div class="divider"></div>
+    <div class="seg">
+      <button class="active">Toutes</button><button>Actives</button><button>Jamais touchées</button><button>Comblées</button>
+    </div>
+    <div class="sort">Trié par <select><option>proximité</option><option>formation</option><option>contacts</option></select></div>
+  </div>
+
+  <p class="fresh">Prix à <span class="num">15:30</span> · il y a <span class="num">26</span> minutes</p>
+
+  <p class="section-title">Le prix est dedans</p>
+
+</body>
+</html>
