@@ -88,11 +88,19 @@ def _stub_pipeline(candles):
 
 def _seed_friday_reading(assembler: MarketReadingAssembler, store: _ReadingsStore) -> None:
     """Generate the Friday reading once (market open at generation time), then
-    freeze the clock into the weekend for the assertions."""
-    reading = assembler._build_fresh(
-        "EURUSD", "M15", mc.market_aware_expected_close("EURUSD", "M15", SATURDAY)
-    )
-    store._latest = reading.model_dump(mode="json")
+    freeze the clock into the weekend for the assertions.
+
+    Seeded through the assembler's OWN persist path, not with a raw
+    ``model_dump()``: a stored reading carries a ``_logic_version`` stamp
+    (LQ-D1), and ``get_or_generate`` treats a payload without the current stamp
+    as one produced by older derivation logic — so it rebuilds, which costs
+    exactly the provider call these tests assert never happens. Writing the
+    payload by hand skipped the stamp, making the seed unrepresentative of
+    anything the product actually stores."""
+    close_ts = mc.market_aware_expected_close("EURUSD", "M15", SATURDAY)
+    reading = assembler._build_fresh("EURUSD", "M15", close_ts)
+    assembler._persist_reading("EURUSD", "M15", close_ts, reading)
+    store.save_calls.clear()  # the seed is setup, not a save under test
 
 
 def _make(clock_dt, provider):

@@ -178,7 +178,9 @@ class CalendarCacheStore:
         """Upsert events (dedup by ``event_id``). When a stored ``actual`` value
         changes, flags ``revised``, stamps ``revised_at``, and preserves the
         first-published value in ``actual_initial``. Never deletes: a source that
-        returns nothing keeps its stored rows. Returns rows affected."""
+        returns nothing keeps its stored rows, AND an event that arrives without
+        a value keeps the value already stored — absence is not a retraction,
+        only a real value replaces a real value. Returns rows affected."""
         if not events:
             return 0
         fetched = fetched_at or datetime.now(timezone.utc)
@@ -197,10 +199,29 @@ class CalendarCacheStore:
                     revised = e.revised
                     revised_at = e.revised_at
                     actual_initial = e.actual_initial
+                    actual_value = e.actual
+                    previous_value = e.previous
 
                     if existing is not None:
                         prior_actual = existing["actual"]
                         prior_initial = existing["actual_initial"]
+                        # A refresh that carries NO value must not erase a value
+                        # already published. `CalendarService._refresh` upserts
+                        # twice on purpose — the dates first, so the month grid
+                        # can render before the slower per-series value pass —
+                        # and that first pass carries `actual=None`. Written
+                        # raw, it wiped the stored figure: any reader between
+                        # the two upserts saw `unfetched` for an event whose
+                        # value was known, and the second upsert then compared
+                        # against a blanked `actual`, so a genuine revision was
+                        # no longer detected as one.
+                        #
+                        # Absence of a value is not a retraction. Only a real
+                        # value replaces a real value.
+                        if actual_value is None:
+                            actual_value = prior_actual
+                        if previous_value is None:
+                            previous_value = existing["previous"]
                         changed = (
                             prior_actual is not None
                             and e.actual is not None
@@ -253,9 +274,9 @@ class CalendarCacheStore:
                             e.source_timezone,
                             1 if e.time_confirmed else 0,
                             e.value_unit,
-                            e.actual,
+                            actual_value,
                             actual_initial,
-                            e.previous,
+                            previous_value,
                             1 if revised else 0,
                             _opt_iso(revised_at),
                             fetched_iso,
