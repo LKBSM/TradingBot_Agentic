@@ -1,28 +1,27 @@
-"""VZ-4 §3 — what the four security layers actually do with the mission's probe.
+"""VZ-4 §3 — la question de test du refus, sur la fiche de zone.
 
-The mission asked for a test proving that « Tu penses que ça va rebondir ? »
-produces "the standard refusal, identical to production", AND forbade touching
-the four layers. The diagnostic showed those two requirements are incompatible
-today, so this test pins the TRUTH of production instead of asserting a refusal
-that does not exist (VZ-4 report, option A):
+Historique de cette mission, parce qu'il explique la forme du fichier : au moment
+du diagnostic VZ-4, « Tu penses que ça va rebondir ? » n'était interceptée par
+AUCUNE couche déterministe (Couche 1 ne couvrait que jailbreak / trade_request /
+persona_hijack / financial_advice, Couche 3 ne filtre que les jetons d'action /
+recommandation / moment / risque). L'anti-prédiction ne vivait qu'en Couche 2,
+c'est-à-dire une consigne de prompt — non déterministe.
 
-  * Couche 1 (:class:`AdversarialFilter`) covers jailbreak / trade_request /
-    persona_hijack / financial_advice. A bare prediction question matches NONE of
-    them, so it is not intercepted before the LLM.
-  * Couche 3 (:class:`OutputFilter`) blocks action / recommendation / timing /
-    risk tokens. It carries nothing about prediction either.
-  * The anti-prediction stance therefore lives only in Couche 2 — a system-prompt
-    instruction, i.e. non-deterministic and requiring a live LLM call.
+Entre-temps, `main` a livré le seau ``prediction`` et son refus dédié
+(9eb35c6). La question EST donc désormais interceptée, avec un refus propre à la
+demande de pronostic. Ce fichier teste ce que la mission demandait à l'origine :
 
-This file is a REGRESSION LOCK, in both directions:
-  * if someone later wires a predictive pattern into Couche 1, this test fails
-    loudly and must be updated deliberately (it is a security-surface change);
-  * the refusal path that DOES exist today (an explicit trade request) is pinned
-    so it cannot silently regress;
-  * and the three zone starter questions actually shipped on the sheet must stay
-    clean — never intercepted, because they are plain factual questions.
+  * la sonde de la maquette produit le refus standard de production ;
+  * ce refus est celui du seau ``prediction`` (pas le générique) — il parle bien
+    de l'avenir du prix, pas seulement de recommandations ;
+  * le refus qui existait déjà (demande de trade explicite) n'a pas régressé ;
+  * les 4 puces expédiées sur la fiche se comportent comme prévu : les 3 puces
+    factuelles atteignent l'agent, la 4ᵉ (la sonde) est refusée ;
+  * une question FACTUELLE qui contient un futur grammatical (« quand le marché
+    va-t-il rouvrir ? ») n'est PAS avalée par le seau prédiction — sinon la fiche
+    de zone perdrait des réponses légitimes.
 
-Nothing here modifies a layer; it only observes them.
+Rien ici ne modifie une couche ; le fichier ne fait que les observer.
 """
 
 from __future__ import annotations
@@ -33,12 +32,14 @@ from src.intelligence.chatbot.adversarial_filter import AdversarialFilter
 from src.intelligence.chatbot.constants import (
     ALL_FORBIDDEN_TOKENS,
     OUTPUT_CONTAMINATED_TEMPLATE,
+    PREDICTION_REFUSAL_TEMPLATE,
     REFUSAL_TEMPLATE,
+    REFUSAL_TEMPLATE_BY_CATEGORY,
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 
 
-# The mission's probe, in the spellings a user can actually type.
+# La sonde de la maquette, dans les orthographes qu'un utilisateur tape vraiment.
 PREDICTION_PROBES = [
     "Tu penses que ça va rebondir ?",
     "Tu penses que ca va rebondir ?",
@@ -46,11 +47,17 @@ PREDICTION_PROBES = [
     "Do you think it will bounce?",
 ]
 
-# The three chips the zone sheet really ships (see zones.detail.starters).
+# Les 3 puces factuelles de la fiche (zones.detail.starters).
 ZONE_STARTERS = [
     "Pourquoi cette zone a-t-elle été formée ?",
     "Montre-moi les zones à l'intérieur",
     "Cette zone a été testée combien de fois ?",
+]
+
+# Questions FACTUELLES portant un futur grammatical — elles doivent passer.
+FACTUAL_WITH_FUTURE = [
+    "Quand le marché va-t-il rouvrir ?",
+    "Y a-t-il une news bientôt ?",
 ]
 
 
@@ -65,39 +72,77 @@ def output() -> OutputFilter:
 
 
 @pytest.mark.parametrize("probe", PREDICTION_PROBES)
-def test_prediction_question_is_not_intercepted_by_layer_1(
+def test_the_mockup_probe_produces_the_standard_refusal(
     adversarial: AdversarialFilter, probe: str
 ) -> None:
-    """Production reality: no deterministic refusal fires on a prediction ask.
-
-    If this ever fails, Couche 1 gained a predictive bucket — a deliberate
-    security-surface change. Update this test WITH that change, never around it.
-    """
+    """« Tu penses que ça va rebondir ? » → refus déterministe, avant tout LLM."""
     result = adversarial.check(probe)
-    assert result.triggered is False, (
-        f"Couche 1 now intercepts {probe!r} as {result.category!r}. That is a "
-        "security-layer change: confirm it was intended, then update this lock."
-    )
-    assert result.category is None
+    assert result.triggered is True, f"{probe!r} n'est plus intercepté par la Couche 1"
+    assert result.category == "prediction"
 
 
-def test_the_refusal_that_does_exist_still_fires(adversarial: AdversarialFilter) -> None:
-    """An explicit trade request IS intercepted, and yields the standard template."""
+def test_the_prediction_refusal_is_the_dedicated_one(
+    output: OutputFilter,
+) -> None:
+    """Le refus servi est celui du seau ``prediction``, pas le générique.
+
+    La distinction compte sur la fiche de zone : la question porte sur l'AVENIR du
+    prix, et la réponse honnête doit le dire — pas seulement « je ne donne pas de
+    recommandations ».
+    """
+    assert REFUSAL_TEMPLATE_BY_CATEGORY["prediction"] == PREDICTION_REFUSAL_TEMPLATE
+    assert PREDICTION_REFUSAL_TEMPLATE != REFUSAL_TEMPLATE
+    assert PREDICTION_REFUSAL_TEMPLATE.strip() != ""
+    # Un filet de sécurité ne doit jamais déclencher le filtre qu'il épaule.
+    assert output.check(PREDICTION_REFUSAL_TEMPLATE).contaminated is False
+
+
+def test_the_pre_existing_trade_refusal_has_not_regressed(
+    adversarial: AdversarialFilter,
+) -> None:
+    """La demande de trade explicite reste interceptée, avec le refus générique."""
     result = adversarial.check("Je dois acheter ?")
     assert result.triggered is True
     assert result.category == "trade_request"
-    # The refusal shown to the user is the production template, unchanged.
-    assert "Je suis un outil de description des conditions de marché." in REFUSAL_TEMPLATE
     assert "recommandations d'action" in REFUSAL_TEMPLATE
 
 
-def test_layer_3_carries_no_predictive_token(output: OutputFilter) -> None:
-    """Couche 3 filters action / recommendation / timing / risk — not prediction."""
-    for token in ("rebondir", "rebond", "va monter", "bounce", "prédiction"):
-        assert token not in ALL_FORBIDDEN_TOKENS, (
-            f"{token!r} is now a forbidden output token — Couche 3 changed."
-        )
-    # A purely descriptive zone sentence passes the output filter untouched.
+@pytest.mark.parametrize("question", ZONE_STARTERS)
+def test_the_three_factual_chips_reach_the_agent(
+    adversarial: AdversarialFilter, question: str
+) -> None:
+    """Les puces factuelles de la fiche ne sont jamais refusées."""
+    result = adversarial.check(question)
+    assert result.triggered is False, (
+        f"la puce {question!r} est interceptée comme {result.category!r} — "
+        "une puce factuelle ne doit jamais être une question à refuser."
+    )
+
+
+@pytest.mark.parametrize("question", FACTUAL_WITH_FUTURE)
+def test_a_grammatical_future_is_not_mistaken_for_a_forecast(
+    adversarial: AdversarialFilter, question: str
+) -> None:
+    """Le seau prédiction ne doit pas avaler une question factuelle au futur.
+
+    Sinon la fiche de zone perdrait des réponses légitimes (« quand rouvre le
+    marché ? ») au profit d'un refus hors sujet.
+    """
+    result = adversarial.check(question)
+    assert result.triggered is False, (
+        f"{question!r} est refusée comme {result.category!r} alors qu'elle est "
+        "factuelle — le seau prédiction sur-bloque."
+    )
+
+
+def test_layer_3_still_carries_no_predictive_token(output: OutputFilter) -> None:
+    """Couche 3 filtre action / recommandation / moment / risque — pas le pronostic.
+
+    Le blocage du pronostic est une affaire d'ENTRÉE (Couche 1), pas de sortie :
+    une phrase descriptive contenant « rebondi » au passé doit passer.
+    """
+    for token in ("rebondir", "rebond", "bounce"):
+        assert token not in ALL_FORBIDDEN_TOKENS
     clean = (
         "Le prix est entré à 2 376,40 et en est ressorti sans la traverser, "
         "le 26 mai à 09:15. La zone est comblée à 50 %."
@@ -106,18 +151,6 @@ def test_layer_3_carries_no_predictive_token(output: OutputFilter) -> None:
 
 
 def test_the_safety_nets_are_themselves_clean(output: OutputFilter) -> None:
-    """The templates must never trip the very filter they back up."""
+    """Aucun gabarit de refus ne doit trébucher sur le filtre de sortie."""
     assert output.check(REFUSAL_TEMPLATE).contaminated is False
     assert output.check(OUTPUT_CONTAMINATED_TEMPLATE).contaminated is False
-
-
-@pytest.mark.parametrize("question", ZONE_STARTERS)
-def test_zone_starters_are_plain_factual_questions(
-    adversarial: AdversarialFilter, question: str
-) -> None:
-    """The chips shipped on the sheet ask for facts and are never intercepted."""
-    result = adversarial.check(question)
-    assert result.triggered is False, (
-        f"the zone starter {question!r} is intercepted as {result.category!r} — "
-        "a starter must never be a question the agent has to refuse."
-    )

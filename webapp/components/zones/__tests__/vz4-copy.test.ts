@@ -1,3 +1,10 @@
+/**
+ * @vitest-environment node
+ *
+ * Pure data guard over the message catalogues — no DOM is needed, so this
+ * file skips the jsdom setup entirely (which dominates its runtime and, on a
+ * loaded machine, was starving the worker past its startup timeout).
+ */
 import { describe, expect, it } from 'vitest';
 import ar from '@/messages/ar.json';
 import de from '@/messages/de.json';
@@ -123,11 +130,11 @@ describe('VZ-4 — the zone sheet never passes judgement on a zone', () => {
     }
   });
 
-  it('the M.I.A starter questions are factual, and none asks for a prediction', () => {
-    // The mockup carried a fourth « tu penses que ça va rebondir ? » chip as a
-    // refusal probe. It is deliberately NOT shipped: the diagnostic showed no
-    // deterministic layer intercepts that question (see vz4-refusal.test.ts), so
-    // a chip inviting it would invite the one answer this surface must not give.
+  it('ships three factual chips plus ONE deliberate refusal probe', () => {
+    // The fourth chip asks for a forecast on purpose: Couche 1's `prediction`
+    // bucket intercepts it deterministically and answers with the dedicated
+    // forecast refusal, so the chip demonstrates the product's honesty instead
+    // of inviting a forecast. tests/test_vz4_zone_refusal.py locks that.
     const predictive = [
       'rebondir',
       'bounce',
@@ -136,27 +143,40 @@ describe('VZ-4 — the zone sheet never passes judgement on a zone', () => {
       'will go up',
       'will rise',
       'will drop',
-      'penses-tu',
       'tu penses',
       'do you think',
-      'prediction',
-      'previsi',
       'forecast',
     ];
+    const FACTUAL = ['formed', 'nested', 'tested'];
     for (const locale of Object.keys(LOCALES)) {
       const zones = (LOCALES[locale] as Dict).zones as Dict;
       const detail = zones.detail as Dict;
-      const starters = strings(detail.starters, 'starters');
-      expect(starters.length, `${locale} starters`).toBe(3);
-      for (const [path, value] of starters) {
-        const hay = normalize(value);
+      const starters = detail.starters as Record<string, string>;
+      expect(Object.keys(starters).sort(), `${locale} starters`).toEqual([
+        'formed',
+        'nested',
+        'probe',
+        'tested',
+      ]);
+
+      // The three factual chips never ask for a forecast.
+      for (const key of FACTUAL) {
+        const hay = normalize(starters[key]!);
         for (const word of predictive) {
           expect(
             hay.includes(normalize(word)),
-            `${locale} · ${path} asks for a prediction («${word}»): ${value}`,
+            `${locale} · starters.${key} asks for a prediction («${word}»): ${starters[key]}`,
           ).toBe(false);
         }
       }
+
+      // The probe DOES ask for one — that is its whole job. If this ever stops
+      // being true, the refusal it exercises is no longer being exercised.
+      const probe = normalize(starters.probe!);
+      expect(
+        predictive.some((w) => probe.includes(normalize(w))),
+        `${locale} · starters.probe no longer asks for a forecast: ${starters.probe}`,
+      ).toBe(true);
     }
   });
 

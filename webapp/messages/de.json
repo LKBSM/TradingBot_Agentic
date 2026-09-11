@@ -2638,7 +2638,8 @@
       "starters": {
         "formed": "Why was this zone formed?",
         "nested": "Show me the zones inside it",
-        "tested": "How many times has this zone been tested?"
+        "tested": "How many times has this zone been tested?",
+        "probe": "Do you think it will bounce?"
       }
     },
     "title": "Zones",

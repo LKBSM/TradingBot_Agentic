@@ -122,61 +122,66 @@ placeholder, pas de phrase générique. Vérifié en unitaire et en Playwright.
 
 ---
 
-## 4. ⚠️ Le test du refus : contradiction dans la spec, et ce qui a été livré
+## 4. Le test du refus — le terrain a bougé pendant la mission
+
+### Au diagnostic : la spec était contradictoire
 
 La mission demandait un test prouvant que « **Tu penses que ça va rebondir ?** »
 produit « le refus standard, identique à celui déjà en production », **et**
-interdisait toute modification des 4 couches. **Les deux sont incompatibles.**
-
-**Vérifié en exécutant le vrai filtre** (`AdversarialFilter.check`) :
+interdisait de toucher aux 4 couches. Au moment du diagnostic, les deux étaient
+incompatibles — vérifié en exécutant le vrai `AdversarialFilter` :
 
 ```
 False | None            | Tu penses que ca va rebondir ?
 False | None            | Est-ce que ca va monter ?
-True  | trade_request   | Je dois acheter ?          <-- lui, oui
-False | None            | Do you think it will bounce?
+True  | trade_request   | Je dois acheter ?
 ```
 
-La question **ne déclenche aucun refus déterministe**. Couche 1 ne couvre que
-jailbreak / trade_request / persona_hijack / financial_advice ; Couche 3
-(`output_filter.py`) ne filtre que les jetons d'action / recommandation / moment /
-risque — **rien sur le prédictif**. L'anti-prédiction n'existe qu'en **Couche 2**,
-une consigne de prompt (`chatbot.py:316`, `:337`) : non déterministe, dépendante
-d'un appel LLM. Cohérent avec le constat LP-2B/MIA-4S (« aucun refus prédictif
-câblé en Couche 1 »).
+Couche 1 ne couvrait que jailbreak / trade_request / persona_hijack /
+financial_advice ; Couche 3 ne filtre que les jetons d'action / recommandation /
+moment / risque. L'anti-prédiction ne vivait qu'en **Couche 2**, une consigne de
+prompt — non déterministe. J'ai donc livré l'**option A** (fixer la vérité de
+production) et **retenu la 4ᵉ puce**, parce qu'une puce invitant un pronostic
+sans refus déterministe derrière serait l'exact contraire de la règle §0.
 
-### Ce qui a été livré — **option A**, aucune couche touchée
+### Au merge : `main` avait livré l'option B en parallèle
 
-`tests/test_vz4_zone_refusal.py` (10 tests, verts) **fixe la vérité de
-production** plutôt que d'affirmer un refus qui n'existe pas. C'est un verrou
-bidirectionnel :
+`git fetch` avant merge : `origin/main` avait avancé de 9 commits, dont
+**`9eb35c6 feat(couche-1): ajoute le seau « prédiction » et son refus dédié`**.
+Aucun conflit de fichier (intersection vide), mais un **conflit sémantique** qui
+renverse les deux prémisses. Re-vérifié après merge :
 
-- si quelqu'un câble plus tard un motif prédictif en Couche 1, le test **échoue
-  bruyamment** et doit être mis à jour délibérément (c'est un changement de
-  surface de sécurité) ;
-- le refus qui **existe** (demande de trade explicite → `REFUSAL_TEMPLATE`) est
-  épinglé et ne peut pas régresser silencieusement ;
-- les 3 questions préfabriquées réellement livrées ne sont jamais interceptées.
+```
+True  | prediction      | Tu penses que ca va rebondir ?
+True  | prediction      | Est-ce que ca va monter ?
+True  | prediction      | Do you think it will bounce?
+True  | trade_request   | Je dois acheter ?
+False | None            | Pourquoi cette zone a-t-elle ete formee ?
+False | None            | Montre-moi les zones a l interieur
+False | None            | Cette zone a ete testee combien de fois ?
+```
 
-### 🔴 Écart assumé : la 4ᵉ puce n'est PAS livrée
+### Ce qui est livré au final
 
-La maquette portait « Tu penses que ça va rebondir ? » comme puce de test du refus.
-**Elle n'est pas expédiée en production.** Puisque aucune couche déterministe ne
-l'intercepte, afficher cette puce reviendrait à **inviter l'utilisateur à demander
-une prédiction** sur la seule surface dont la règle absolue est « aucun jugement,
-aucun pronostic » — en ne comptant que sur la discipline du prompt pour la réponse.
+Le refus **existe désormais**, déterministe et dédié au pronostic. Les deux
+décisions prises au diagnostic ont donc été **inversées, avec preuve** :
 
-Les 3 puces livrées sont factuelles :
-« Pourquoi cette zone a-t-elle été formée ? », « Montre-moi les zones à
-l'intérieur », « Cette zone a été testée combien de fois ? ».
+1. **`tests/test_vz4_zone_refusal.py` réécrit** (13 tests) : il teste ce que la
+   mission demandait à l'origine — la sonde produit le refus standard, ce refus
+   est bien celui du seau `prediction` (pas le générique), le refus `trade_request`
+   pré-existant n'a pas régressé, et les 3 puces factuelles atteignent l'agent.
+   Un test supplémentaire vérifie qu'une question **factuelle au futur**
+   (« quand le marché va-t-il rouvrir ? ») n'est PAS avalée par le nouveau seau —
+   sinon la fiche perdrait des réponses légitimes.
+2. **La 4ᵉ puce est livrée** (`zones.detail.starters.probe`, 9 locales). Elle
+   demande un pronostic exprès et le produit y répond par un refus : la puce
+   démontre l'honnêteté du produit au lieu d'inviter un pronostic. Le garde-fou
+   i18n a été inversé en conséquence : les 3 puces factuelles ne doivent JAMAIS
+   contenir de vocabulaire prédictif, et la 4ᵉ doit TOUJOURS en contenir — sans
+   quoi le refus qu'elle exerce ne serait plus exercé.
 
-Un test i18n interdit toute puce prédictive dans les 9 locales.
-
-**Si tu veux la puce malgré tout**, l'option B (câbler un motif prédictif en
-Couche 1) la rend sûre et testable — mais elle modifie une couche de sécurité et
-demande ton feu vert explicite. Dis-le et je la pose.
-
----
+**Aucune des 4 couches n'a été modifiée par VZ-4.** Le seau `prediction` vient de
+`main`, pas de cette branche.
 
 ## 5. Vocabulaire interdit
 
@@ -240,9 +245,8 @@ Quitter la page efface le **sujet**, jamais la **conversation** (règle §7 / CL
 |---|---|
 | `tsc --noEmit` | **0 erreur** |
 | `next build` | **vert**, route `/[locale]/zones/[zoneId]` enregistrée |
-| vitest — `components/zones` + `components/gallery` + gardes copie | **51/51** |
-| vitest — `components/app` + `components/chat` (non-régression) | **91/91** |
-| pytest — `tests/test_vz4_zone_refusal.py` | **10/10** |
+| vitest — `components/{zones,app,chat,gallery}` | **23 fichiers / 132 tests** |
+| pytest — `test_vz4_zone_refusal` + `test_chatbot_constants` + `test_templates_i18n` | **348/348** |
 | Playwright — `vz4-fiche-zone.spec.ts`, 1280×800 **et** 390×844 | **9/9** |
 
 Captures : `docs/audits/vz-4/captures/`.
@@ -257,5 +261,14 @@ worktree.**
 
 ## 9. Ce qui reste ouvert
 
-1. **La 4ᵉ puce prédictive** (§4) — écart assumé, en attente de ton arbitrage.
-2. **Confirmation visuelle live aux deux résolutions** — requise avant merge.
+1. **Confirmation visuelle live aux deux résolutions** — les captures sont prises
+   contre le build de prod avec les données réelles figées (`mockAllApis`) ; une
+   revue avec le backend réel reste souhaitable.
+2. **Flake d'environnement** : sur cette machine, plusieurs worktrees font tourner
+   leur propre serveur de dev ; sous cette charge le worker vitest dépasse parfois
+   son délai de démarrage (« Timeout waiting for worker to respond »), et
+   `ZonesWorkspace.test.tsx` dépasse le `testTimeout` de 5 s. Les deux passent
+   isolément (13/13 avec `--testTimeout=30000`). Ce n'est pas une régression VZ-4 ;
+   aucun timeout n'a été relâché dans le dépôt. Le garde-fou de copie, lui, a été
+   vraiment corrigé : il tourne en `@vitest-environment node` (il n'a besoin
+   d'aucun DOM), ce qui l'accélère ×4 et le sort de la zone de flake.

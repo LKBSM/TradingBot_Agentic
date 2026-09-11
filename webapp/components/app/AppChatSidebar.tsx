@@ -37,17 +37,22 @@ const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
  * a second injection path: when the one conversation is oriented on a zone, the
  * empty-state chips ask about THAT zone.
  *
- * All three are factual questions the agent answers from its tools — formation,
- * containment, contact count. There is deliberately NO predictive chip: the
- * diagnostic showed « ça va rebondir ? » is not intercepted by any deterministic
- * layer (Couche 1 covers jailbreak / trade / persona / advice, Couche 3 filters
- * action-recommendation-timing-risk tokens), so shipping such a chip would invite
- * the one answer this surface must never produce.
+ * The first three are factual questions the agent answers from its tools —
+ * formation, containment, contact count.
+ *
+ * The fourth is deliberately a PROBE: it asks for a forecast, and the product
+ * answers it with a refusal. It is shipped because that refusal is now
+ * DETERMINISTIC — the ``prediction`` bucket of Couche 1 intercepts it before any
+ * LLM call and serves the dedicated forecast refusal. (It was withheld earlier in
+ * VZ-4: at diagnostic time no layer caught it, so the chip would have invited the
+ * one answer this surface must never produce. `tests/test_vz4_zone_refusal.py`
+ * locks the behaviour in both directions.)
  */
 const ZONE_STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
   { id: 'formed', icon: <LineChart className="h-4 w-4" aria-hidden /> },
   { id: 'nested', icon: <LayoutPanelTop className="h-4 w-4" aria-hidden /> },
   { id: 'tested', icon: <HelpCircle className="h-4 w-4" aria-hidden /> },
+  { id: 'probe', icon: <HelpCircle className="h-4 w-4" aria-hidden /> },
 ];
 
 /**

@@ -131,14 +131,14 @@ test.describe('VZ-4 — M.I.A contextual chips', () => {
     // Exactly ONE panel (MIA-3 guard) and the subject is this zone.
     await expect(page.getByTestId('mia-subject')).toHaveCount(1);
 
-    // The starter chips are the zone-contextual ones, and none asks for a
-    // prediction (the mockup's « ça va rebondir ? » probe is deliberately not
-    // shipped — see docs/audits/AUDIT-vz-4-fiche-zone.md).
-    const chips = page.locator('button', { hasText: /zone/i });
+    // The chips are the zone-contextual ones: three factual questions plus the
+    // deliberate refusal probe. The probe ships because Couche 1's `prediction`
+    // bucket now intercepts it deterministically (see tests/test_vz4_zone_refusal.py).
+    const chips = page.locator('button', { hasText: /zone|rebondir|bounce/i });
     const texts = await chips.allTextContents();
     const joined = texts.join(' | ');
     expect(joined).toMatch(/form[ée]e/i);
-    expect(joined).not.toMatch(/rebondir|bounce/i);
+    expect(joined).toMatch(/rebondir|bounce/i);
 
     await page.screenshot({
       path: path.join(OUT, 'desktop-1280x800-fiche-zone-mia.png'),
