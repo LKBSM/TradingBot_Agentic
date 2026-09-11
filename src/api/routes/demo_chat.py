@@ -41,7 +41,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from src.api.auth_throttle import AuthThrottle, client_ip
-from src.intelligence.chatbot.constants import LLM_ERROR_TEMPLATE
+from src.intelligence.chatbot.constants import localized
 
 logger = logging.getLogger(__name__)
 
@@ -104,23 +104,14 @@ _ZONE_LAYERS: Optional[Dict[str, str]] = None
 # not even correlatable across restarts, which is the privacy-preserving default.
 _LOG_SALT = os.environ.get("DEMO_LOG_SALT") or secrets.token_hex(8)
 
-# What the visitor is told when a quota is reached. Free of forbidden tokens, so
-# these never trip Couche 3 — same discipline as the production templates.
-QUOTA_TEMPLATES: Dict[str, str] = {
-    "session_limit": (
-        "On s'arrête ici pour la démonstration : elle est limitée à quelques "
-        "questions par visiteur. Ce que tu viens de voir tourne sur un scénario "
-        "figé — dans le produit, M.I.A lit les marchés réels et la conversation "
-        "n'est pas limitée."
-    ),
-    "ip_limit": (
-        "Beaucoup de questions sont arrivées depuis cette connexion en peu de "
-        "temps. La démonstration se met en pause un moment."
-    ),
-    "daily_budget": (
-        "La démonstration a atteint son quota du jour. Les onglets de la page "
-        "restent utilisables, et le produit, lui, n'est pas concerné."
-    ),
+# What the visitor is told when a quota is reached — in their own language, like
+# every other verbatim text on this path. The strings live in templates_i18n;
+# this maps the quota reason to its family. Free of forbidden tokens, so they
+# never trip Couche 3 — same discipline as the production templates.
+QUOTA_TEMPLATE_FAMILY: Dict[str, str] = {
+    "session_limit": "QUOTA_SESSION_LIMIT",
+    "ip_limit": "QUOTA_IP_LIMIT",
+    "daily_budget": "QUOTA_DAILY_BUDGET",
 }
 
 
@@ -182,7 +173,7 @@ def _agent(request: Request, locale: Optional[str]) -> Any:
     return registry.for_locale(locale)
 
 
-def _check_quotas(sid: str, ip: str) -> None:
+def _check_quotas(sid: str, ip: str, locale: Optional[str] = None) -> None:
     """Raise 429 with a spoken reason, cheapest/broadest check first.
 
     Ordered so an abusive burst is stopped by the daily brake before it can even
@@ -199,7 +190,7 @@ def _check_quotas(sid: str, ip: str) -> None:
                 status_code=429,
                 detail={
                     "reason": reason,
-                    "message": QUOTA_TEMPLATES[reason],
+                    "message": localized(QUOTA_TEMPLATE_FAMILY[reason], locale),
                     "retry_after": retry_after,
                 },
             )
@@ -291,7 +282,7 @@ async def demo_chat(
     if is_new:
         _set_session_cookie(response, sid)
     ip = client_ip(request)
-    _check_quotas(sid, ip)
+    _check_quotas(sid, ip, payload.locale)
 
     started = time.monotonic()
     try:
@@ -336,7 +327,7 @@ async def demo_chat_stream(payload: DemoChatRequest, request: Request) -> Stream
     agent = _agent(request, payload.locale)
     sid, is_new = _session_id(request)
     ip = client_ip(request)
-    _check_quotas(sid, ip)
+    _check_quotas(sid, ip, payload.locale)
 
     user_message = payload.user_message
     history = [m.model_dump() for m in payload.conversation_history]
@@ -364,7 +355,8 @@ async def demo_chat_stream(payload: DemoChatRequest, request: Request) -> Stream
             yield _sse(
                 {
                     "event": "answer",
-                    "content": LLM_ERROR_TEMPLATE,
+                    # In the visitor's language, like every other safety template.
+                    "content": localized("LLM_ERROR_TEMPLATE", payload.locale),
                     "tool_calls_made": [],
                     "view_actions": [],
                     "blocked_reason": "llm_error",

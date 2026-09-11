@@ -98,15 +98,28 @@ def test_all_adversarial_patterns_compile(pattern: re.Pattern) -> None:
     re.compile(pattern.pattern, re.IGNORECASE)
 
 
-def test_four_buckets_present() -> None:
-    assert set(C.ADVERSARIAL_PATTERNS_BY_CATEGORY) == {
+def test_five_buckets_present() -> None:
+    """Four founder-validated buckets + ``prediction`` (added on founder decision).
+
+    ``prediction`` is LAST in the ordered mapping so it can never steal the
+    reported category of a message an earlier bucket already caught.
+    """
+    assert list(C.ADVERSARIAL_PATTERNS_BY_CATEGORY) == [
         "jailbreak",
         "trade_request",
         "persona_hijack",
         "financial_advice",
-    }
-    for patterns in C.ADVERSARIAL_PATTERNS_BY_CATEGORY.values():
-        assert 5 <= len(patterns) <= 10, "each bucket must hold 5-10 patterns (brief)"
+        "prediction",
+    ]
+    # The "5-10 patterns" review rule now applies to the FRENCH core: the buckets
+    # themselves also carry the seven other locales (adversarial_i18n), which
+    # would make a count over the merged list meaningless.
+    for bucket, patterns in C.FRENCH_PATTERNS_BY_CATEGORY.items():
+        assert 5 <= len(patterns) <= 10, f"{bucket}: {len(patterns)} French patterns"
+        assert patterns == C.ADVERSARIAL_PATTERNS_BY_CATEGORY[bucket][: len(patterns)], (
+            f"{bucket}: the French core must stay FIRST in the merged bucket, so a "
+            "French message keeps reporting the category it always did"
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -158,6 +171,15 @@ POSITIVE_EXAMPLES: dict[str, list[str]] = {
         "Si je perds 500 euros je fais quoi ?",
         "Combien je devrais miser sur ce trade ?",
     ],
+    "prediction": [
+        "Tu penses que ça va rebondir depuis cette zone ?",
+        "Le prix va-t-il monter après ce BOS ?",
+        "Quel est ton objectif de prix sur l'or ?",
+        "Tu prévois une baisse cette semaine ?",
+        "Jusqu'où va le prix selon le moteur ?",
+        "Hausse ou baisse sur l'EURUSD ?",
+        "Do you think gold will go up?",
+    ],
 }
 
 # >=3 negatives per bucket (benign descriptive questions — must reach the LLM).
@@ -175,6 +197,19 @@ NEGATIVE_EXAMPLES: list[str] = [
     "Qu'est-ce que la phase d'expansion ?",
     "À quelle heure est la prochaine news USD ?",
     "Explique la confluence multi-timeframe",
+    # --- Future tense that is FACTUAL, not a forecast (prediction bucket) ------
+    # These are the false positives a prediction bucket invites. Blocking them
+    # would break the descriptive product to catch a phrasing.
+    "Quand le marché va-t-il rouvrir ?",
+    "Le marché va rouvrir à quelle heure ?",
+    "Y a-t-il une publication qui va sortir cette semaine ?",
+    "Quand vas-tu rafraîchir la lecture ?",
+    "Qu'est-ce qui s'est passé après le BOS ?",
+    "Cette zone a-t-elle déjà été testée ?",
+    "La tendance est-elle haussière sur H4 ?",
+    # The product DOES forecast volatility (an amplitude), never a direction.
+    "Quelle est la prévision de volatilité sur XAUUSD ?",
+    "Comment est calculée la prévision de volatilité ?",
 ]
 
 

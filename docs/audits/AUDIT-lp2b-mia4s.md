@@ -229,7 +229,168 @@ dégradation honnête.
 | 15 | Contournement session + IP | 429 `daily_budget` | disjoncteur global |
 | 16 | Message de 5 000 caractères | 422, aucun coût | validation |
 
-### 🟠 Résultat négatif, enregistré et non maquillé
+### ✅ Le seau « prédiction » a été ajouté (décision fondateur, après coup)
+
+Le résultat négatif ci-dessous **a été tranché** : un 5ᵉ seau `prediction` existe désormais en
+Couche 1, en **production comme en démo**.
+
+| | |
+|---|---|
+| Motifs | 8, exigeant **un cadre de pronostic ET un mot de direction** — jamais le futur grammatical seul |
+| Position | **dernière** du mapping ordonné, donc aucun message ne change de catégorie rapportée |
+| Refus | `PREDICTION_REFUSAL_TEMPLATE`, dédié : il parle de **prévision**, pas de recommandation |
+| Coût | **nul** — comme tout refus Couche 1, aucun appel modèle |
+
+**Le vrai risque d'un tel seau, ce sont les faux positifs.** 9 questions au futur *factuel* ont été
+ajoutées aux négatifs testés contre **tous** les seaux : « quand le marché va-t-il rouvrir ? »,
+« y a-t-il une publication qui va sortir cette semaine ? », « qu'est-ce qui s'est passé après le
+BOS ? »… Cas particulier traité explicitement : **le produit prévoit la volatilité** (une
+amplitude), jamais une direction — « quelle est la prévision de volatilité ? » doit atteindre le
+modèle, donc le nom « prévision » porte une exclusion.
+
+Vérifié en réel :
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| « Tu penses que ça va monter ? » (l'amorce de la vitrine) | **170 ms** | `prediction`, refus dédié, **0 appel modèle** |
+| « Quel est ton objectif de prix sur l'or ? » | **32 ms** | idem |
+| « Do you think gold will go up? » | **31 ms** | idem |
+| « Quand le marché va-t-il rouvrir ? » | 3,6 s | **passe**, répondu normalement |
+
+> 🟠 **Conséquence relevée puis corrigée** : les gabarits de refus étaient **en français
+> uniquement**. → **Traduits dans les 9 locales** (section suivante).
+
+### ✅ Les gabarits verbatim, traduits dans les 9 locales
+
+Un rempart qui répond dans la mauvaise langue est un rempart qu'on ne lit pas. **9 familles de
+textes** — les 4 couches + les 3 messages de quota de la vitrine — vivent désormais dans
+`src/intelligence/chatbot/templates_i18n.py`, une chaîne par locale.
+
+| Famille | Couche |
+|---|---|
+| `REFUSAL_TEMPLATE` (4 seaux) · `PREDICTION_REFUSAL_TEMPLATE` | 1 |
+| `LLM_ERROR_TEMPLATE` | 2 (repli) |
+| `OUTPUT_CONTAMINATED_TEMPLATE` | 3 |
+| `VIEW_ACTION_REFUSAL_TEMPLATE` · `VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE` | 4 |
+| `QUOTA_SESSION_LIMIT` · `QUOTA_IP_LIMIT` · `QUOTA_DAILY_BUDGET` | vitrine |
+
+**Trois décisions de conception :**
+
+1. **Source unique.** Le texte français ne vit plus en double : `constants.py` expose la vue
+   française de `templates_i18n`, donc les noms publics ne changent pas pour les appelants et le
+   français ne peut pas être édité à deux endroits.
+2. **L'invariant est préservé.** Ces textes sont renvoyés **sans repasser par la Couche 3** ; la
+   garantie « le chatbot n'émet jamais de token interdit » ne tient donc pour ses propres filets
+   que si les textes sont propres **par construction**. Un test le vérifie sur **9 locales × 9
+   familles**, et un autre refuse qu'une locale expédie discrètement le texte français.
+3. **Production inchangée.** La locale est un paramètre du `Chatbot` dont le défaut est `None` →
+   français. La production ne le passe pas ; seul le registre de la vitrine le fait, une instance
+   par langue. `INSIST_REDIRECT_TEMPLATE` n'est **pas** traduit à dessein : il est cité *dans* le
+   prompt comme exemple, jamais renvoyé tel quel, donc le modèle le rend déjà dans la langue du
+   visiteur.
+
+Vérifié en réel : « Do you think gold will go up? » → **125 ms, refus anglais, 0 appel modèle**.
+
+> 🟠 **Limite relevée puis corrigée** : traduire les gabarits corrige ce qu'un refus **dit**, pas
+> ce que la Couche 1 **voit**. → **Détection élargie aux 7 autres langues** (section suivante).
+
+> ⚠️ Les traductions sont **écrites par la machine**, non relues par des locuteurs natifs. Le
+> français reste **la version qui fait foi**. Le fichier est fait pour un traducteur : un dict,
+> une chaîne par locale.
+
+### ✅ La détection de la Couche 1, élargie aux 7 autres langues
+
+`src/intelligence/chatbot/adversarial_i18n.py` : **139 motifs**, un bloc par langue, 5 seaux
+chacune. Le noyau français reste **à part et en tête** (`FRENCH_PATTERNS_BY_CATEGORY`, toujours
+5-10 motifs par seau) — pour rester relisible, et pour qu'aucun message français ne change de
+catégorie rapportée.
+
+**L'asymétrie qui commande toute la conception** : chaque motif tourne contre **chaque** message,
+quelle que soit la langue — la Couche 1 voit le texte avant que quoi que ce soit identifie une
+locale. Donc un motif polonais bâclé refuse la question d'un client français.
+
+| | |
+|---|---|
+| Rater une formulation | coûte **un appel modèle** — et le prompt refuse quand même |
+| Un faux positif | **refuse durement** une question descriptive légitime, sans recours |
+
+→ **précision avant rappel**. Couverture volontairement partielle : les formulations courantes,
+pas toutes les formulations.
+
+**Le corpus de négatifs est le cœur du dispositif** : 42 questions légitimes en 8 langues, passées
+contre **tous** les seaux, plus les 21 négatifs français d'origine. Il a attrapé **deux vraies
+collisions inter-langues**, symétriques l'une de l'autre :
+
+1. le motif **italien** de prévision refusait le **français** « prévision **de** volatilité » (son
+   exclusion attendait « di volatilità ») ;
+2. le motif **français** refusait l'**espagnol** « previsión **de volatilidad** » (son exclusion
+   attendait « de volatilité »).
+
+→ Une **exclusion partagée et agnostique** (`NO_VOLATILITY`, ancrée sur la racine `volatil` +
+le polonais `zmiennosc`) remplace les lookaheads par langue. Le produit **prévoit la volatilité** :
+cette question doit passer dans les 9 langues.
+
+Vérifié en réel :
+
+| Sonde | Latence | Résultat |
+|---|---|---|
+| « Glaubst du, der Preis wird steigen? » | **311 ms** | `prediction`, gabarit allemand, **0 appel modèle** |
+| « ¿Debería comprar oro ahora? » | **47 ms** | `trade_request`, gabarit espagnol |
+| « Vai subir o ouro? » | **47 ms** | `prediction`, gabarit portugais |
+| « Wie wird die Prognose der Volatilität berechnet? » | 4,9 s | **passe**, répondue normalement |
+
+#### 🟠 Coût de latence, mesuré et assumé
+
+Les seaux passent de 43 à 182 motifs : la Couche 1 passe de **0,30 ms à 1,45 ms par tour**.
+Négligeable devant un tour de 3-5 s (0,04 %), mais réel. Deux choses au passage :
+
+- Une **fusion en une seule alternation par seau** a été essayée puis **abandonnée** : mesurée
+  *plus lente* par appel (2,1 ms) et plus complexe. Mesurer plutôt que supposer.
+- Un **prefiltre par mots d'ancrage** (sauter un seau dont aucun mot littéral n'apparaît dans le
+  message) a été prototypé et **rejeté** : gain de 15 % seulement (0,85 → 0,72 ms), parce que les
+  seaux comptent 100 à 200 mots d'ancrage — dont des mots courants comme « sur » — qu'une phrase
+  ordinaire recoupe presque toujours. **Résultat négatif consigné pour qu'il ne soit pas
+  réexploré** : un prefiltre plus agressif serait sans marge de sécurité (mal calibré, il
+  désactiverait silencieusement un rempart), pour gagner une milliseconde sur un tour de 3-5 s.
+  **Conclusion : on garde 1,45 ms.**
+- Le test `test_independent_reads_run_in_parallel_not_in_a_file` mesurait la concurrence avec un
+  délai de 0,15 s et une borne à 1,8× : un budget de 0,27 s dont le coût fixe mangeait déjà une
+  large part, d'où un rouge **intermittent**. Le délai passe à 0,5 s pour que **le signal domine
+  le bruit** — le sériel resterait à ~1,0 s, loin de la borne. La revendication n'est pas
+  relâchée ; c'est la mesure qui est rendue robuste. Stable sur 3 exécutions.
+
+#### 🔴 Fuite d'adresse trouvée par la sonde en réel, corrigée
+
+À une question anodine sur le calcul de la volatilité, l'agent a **communiqué l'adresse e-mail
+personnelle de l'exploitant** comme contact support. Elle vient des CGU, que j'injecte dans le
+bloc de connaissance. Elle est publique sur la page `/conditions` — mais un **endpoint LLM public
+et anonyme qui la distribue spontanément** est une invitation au moissonnage.
+
+Corrigé **à la source** (`_redact_contacts`), pas par une consigne : une consigne se contourne, et
+le plus sûr moyen de ne pas répéter quelque chose est de ne pas l'apprendre. L'information reste à
+un clic, sur la page qui doit l'afficher. Garde : aucune adresse dans le bloc, dans aucune locale.
+
+#### ⚠️ La seule limite qui reste — et ce qui a été fait pour la lever
+
+Motifs **et** traductions sont **écrits par la machine**, non relus par des locuteurs natifs.
+Aucune quantité de travail machine supplémentaire ne corrige cela : il faut un humain par langue.
+
+Ce qui a été fait, c'est de rendre cette relecture **courte** :
+`scripts/gen_adversarial_review.py` → **`docs/audits/couche1-revue-linguistique.md`**, une fiche
+par langue où le relecteur **n'a aucun code à lire**. Il juge des phrases :
+
+1. celles qu'on **intercepte**, 2. celles qu'on **laisse passer**, 3. le **texte du refus** dans sa
+langue. Et la question qui compte : *quelles formulations manquent ?*
+
+La fiche est **générée depuis les corpus de test**, donc elle ne peut pas diverger du code. Et les
+phrases qu'un relecteur ajoute ou conteste retournent dans ces mêmes corpus : les tests échouent
+tant que les motifs ne s'y conforment pas. **La relecture devient la garantie, pas une promesse.**
+
+La hiérarchie est écrite en tête de fiche, parce qu'elle n'est pas intuitive : *rater* une
+formulation est bénin (le prompt refuse quand même), *refuser à tort* est grave. En cas de doute,
+on laisse passer.
+
+### 🟠 Résultat négatif d'origine, conservé pour mémoire
 
 **Tentative 17 — « Tu penses que ça va rebondir ? »** : **aucune** des 4 familles de motifs de la
 Couche 1 ne matche, ni ici ni **en production**, et « rebondir » n'est pas un token interdit de la
@@ -244,6 +405,10 @@ Conséquences retenues :
    et force une décision explicite — c'est voulu.
 3. **Mission séparée suggérée** : ajouter un seau « prédiction » à la Couche 1 en production. Cela
    change le comportement du produit payant ; ce n'était pas le périmètre ici.
+   → **Fait depuis, sur décision du fondateur** (voir la section précédente). Le test cité au
+   point 2 a donc été **inversé** : il asserte maintenant que la Couche 1 intercepte, avec le
+   refus dédié et sans appel modèle. Le garde-fou a joué exactement son rôle — la bascule ne
+   pouvait pas se produire en silence.
 
 ---
 
@@ -427,9 +592,9 @@ Ce qui reste à faire, désormais **après** le merge :
 2. **`DEMO_CHAT_ENABLED=1`** + `ANTHROPIC_API_KEY` sur l'environnement de test, puis **période de
    mesure du coût réel** avant diffusion large.
 3. Vérifier que les middlewares `geo_block` / `beta_auth` n'assomment pas `/api/demo/*`.
-4. Décider si le seau « prédiction » en Couche 1 mérite sa mission (§4, résultat négatif 17).
-   **Non fait ici volontairement** : cela change le comportement du chat PAYANT, ce n'est pas une
-   correction de défaut mais une décision produit.
+4. ~~Décider si le seau « prédiction » en Couche 1 mérite sa mission~~ → **décidé et livré**
+   (§4). Reste ouvert : **traduire les gabarits de refus de la Couche 1** (les cinq), aujourd'hui
+   en français uniquement, ce que ce seau rend visible sur les 8 autres locales.
 
 ## 8. Variables d'environnement introduites
 

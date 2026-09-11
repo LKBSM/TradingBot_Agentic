@@ -31,6 +31,8 @@ from src.intelligence.chatbot.constants import (
     REFUSAL_TEMPLATE,
     VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE,
     VIEW_ACTION_REFUSAL_TEMPLATE,
+    localized,
+    refusal_for,
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
@@ -414,6 +416,7 @@ class Chatbot:
         tool_schemas: Optional[list[dict[str, Any]]] = None,
         tool_handlers: Optional[dict[str, Any]] = None,
         extra_system_blocks: Optional[list[str]] = None,
+        locale: Optional[str] = None,
     ) -> None:
         self._client = anthropic_client
         self._summary_provider = summary_provider
@@ -452,6 +455,10 @@ class Chatbot:
         self._tool_schemas = tool_schemas if tool_schemas is not None else TOOL_SCHEMAS
         self._tool_handlers = dict(tool_handlers or {})
         self._extra_system_blocks = list(extra_system_blocks or [])
+        # Language of the VERBATIM safety templates (Couches 1-4). None = French,
+        # which is what production builds — the paid chat answers in French.
+        # Only the templates are localised: the prompt decides the prose.
+        self._locale = locale
 
     # ------------------------------------------------------------------ #
     # Public API
@@ -527,7 +534,11 @@ class Chatbot:
         if adv.triggered:
             yield {
                 "event": "answer",
-                "content": REFUSAL_TEMPLATE,
+                # The refusal is chosen by bucket: a forecast request deserves an
+                # answer ABOUT forecasting, not the generic recommendation notice.
+                # Unmapped buckets keep REFUSAL_TEMPLATE, so this changed nothing
+                # for the four that existed before.
+                "content": refusal_for(adv.category, self._locale),
                 "tool_calls_made": [],
                 "view_actions": [],
                 "blocked_reason": adv.category,
@@ -581,7 +592,7 @@ class Chatbot:
                 logger.warning("chatbot LLM call failed: %s — fail-safe template", exc)
                 yield {
                     "event": "answer",
-                    "content": LLM_ERROR_TEMPLATE,
+                    "content": localized("LLM_ERROR_TEMPLATE", self._locale),
                     "tool_calls_made": tool_calls_made,
                     "view_actions": view_actions,
                     "blocked_reason": "llm_error",
@@ -599,7 +610,7 @@ class Chatbot:
                     )
                     yield {
                         "event": "answer",
-                        "content": OUTPUT_CONTAMINATED_TEMPLATE,
+                        "content": localized("OUTPUT_CONTAMINATED_TEMPLATE", self._locale),
                         "tool_calls_made": tool_calls_made,
                         "view_actions": view_actions,
                         "blocked_reason": f"output_contaminated_{output_check.category}",
@@ -697,7 +708,7 @@ class Chatbot:
         logger.warning("chatbot exceeded %d tool turns — fail-safe template", self._max_tool_turns)
         yield {
             "event": "answer",
-            "content": LLM_ERROR_TEMPLATE,
+            "content": localized("LLM_ERROR_TEMPLATE", self._locale),
             "tool_calls_made": tool_calls_made,
             "view_actions": view_actions,
             "blocked_reason": "max_tool_turns_exceeded",
@@ -821,9 +832,9 @@ class Chatbot:
             # invented-structure attempt — hand back the honest "nothing of that
             # kind on this reading" wording instead of the generic refusal.
             message = (
-                VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE
+                localized("VIEW_ACTION_EMPTY_CATEGORY_TEMPLATE", self._locale)
                 if check.reason == "empty_category"
-                else VIEW_ACTION_REFUSAL_TEMPLATE
+                else localized("VIEW_ACTION_REFUSAL_TEMPLATE", self._locale)
             )
             return {
                 "status": "rejected",
