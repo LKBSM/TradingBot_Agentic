@@ -1951,7 +1951,16 @@
       "unpin": "إلغاء التثبيت",
       "pinAria": "تثبيت {combo}",
       "unpinAria": "إلغاء تثبيت {combo}",
-      "notSynced": "غير متزامن"
+      "notSynced": "غير متزامن",
+      "followedByEngine": "متابَعة من المحرّك",
+      "uxTestBadge": "وضع اختبار الواجهة",
+      "uxTestNote": "{count} سوقًا مدرجة للعرض فقط. المحرّك يتابع {real} منها فقط.",
+      "groupFxMajor": "العملات الرئيسية",
+      "groupFxMinor": "العملات الثانوية",
+      "groupFxExotic": "العملات النادرة",
+      "groupMetal": "المعادن",
+      "groupIndex": "المؤشرات",
+      "groupCrypto": "العملات المشفّرة"
     },
     "mobile": {
       "workspaceTitle": "فضاء القراءة",
@@ -2038,7 +2047,9 @@
       "collapseToBubble": "تصغير إلى فقاعة",
       "modeNotSynced": "اختيار العرض الخاص بك — غير مُزامَن.",
       "columnNeedsWidth": "العمود متاح على شاشة أوسع.",
-      "dockToColumn": "تثبيت كعمود"
+      "dockToColumn": "تثبيت كعمود",
+      "welcomeTitleNotCovered": "لا توجد قراءة لهذا السوق",
+      "welcomeSubtitleNotCovered": "المحرّك لا يتابع {market} بعد: لا توجد أي قراءة للحديث عنها. اختر سوقًا متابَعًا لطرح سؤال."
     },
     "placeholders": {
       "emptyReading": "اختر تركيبًا على اليسار لعرض قراءة سوقه.",
@@ -2052,7 +2063,10 @@
       "errorNoData": "لا تتوفر بيانات لهذه التركيبة حتى الآن.",
       "slowLoading": "التحميل يستغرق وقتًا أطول من المتوقع — لا يزال يجري جلب البيانات.",
       "chartUnavailableTitle": "الرسم البياني غير متاح",
-      "chartUnavailableBody": "تدفّق الشموع غير متصل لهذا التركيب. تبقى القراءة أدناه متاحة."
+      "chartUnavailableBody": "تدفّق الشموع غير متصل لهذا التركيب. تبقى القراءة أدناه متاحة.",
+      "marketNotCoveredTitle": "غير متاح بعد على هذا السوق",
+      "marketNotCoveredBody": "المحرّك لا يتابع {market} بعد. لا توجد له أي قراءة ولا رسم بياني ولا سعر — ولا شيء يُحاكى في هذه الأثناء.",
+      "marketNotCoveredChart": "لا توجد أي شمعة لـ {market}: المحرّك لا يتابع هذا السوق. ولا يُرسم أي شيء بدلاً منها."
     },
     "chart": {
       "recent": "Go to the most recent candle",

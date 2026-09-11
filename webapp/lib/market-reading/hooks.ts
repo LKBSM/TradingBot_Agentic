@@ -6,9 +6,11 @@ import {
   fetchCandles,
   fetchCandleWindow,
   fetchMarketReading,
+  MarketNotCoveredError,
   MarketReadingNotAvailableError,
   type CandlesErrorReason,
 } from './api-client';
+import { isCatalogOnly } from '@/lib/market-catalog';
 import { computeDailyChange, type DailyChange } from './price';
 import { getMockCandles, getMockReading, READING_DATA_SOURCE } from '@/lib/mockReadings';
 import { mtfOrderFor, type MtfTrendMap } from './mtf-trend';
@@ -114,6 +116,19 @@ export function useMarketReading(
       setIsLoading(false);
       setIsRefreshing(false);
       setError(null);
+      return;
+    }
+
+    // MKT-1 test UX — a catalogue-only market has NO data anywhere. Refuse it
+    // HERE, before any request: nothing is fetched, so nothing can be rendered
+    // from a response, and the honest empty state is structural rather than a
+    // promise. Off by default — isCatalogOnly() is false when the flag is off.
+    if (isCatalogOnly(instrument)) {
+      loadedKey.current = null;
+      setData(null);
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setError(new MarketNotCoveredError(instrument));
       return;
     }
 
@@ -230,6 +245,15 @@ export function useMtfTrends(
 
   React.useEffect(() => {
     if (!instrument || !timeframe) {
+      setTrends(EMPTY_MTF_TRENDS);
+      setIsLoading(false);
+      return;
+    }
+
+    // MKT-1 test UX — no upper-unit reads for a market the engine does not
+    // follow: an empty map counts every unit "indisponible", which is the
+    // existing honest behaviour for a missing unit (never an agreement).
+    if (isCatalogOnly(instrument)) {
       setTrends(EMPTY_MTF_TRENDS);
       setIsLoading(false);
       return;
@@ -451,6 +475,17 @@ export function useCandles(
       setCandles(null);
       setIsLoading(false);
       setError(null);
+      return;
+    }
+
+    // MKT-1 test UX — never request candles for a catalogue-only market. The
+    // chart placeholder shows instead: no series exists, so none is drawn.
+    if (isCatalogOnly(instrument)) {
+      loadedKey.current = null;
+      candlesRef.current = null;
+      setCandles(null);
+      setIsLoading(false);
+      setError(new MarketNotCoveredError(instrument));
       return;
     }
 
@@ -688,6 +723,15 @@ export function useLatestPrice(
 
   React.useEffect(() => {
     if (!instrument) {
+      setChange(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // MKT-1 test UX — no price for a market the engine does not follow. Leaving
+    // `change` null is what every consumer already renders as "pas de prix";
+    // inventing a placeholder number here is exactly what must never happen.
+    if (isCatalogOnly(instrument)) {
       setChange(null);
       setIsLoading(false);
       return;

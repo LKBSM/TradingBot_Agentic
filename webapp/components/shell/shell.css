@@ -765,6 +765,92 @@
   color: var(--dim);
   padding: 6px 5px;
 }
+
+/* MKT-1 — scale to ~100 markets.
+   The rail itself scrolls (.rail { overflow-y: auto }), so with a long market
+   list the search field scrolled out of the top and the timeframe pills sat 100
+   rows below the fold: the two controls that make a long list usable were the
+   first things to leave the screen. Pinning them to the ends of the scroll
+   container fixes that. No visible effect at 2 markets — nothing overflows. */
+.app-shell .marketsel-stick {
+  position: sticky;
+  top: -13px; /* cancels .rail's 13px top padding so nothing peeks above */
+  z-index: 2;
+  background: var(--panel);
+  padding-top: 13px;
+  margin-top: -13px;
+}
+.app-shell .marketsel-tfstick {
+  position: sticky;
+  bottom: -13px;
+  z-index: 2;
+  background: var(--panel);
+  padding-bottom: 13px;
+  margin-bottom: -13px;
+}
+
+/* Collapsible category header for the display-only catalogue. */
+.app-shell .marketsel-grouphead {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 5px 5px;
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.app-shell .marketsel-grouphead:hover {
+  color: var(--txt);
+}
+.app-shell .marketsel-grouphead svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.app-shell .marketsel-groupcount {
+  margin-left: auto;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+/* A market listed for display only: legible, but visibly not one of the
+   markets the engine follows. */
+.app-shell .mkt.mkt-nodata .nm {
+  color: var(--dim);
+}
+.app-shell .mkt.mkt-nodata .ic {
+  opacity: 0.65;
+}
+
+/* « Mode test UX » banner — permanent while the flag is on, by design. */
+.app-shell .marketsel-uxtest {
+  /* --sentinel-warn is the product's warning role, defined as an HSL triplet on
+     all four themes (globals.css) — so the banner reads correctly in each. */
+  border: 1px solid hsl(var(--sentinel-warn) / 0.4);
+  background: hsl(var(--sentinel-warn) / 0.1);
+  border-radius: var(--r-s);
+  padding: 7px 9px;
+}
+.app-shell .marketsel-uxtest-t {
+  display: block;
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+  color: var(--txt);
+}
+.app-shell .marketsel-uxtest-b {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-secondary);
+  line-height: 1.35;
+  color: var(--dim);
+}
 .app-shell .nl {
   display: flex;
   align-items: center;

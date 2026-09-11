@@ -1951,7 +1951,16 @@
       "unpin": "Losmaken",
       "pinAria": "{combo} vastzetten",
       "unpinAria": "{combo} losmaken",
-      "notSynced": "Niet gesynchroniseerd"
+      "notSynced": "Niet gesynchroniseerd",
+      "followedByEngine": "Gevolgd door de engine",
+      "uxTestBadge": "UX-testmodus",
+      "uxTestNote": "{count} markten alleen ter weergave vermeld. De engine volgt er slechts {real}.",
+      "groupFxMajor": "Belangrijkste valuta’s",
+      "groupFxMinor": "Secundaire valuta’s",
+      "groupFxExotic": "Exotische valuta’s",
+      "groupMetal": "Metalen",
+      "groupIndex": "Indices",
+      "groupCrypto": "Crypto"
     },
     "mobile": {
       "workspaceTitle": "Leesruimte",
@@ -2038,7 +2047,9 @@
       "collapseToBubble": "Verkleinen tot bel",
       "modeNotSynced": "Je weergavekeuze — niet gesynchroniseerd.",
       "columnNeedsWidth": "Kolom beschikbaar op een breder scherm.",
-      "dockToColumn": "Vastzetten als kolom"
+      "dockToColumn": "Vastzetten als kolom",
+      "welcomeTitleNotCovered": "Geen analyse voor deze markt",
+      "welcomeSubtitleNotCovered": "De engine volgt {market} nog niet: er is geen analyse om te bespreken. Kies een gevolgde markt om een vraag te stellen."
     },
     "placeholders": {
       "emptyReading": "Selecteer links een combinatie om de marktlezing ervan weer te geven.",
@@ -2052,7 +2063,10 @@
       "errorNoData": "Er zijn nog geen gegevens beschikbaar voor deze combinatie.",
       "slowLoading": "Het laden duurt langer dan verwacht — de gegevens worden nog opgehaald.",
       "chartUnavailableTitle": "Grafiek niet beschikbaar",
-      "chartUnavailableBody": "De candlestream is niet verbonden voor deze combinatie. De lezing hieronder blijft beschikbaar."
+      "chartUnavailableBody": "De candlestream is niet verbonden voor deze combinatie. De lezing hieronder blijft beschikbaar.",
+      "marketNotCoveredTitle": "Nog niet beschikbaar op deze markt",
+      "marketNotCoveredBody": "De engine volgt {market} nog niet. Er bestaat geen enkele analyse, grafiek of koers voor — er wordt in de tussentijd niets gesimuleerd.",
+      "marketNotCoveredChart": "Er bestaat geen enkele candle voor {market}: de engine volgt deze markt niet. Er wordt niets in de plaats getekend."
     },
     "chart": {
       "recent": "Go to the most recent candle",

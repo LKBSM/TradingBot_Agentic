@@ -179,35 +179,34 @@ def test_enricher_caches_value_fetch_within_ttl(tmp_path):
     assert calls["n"] == 1                              # served from cache
 
 
-def _settle(svc: CalendarService) -> None:
-    """Wait for the in-flight background refresh.
-
-    On a WARM cache the refresh runs in a daemon thread and the request is served
-    from the cache on purpose (CAL-1: a request never blocks on the network), so
-    a second ``get_calendar`` returns before the new values are written. Only a
-    cold cache is joined. Acquiring the single-flight lock blocks until the
-    refresh releases it, which makes the assertions below read a settled state
-    instead of racing one."""
-    svc._refresh_lock.acquire()
-    svc._refresh_lock.release()
-
-
 def test_enricher_flags_revision_across_cycles(tmp_path):
+    """Deux cycles, deux valeurs : la révision est vue, et le premier chiffre gardé.
+
+    Les deux rafraîchissements sont déclenchés EXPLICITEMENT. Depuis CAL-1 le
+    rafraîchissement est asynchrone : ``get_calendar`` lance un thread et sert
+    immédiatement le cache, donc une valeur récupérée pendant l'appel n'est jamais
+    visible dans la réponse de CE même appel. Ce test porte sur l'enrichisseur et
+    sur la détection de révision au stockage, pas sur l'ordonnancement — il les
+    appelle donc directement.
+    """
     store = CalendarCacheStore(db_path=str(tmp_path / "cal.db"))
     ev = _pe("past_series", when=NOW - timedelta(days=5))
-    CalendarService(provider=_Prov([ev]), store=store, market_map=MAP, ttl_seconds=0,
-                    clock=lambda: NOW, value_fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.4)})
-                    ).get_calendar(now=NOW, lookback_minutes=30 * 1440, lookahead_minutes=1440)
-    later = NOW + timedelta(minutes=5)
+    CalendarService(
+        provider=_Prov([ev]), store=store, market_map=MAP, ttl_seconds=0,
+        clock=lambda: NOW, value_fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.4)}),
+    )._do_refresh(NOW)
+
     svc2 = CalendarService(
         provider=_Prov([ev]), store=store, market_map=MAP, ttl_seconds=0,
-        clock=lambda: later,
+        clock=lambda: NOW + timedelta(minutes=5),
         value_fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.6)}),
     )
-    # First call kicks the (background) refresh; the second reads what it wrote.
-    svc2.get_calendar(now=later, lookback_minutes=30 * 1440, lookahead_minutes=1440)
-    _settle(svc2)
-    resp2 = svc2.get_calendar(now=later, lookback_minutes=30 * 1440, lookahead_minutes=1440)
+    svc2._do_refresh(NOW + timedelta(minutes=5))
+    resp2 = svc2.get_calendar(
+        now=NOW + timedelta(minutes=5),
+        lookback_minutes=30 * 1440,
+        lookahead_minutes=1440,
+    )
     e = resp2.events[0]
     assert e.actual == 3.6
     assert e.actual_initial == 3.4      # first print preserved

@@ -36,6 +36,7 @@ import unicodedata
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.intelligence.conditions_scanner import ALLOWED_CONDITION_TYPES, PALETTE
+from src.intelligence.llm_cost_policy import log_usage
 
 logger = logging.getLogger(__name__)
 
@@ -607,6 +608,12 @@ class ScannerTranslator:
                 tool_choice={"type": "tool", "name": TOOL_NAME},
                 timeout=self._timeout_s,
             )
+            # PERF-3 (B-2) — token accounting for the translator. This caller has
+            # NO cache_control at all, and on Haiku 4.5 adding one would not help:
+            # its prefix (~1 800 tokens) sits under the model's 4 096-token
+            # minimum. Whether that justifies a model change is a traffic
+            # question, so it needs measurement, not a guess. See audit §B.3, B-4.
+            log_usage(logger, "scanner_translator", response, model=self._model)
             return _extract_tool_input(response)
 
         if self._breaker is not None:

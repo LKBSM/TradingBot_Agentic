@@ -1988,7 +1988,16 @@
       "unpin": "Désépingler",
       "pinAria": "Épingler {combo}",
       "unpinAria": "Désépingler {combo}",
-      "notSynced": "Non synchronisé"
+      "notSynced": "Non synchronisé",
+      "followedByEngine": "Suivis par le moteur",
+      "uxTestBadge": "Mode test UX",
+      "uxTestNote": "{count} marchés listés pour l’affichage seulement. Le moteur n’en suit que {real}.",
+      "groupFxMajor": "Devises majeures",
+      "groupFxMinor": "Devises mineures",
+      "groupFxExotic": "Devises exotiques",
+      "groupMetal": "Métaux",
+      "groupIndex": "Indices",
+      "groupCrypto": "Crypto"
     },
     "mobile": {
       "workspaceTitle": "Espace de lecture",
@@ -2075,7 +2084,9 @@
       "collapseToBubble": "Réduire en bulle",
       "modeNotSynced": "Ton choix d'affichage — non synchronisé.",
       "columnNeedsWidth": "Colonne disponible sur un écran plus large.",
-      "dockToColumn": "Afficher en colonne"
+      "dockToColumn": "Afficher en colonne",
+      "welcomeTitleNotCovered": "Aucune lecture sur ce marché",
+      "welcomeSubtitleNotCovered": "Le moteur ne suit pas encore {market} : il n’y a aucune lecture à commenter. Choisis un marché suivi pour poser une question."
     },
     "placeholders": {
       "emptyReading": "Sélectionnez une combinaison à gauche pour afficher sa lecture de marché.",
@@ -2089,7 +2100,10 @@
       "errorNoData": "Aucune donnée n'est disponible pour cette combinaison pour le moment.",
       "slowLoading": "Le chargement prend plus de temps que prévu — récupération des données en cours.",
       "chartUnavailableTitle": "Graphique indisponible",
-      "chartUnavailableBody": "Le flux de bougies n’est pas connecté pour cette combinaison. La lecture ci-dessous reste disponible."
+      "chartUnavailableBody": "Le flux de bougies n’est pas connecté pour cette combinaison. La lecture ci-dessous reste disponible.",
+      "marketNotCoveredTitle": "Pas encore disponible sur ce marché",
+      "marketNotCoveredBody": "Le moteur ne suit pas encore {market}. Aucune lecture, aucun graphique et aucun prix n’existe pour lui — rien n’est simulé en attendant.",
+      "marketNotCoveredChart": "Aucune bougie n’existe pour {market} : le moteur ne suit pas ce marché. Rien n’est dessiné à la place."
     },
     "chart": {
       "recent": "Aller à la bougie la plus récente",

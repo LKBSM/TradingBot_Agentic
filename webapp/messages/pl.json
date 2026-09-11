@@ -1951,7 +1951,16 @@
       "unpin": "Odepnij",
       "pinAria": "Przypnij {combo}",
       "unpinAria": "Odepnij {combo}",
-      "notSynced": "Niezsynchronizowane"
+      "notSynced": "Niezsynchronizowane",
+      "followedByEngine": "Śledzone przez silnik",
+      "uxTestBadge": "Tryb testu UX",
+      "uxTestNote": "{count} rynków wymienionych wyłącznie do wyświetlania. Silnik śledzi tylko {real}.",
+      "groupFxMajor": "Waluty główne",
+      "groupFxMinor": "Waluty poboczne",
+      "groupFxExotic": "Waluty egzotyczne",
+      "groupMetal": "Metale",
+      "groupIndex": "Indeksy",
+      "groupCrypto": "Krypto"
     },
     "mobile": {
       "workspaceTitle": "Przestrzeń odczytu",
@@ -2038,7 +2047,9 @@
       "collapseToBubble": "Zwiń do dymka",
       "modeNotSynced": "Twój wybór widoku — niezsynchronizowany.",
       "columnNeedsWidth": "Kolumna dostępna na szerszym ekranie.",
-      "dockToColumn": "Zadokuj jako kolumnę"
+      "dockToColumn": "Zadokuj jako kolumnę",
+      "welcomeTitleNotCovered": "Brak odczytu dla tego rynku",
+      "welcomeSubtitleNotCovered": "Silnik nie śledzi jeszcze {market}: nie ma żadnego odczytu do omówienia. Wybierz śledzony rynek, aby zadać pytanie."
     },
     "placeholders": {
       "emptyReading": "Wybierz kombinację po lewej, aby wyświetlić jej odczyt rynku.",
@@ -2052,7 +2063,10 @@
       "errorNoData": "Brak danych dla tej kombinacji w tej chwili.",
       "slowLoading": "Ładowanie trwa dłużej niż zwykle — trwa pobieranie danych.",
       "chartUnavailableTitle": "Wykres niedostępny",
-      "chartUnavailableBody": "Strumień świec nie jest podłączony dla tej kombinacji. Poniższy odczyt pozostaje dostępny."
+      "chartUnavailableBody": "Strumień świec nie jest podłączony dla tej kombinacji. Poniższy odczyt pozostaje dostępny.",
+      "marketNotCoveredTitle": "Jeszcze niedostępne na tym rynku",
+      "marketNotCoveredBody": "Silnik nie śledzi jeszcze {market}. Nie istnieje dla niego żaden odczyt, wykres ani cena — nic nie jest w tym czasie symulowane.",
+      "marketNotCoveredChart": "Dla {market} nie istnieje żadna świeca: silnik nie śledzi tego rynku. Nic nie jest rysowane w zamian."
     },
     "chart": {
       "recent": "Go to the most recent candle",

@@ -1951,7 +1951,16 @@
       "unpin": "Lösen",
       "pinAria": "{combo} anheften",
       "unpinAria": "{combo} lösen",
-      "notSynced": "Nicht synchronisiert"
+      "notSynced": "Nicht synchronisiert",
+      "followedByEngine": "Von der Engine verfolgt",
+      "uxTestBadge": "UX-Testmodus",
+      "uxTestNote": "{count} Märkte nur zur Anzeige gelistet. Die Engine verfolgt nur {real}.",
+      "groupFxMajor": "Hauptwährungen",
+      "groupFxMinor": "Nebenwährungen",
+      "groupFxExotic": "Exotische Währungen",
+      "groupMetal": "Metalle",
+      "groupIndex": "Indizes",
+      "groupCrypto": "Krypto"
     },
     "mobile": {
       "workspaceTitle": "Lesebereich",
@@ -2038,7 +2047,9 @@
       "collapseToBubble": "Auf Blase reduzieren",
       "modeNotSynced": "Deine Anzeigewahl — nicht synchronisiert.",
       "columnNeedsWidth": "Spalte auf einem breiteren Bildschirm verfügbar.",
-      "dockToColumn": "Als Spalte andocken"
+      "dockToColumn": "Als Spalte andocken",
+      "welcomeTitleNotCovered": "Keine Analyse zu diesem Markt",
+      "welcomeSubtitleNotCovered": "Die Engine verfolgt {market} noch nicht: Es gibt keine Analyse zu besprechen. Wähle einen verfolgten Markt, um eine Frage zu stellen."
     },
     "placeholders": {
       "emptyReading": "Wählen Sie links eine Kombination, um ihre Marktlesart anzuzeigen.",
@@ -2052,7 +2063,10 @@
       "errorNoData": "Für diese Kombination sind noch keine Daten verfügbar.",
       "slowLoading": "Das Laden dauert länger als erwartet — die Daten werden noch abgerufen.",
       "chartUnavailableTitle": "Chart nicht verfügbar",
-      "chartUnavailableBody": "Der Kerzen-Feed ist für diese Kombination nicht verbunden. Die Lesart unten bleibt verfügbar."
+      "chartUnavailableBody": "Der Kerzen-Feed ist für diese Kombination nicht verbunden. Die Lesart unten bleibt verfügbar.",
+      "marketNotCoveredTitle": "Für diesen Markt noch nicht verfügbar",
+      "marketNotCoveredBody": "Die Engine verfolgt {market} noch nicht. Es gibt dafür keine Analyse, kein Chart und keinen Kurs — nichts wird währenddessen simuliert.",
+      "marketNotCoveredChart": "Für {market} existiert keine Kerze: Die Engine verfolgt diesen Markt nicht. Es wird nichts an dessen Stelle gezeichnet."
     },
     "chart": {
       "recent": "Go to the most recent candle",

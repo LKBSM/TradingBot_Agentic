@@ -44,7 +44,12 @@ if (process.argv.includes('--check')) {
   } catch {
     /* missing → out of date */
   }
-  if (current !== generated) {
+  // Compare EOL-insensitively: the repo checks out CRLF on Windows
+  // (core.autocrlf=true) while this script emits LF, so a byte comparison
+  // reported a false "OUT OF DATE" on a file perfectly in sync — making this CI
+  // guard useless on a Windows checkout. Same fix as gen_market_catalog.mjs.
+  const norm = (s) => s.split('\r\n').join('\n');
+  if (norm(current) !== norm(generated)) {
     console.error('markets.generated.ts is OUT OF DATE. Run: node scripts/gen_markets.mjs');
     process.exit(1);
   }
