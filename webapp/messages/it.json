@@ -2047,7 +2047,9 @@
       "collapseToBubble": "Riduci a bolla",
       "modeNotSynced": "La tua scelta di visualizzazione — non sincronizzata.",
       "columnNeedsWidth": "Colonna disponibile su uno schermo più ampio.",
-      "dockToColumn": "Blocca come colonna"
+      "dockToColumn": "Blocca come colonna",
+      "welcomeTitleNotCovered": "Nessuna lettura su questo mercato",
+      "welcomeSubtitleNotCovered": "Il motore non segue ancora {market}: non c’è alcuna lettura da commentare. Scegli un mercato seguito per fare una domanda."
     },
     "placeholders": {
       "emptyReading": "Seleziona una combinazione a sinistra per mostrare la sua lettura di mercato.",

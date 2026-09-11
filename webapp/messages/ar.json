@@ -2047,7 +2047,9 @@
       "collapseToBubble": "تصغير إلى فقاعة",
       "modeNotSynced": "اختيار العرض الخاص بك — غير مُزامَن.",
       "columnNeedsWidth": "العمود متاح على شاشة أوسع.",
-      "dockToColumn": "تثبيت كعمود"
+      "dockToColumn": "تثبيت كعمود",
+      "welcomeTitleNotCovered": "لا توجد قراءة لهذا السوق",
+      "welcomeSubtitleNotCovered": "المحرّك لا يتابع {market} بعد: لا توجد أي قراءة للحديث عنها. اختر سوقًا متابَعًا لطرح سؤال."
     },
     "placeholders": {
       "emptyReading": "اختر تركيبًا على اليسار لعرض قراءة سوقه.",

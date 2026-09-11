@@ -2047,7 +2047,9 @@
       "collapseToBubble": "Auf Blase reduzieren",
       "modeNotSynced": "Deine Anzeigewahl — nicht synchronisiert.",
       "columnNeedsWidth": "Spalte auf einem breiteren Bildschirm verfügbar.",
-      "dockToColumn": "Als Spalte andocken"
+      "dockToColumn": "Als Spalte andocken",
+      "welcomeTitleNotCovered": "Keine Analyse zu diesem Markt",
+      "welcomeSubtitleNotCovered": "Die Engine verfolgt {market} noch nicht: Es gibt keine Analyse zu besprechen. Wähle einen verfolgten Markt, um eine Frage zu stellen."
     },
     "placeholders": {
       "emptyReading": "Wählen Sie links eine Kombination, um ihre Marktlesart anzuzeigen.",

@@ -2047,7 +2047,9 @@
       "collapseToBubble": "Reduce to a bubble",
       "modeNotSynced": "Your display choice — not synced.",
       "columnNeedsWidth": "Column available on a wider screen.",
-      "dockToColumn": "Dock as a column"
+      "dockToColumn": "Dock as a column",
+      "welcomeTitleNotCovered": "No reading on this market",
+      "welcomeSubtitleNotCovered": "The engine does not follow {market} yet: there is no reading to discuss. Pick a followed market to ask a question."
     },
     "placeholders": {
       "emptyReading": "Select a combination on the left to display its market reading.",

@@ -234,6 +234,43 @@ cette fonctionnalité aurait été livrée cassée avec une suite unitaire verte
 
 ---
 
+## 7 ter. MKT-1b — les deux corrections de suivi (PR séparée)
+
+### M.I.A n'offre plus d'analyser un marché sans donnée
+
+La capture `etat-vide-desktop.png` a révélé une incohérence : pendant que la
+colonne centrale disait honnêtement « Pas encore disponible sur ce marché », le
+panneau M.I.A affichait « BTCUSD » et proposait *« Décompose la structure
+actuelle »* et *« Montre-moi les Order Blocks actifs »*. M.I.A ne pouvait rien
+inventer (le backend ignore ce marché), mais **la suggestion invitait à poser une
+question sur une donnée inexistante** — la dishonnêteté même que l'état vide
+existe pour éviter.
+
+Correctif dans `AppChatSidebar` **uniquement** — `MiaPanel` n'est pas touché,
+donc aucun conflit avec les missions MIA-* en cours. Il réutilise le motif déjà
+en place (`starters={active ? STARTERS : []}`) en traitant un marché du catalogue
+comme un contexte non analysable :
+
+> **Aucune lecture sur ce marché**
+> Le moteur ne suit pas encore **Bitcoin (BTC/USD)** : il n'y a aucune lecture à
+> commenter. Choisis un marché suivi pour poser une question.
+
+Le marché est nommé par son libellé humain jusque dans l'en-tête du panneau
+(« Bitcoin (BTC/USD) » au lieu du ticker brut). 6 tests verrouillent le
+comportement, dont deux garde-fous de portée : un marché **suivi** conserve ses
+questions, et l'absence de combo se comporte comme avant.
+
+### `gen_markets.mjs --check` réparé (bug pré-existant)
+
+Ce garde-fou CI était **inopérant sur tout checkout Windows** : le script émet du
+LF, le dépôt checkoute en CRLF (`core.autocrlf=true`), et la comparaison était
+faite octet à octet — il signalait « OUT OF DATE » sur un fichier parfaitement à
+jour. Signalé lors de la première passe et laissé en l'état (périmètre réel) ;
+corrigé ici sur demande. Une ligne, aucun fichier généré modifié. Les deux
+générateurs passent maintenant.
+
+---
+
 ## 8. Fichiers
 
 **Ajoutés**
@@ -274,20 +311,6 @@ webapp/lib/markets.ts               webapp/lib/market-reading/perimeter.ts
 ---
 
 ## 9. Ce qui reste ouvert
-
-0. **🔴 M.I.A propose d'analyser un marché qui n'a aucune donnée.** Visible sur
-   `mkt-1-shots/etat-vide-desktop.png` : pendant que la colonne centrale dit
-   honnêtement « Pas encore disponible sur ce marché », le panneau M.I.A à droite
-   affiche « BTCUSD · 15 minutes » et propose *« Décompose la structure actuelle »*
-   et *« Montre-moi les Order Blocks actifs »*. M.I.A ne peut rien inventer (le
-   backend ne connaît pas ce marché), mais **les suggestions invitent à demander
-   des données qui n'existent pas** — ce qui contredit l'esprit de la mission.
-   
-   **Non corrigé volontairement** : le panneau M.I.A appartient aux missions MIA-1
-   à MIA-5, et la PR #209 (MIA-5) est ouverte dessus en ce moment. Le correctif
-   tiendrait en quelques lignes (masquer les suggestions, ou les remplacer par une
-   ligne d'indisponibilité, quand `isCatalogOnly(active.instrument)`). **Votre
-   arbitrage** : ici, ou dans une mission M.I.A.
 
 1. **La liste des 100 marchés est la mienne** (§3). Si votre fichier de référence réapparaît, il doit la remplacer — c'est une édition du JSON + `node scripts/gen_market_catalog.mjs`, rien d'autre.
 2. **Séparation visuelle test/réel** (§5) : appliquée sur ma recommandation, pas sur votre arbitrage explicite.
