@@ -53,7 +53,8 @@ type Loc = {
   calcOpen: string;
   calcRow: string;
   illus: RegExp;
-  statStructures: RegExp;
+  marketsLine: RegExp;
+  marketsTickers: RegExp;
   tryFree: RegExp;
   dot5: RegExp;
 };
@@ -93,7 +94,8 @@ const LOCALES: Loc[] = [
     calcOpen: 'Ouvre le calcul',
     calcRow: 'Parcours moyen récent',
     illus: /Données d'illustration/i,
-    statStructures: /structures détectées/i,
+    marketsLine: /80 marchés au programme/i,
+    marketsTickers: /XAUUSD et EURUSD/i,
     tryFree: ctaLabel(frMessages),
     dot5: /Aller au volet 5/i,
   },
@@ -131,7 +133,8 @@ const LOCALES: Loc[] = [
     calcOpen: 'Open the calculation',
     calcRow: 'Recent average range',
     illus: /Illustration data/i,
-    statStructures: /structures detected/i,
+    marketsLine: /80 markets planned/i,
+    marketsTickers: /XAUUSD and EURUSD/i,
     tryFree: ctaLabel(enMessages),
     dot5: /Go to panel 5/i,
   },
@@ -171,12 +174,14 @@ for (const loc of LOCALES) {
       });
       test.describe.configure({ retries: 2 });
 
-      test('full page: hero, real stats, illustration mention, pricing, legal', async ({ page }) => {
+      test('full page: hero, honest markets line, illustration mention, pricing, legal', async ({ page }) => {
         await open(page, loc);
         await expect(page.getByRole('heading', { level: 1 })).toContainText(loc.h1);
-        // real figures, not the maquette fictions — LP-2 band ends on "structures"
-        await expect(page.getByText('22', { exact: true }).first()).toBeVisible();
-        await expect(page.getByText(loc.statStructures).first()).toBeVisible();
+        // LP-2S — the four-stat banner is gone; one line states the ambition WITH
+        // its scope word, then the perimeter actually live. Both halves visible.
+        await expect(page.getByText(loc.marketsLine).first()).toBeVisible();
+        await expect(page.getByText(loc.marketsTickers).first()).toBeVisible();
+        // the removed tiles must not come back, and the maquette fiction stays out
         await expect(page.locator('body')).not.toContainText('480');
         // illustration mention present at least once
         await expect(page.getByText(loc.illus).first()).toBeVisible();

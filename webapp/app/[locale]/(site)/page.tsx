@@ -4,9 +4,13 @@ import { HomeLanding } from '@/components/landing/lp1/HomeLanding';
 /**
  * LP-1 — commercial home page. Structure mirrors the reference maquette
  * (docs/design/reference-accueil.html) but every figure and label is corrected
- * to the real product: 2 markets, 6 timeframes, 12 combinations, 22 conditions.
+ * to the real product.
  *
- *   · Hero + real stats banner (single source: lib/landing/stats.ts)
+ *   · Hero + the honest markets line — LP-2S retired the four-stat banner
+ *     (markets / timeframes / conditions / structures: nothing a first-time
+ *     visitor could act on) and with it lib/landing/stats.ts. The replacement
+ *     line states the 80-market AMBITION with its scope word and names the
+ *     perimeter really in production; home.test.tsx guards both, 9 locales.
  *   · Five tool feature rows (App / Scanner / Zones / News / M.I.A)
  *   · "Essaie sans créer de compte" — five interactive demos, no network
  *   · How it works · Who it's for · What sets us apart · Pricing · FAQ · CTA

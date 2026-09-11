@@ -12,7 +12,7 @@ import pl from '@/messages/pl.json';
 import ar from '@/messages/ar.json';
 import { HomeLanding } from '../HomeLanding';
 import { DemoTabs } from '../DemoTabs';
-import { LANDING_STATS, STRUCTURE_TYPES } from '@/lib/landing/stats';
+import { ALL_MARKET_IDS } from '@/lib/markets';
 
 function render(ui: React.ReactElement, locale: 'fr' | 'en' = 'fr') {
   const messages = locale === 'fr' ? fr : en;
@@ -86,31 +86,169 @@ describe('LP-1 home — forbidden vocabulary', () => {
   });
 });
 
-describe('LP-1 home — honest figures', () => {
-  it('the stats banner renders the real numbers from the single source', () => {
+/**
+ * LP-2S — the four-stat banner (markets / timeframes / conditions / structures)
+ * is gone: it told a first-time visitor nothing. One line replaces it, and that
+ * line carries a claim that MUST stay honest — 80 is an AMBITION, the perimeter
+ * actually in production is XAUUSD + EURUSD.
+ *
+ * The guard below is deliberately stricter than the old `not.toMatch(/80\s*march/)`:
+ * that one banned the figure outright, which cannot express « qualified is fine,
+ * bare is a lie ». Here a market count is legal ONLY when a scope word (planned /
+ * au programme / previstos / geplant …) sits in the SAME sentence segment. A
+ * translator who trims « 80 marchés au programme » down to « 80 marchés » turns
+ * a roadmap into a false claim about the live product — and turns this test red.
+ */
+type Loc = 'fr' | 'en' | 'de' | 'es' | 'it' | 'pt' | 'nl' | 'pl' | 'ar';
+const LOCALES: Record<Loc, unknown> = { fr, en, de, es, it: itMsg, pt, nl, pl, ar };
+
+/** The word for « market » in each locale — what makes a number a MARKET COUNT. */
+const MARKET_WORD: Record<Loc, RegExp> = {
+  fr: /marchés?/i,
+  en: /markets?/i,
+  de: /märkten?|markt/i,
+  es: /mercados?/i,
+  it: /mercati|mercato/i,
+  pt: /mercados?/i,
+  nl: /markten|markt/i,
+  pl: /rynk\w*|rynek/i,
+  ar: /سوق|أسواق/,
+};
+
+/** Scope words — ONLY planning/ambition terms. « up to » alone does not qualify. */
+const SCOPE_WORD: Record<Loc, RegExp> = {
+  fr: /programme|prévue?s?|visée?s?|objectif|à terme/i,
+  en: /planned|targeted|roadmap|goal/i,
+  de: /geplant|vorgesehen|ziel/i,
+  es: /previstos?|planeados?|objetivo/i,
+  it: /previsti|pianificati|obiettivo/i,
+  pt: /previstos?|planeados?|objetivo/i,
+  nl: /gepland|voorzien|doel/i,
+  pl: /plan\w*|docelowo|cel/i,
+  ar: /مخطط|مستهدف/,
+};
+
+// Arabic scope/market words carry harakat in the copy (مخطَّطة); strip the marks
+// so the guard matches the word, not one particular vocalisation of it.
+const stripHarakat = (s: string) => s.replace(/[ً-ْٰ]/g, '');
+
+/** Split a string into sentence segments — a scope word only counts inside the
+ *  SAME segment as the number, so a qualifier three clauses away cannot launder
+ *  a bare count. */
+const segments = (s: string) => s.split(/[—–·.!?\n]|<\/?b>/);
+
+/**
+ * Every segment that states a market count the copy is not allowed to state.
+ *
+ * A market count is legitimate in exactly two cases:
+ *   1. it equals the perimeter REALLY in production (ALL_MARKET_IDS.length) —
+ *      then it is a checkable fact and needs no hedge (« Les 2 marchés »);
+ *   2. it is any other number AND a scope word sits in the same segment —
+ *      then it reads as an ambition, which is what it is (« 80 au programme »).
+ * Anything else is a future number worn as a present one. That is the lie this
+ * guard exists to catch, and the reason it survives a copy rewrite: it compares
+ * against the registry, not against a hard-coded 2.
+ */
+function bareMarketCounts(locale: Loc, text: string): string[] {
+  const mw = MARKET_WORD[locale].source;
+  const scope = SCOPE_WORD[locale];
+  // A number adjacent to the market word, in either reading order (Arabic puts
+  // the count before the noun too, but keep both so no word order slips through).
+  // The `(?![\w-])` guard keeps the word a NOUN: « 12 market-and-timeframe
+  // combinations » counts combinations, not markets, and must not trip this.
+  // NOTE: no `g` flag — a global regex carries `lastIndex` across `.test()` calls
+  // and would skip every other segment inside the filter below.
+  const count = new RegExp(
+    `(?:(\\d[\\d\\s]*)\\s*(?:${mw})(?![\\w-])|(?:${mw})\\s*(\\d[\\d\\s]*))`,
+    'i',
+  );
+  return segments(stripHarakat(text))
+    .filter((seg) => {
+      const m = count.exec(seg);
+      if (!m) return false;
+      const n = Number((m[1] ?? m[2] ?? '').replace(/\s/g, ''));
+      if (n === ALL_MARKET_IDS.length) return false; // the live perimeter, stated as fact
+      return !scope.test(seg); // any other figure needs its scope word
+    })
+    .map((seg) => seg.trim());
+}
+
+describe('LP-2S home — the markets line is never a bare number', () => {
+  it('the hero renders the honest markets line, and no stat banner (fr)', () => {
     render(<HomeLanding />);
-    // LP-2 banner: markets · timeframes · conditions · structures
-    expect(screen.getByText('marchés suivis')).toBeInTheDocument();
-    expect(screen.getByText('unités de temps')).toBeInTheDocument();
-    expect(screen.getByText('conditions de recherche')).toBeInTheDocument();
-    expect(screen.getByText('structures détectées')).toBeInTheDocument();
-    // the distinctive figures come straight from LANDING_STATS
-    expect(String(LANDING_STATS.conditions)).toBe('22');
-    expect(String(LANDING_STATS.structures)).toBe('7');
-    expect(screen.getByText('22')).toBeInTheDocument();
+    const txt = document.body.textContent ?? '';
+    expect(txt).toContain('80 marchés au programme');
+    expect(txt).toContain('XAUUSD et EURUSD');
+    // the four removed tiles must not come back
+    expect(screen.queryByText('marchés suivis')).not.toBeInTheDocument();
+    expect(screen.queryByText('unités de temps')).not.toBeInTheDocument();
+    expect(screen.queryByText('conditions de recherche')).not.toBeInTheDocument();
+    expect(screen.queryByText('structures détectées')).not.toBeInTheDocument();
   });
 
-  it('the 4th banner figure is sourced from STRUCTURE_TYPES, never a literal', () => {
-    // §C4: the "structures détectées" tile must equal the single source length.
-    expect(LANDING_STATS.structures).toBe(STRUCTURE_TYPES.length);
-    expect(STRUCTURE_TYPES.length).toBe(7);
+  it('names exactly the markets really in production, from the registry (9 locales)', () => {
+    // MKT-1 registry is the single source of truth for the LIVE perimeter. Adding
+    // a third market turns this red — the sentence must then be updated, not the test.
+    for (const [loc, msg] of Object.entries(LOCALES)) {
+      const line = ((msg as Record<string, any>).home.hero.roadmap ?? '') as string;
+      for (const id of ALL_MARKET_IDS) {
+        expect(line, `${loc} must name the live market ${id}`).toContain(id);
+      }
+      const tickers = line.match(/\b[A-Z]{6}\b/g) ?? [];
+      expect(tickers.length, `${loc} names a market that is not in the registry`)
+        .toBe(ALL_MARKET_IDS.length);
+    }
   });
 
-  it('does not advertise the maquette fictions (80 markets / 480 combinations)', () => {
+  it('never states a market count without a scope word in the same segment (9 locales)', () => {
+    for (const loc of Object.keys(LOCALES) as Loc[]) {
+      const line = ((LOCALES[loc] as Record<string, any>).home.hero.roadmap ?? '') as string;
+      expect(line, `${loc} roadmap line is missing`).toBeTruthy();
+      // the ambition figure is present…
+      expect(line, `${loc} must still carry the 80 ambition`).toMatch(/80/);
+      // …and never bare
+      expect(bareMarketCounts(loc, line), `${loc}: bare market count`).toEqual([]);
+    }
+  });
+
+  it('no string anywhere in the home namespace states a bare market count (9 locales)', () => {
+    for (const loc of Object.keys(LOCALES) as Loc[]) {
+      const strings = collectStrings((LOCALES[loc] as Record<string, unknown>).home);
+      const offenders = strings.flatMap((s) => bareMarketCounts(loc, s));
+      expect(offenders, `${loc}: bare market count in home copy`).toEqual([]);
+    }
+  });
+
+  // A guard that cannot fail protects nothing. These are the exact sentences a
+  // translator (human or model) produces when they "simplify" the line — the
+  // scope word dropped, the ambition left wearing the present tense. Each one
+  // MUST be caught, in its own language.
+  it('the guard catches a translation stripped of its scope word (9 locales)', () => {
+    const STRIPPED: Record<Loc, string> = {
+      fr: '80 marchés — XAUUSD et EURUSD disponibles dès aujourd’hui.',
+      en: '80 markets — XAUUSD and EURUSD available today.',
+      de: '80 Märkte — XAUUSD und EURUSD ab heute verfügbar.',
+      es: '80 mercados — XAUUSD y EURUSD disponibles desde hoy.',
+      it: '80 mercati — XAUUSD ed EURUSD disponibili da oggi.',
+      pt: '80 mercados — XAUUSD e EURUSD disponíveis desde hoje.',
+      nl: '80 markten — XAUUSD en EURUSD vandaag al beschikbaar.',
+      pl: '80 rynków — XAUUSD i EURUSD dostępne już dziś.',
+      ar: '80 سوقًا — XAUUSD وEURUSD متاحان اليوم.',
+    };
+    for (const loc of Object.keys(STRIPPED) as Loc[]) {
+      expect(
+        bareMarketCounts(loc, STRIPPED[loc]),
+        `${loc}: the guard let a bare "80 markets" through`,
+      ).not.toEqual([]);
+    }
+  });
+});
+
+describe('LP-1 home — honest figures', () => {
+  it('does not advertise the maquette fictions (480 combinations)', () => {
     render(<HomeLanding />);
     const txt = document.body.textContent ?? '';
     expect(txt).not.toMatch(/480/);
-    expect(txt).not.toMatch(/80\s*\+?\s*march/i);
   });
 });
 
