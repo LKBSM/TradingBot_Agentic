@@ -22,9 +22,8 @@ export const LEGAL_LINKS = [
 ] as const;
 
 export const PRODUCT_LINKS = [
-  { href: '/#outils', key: 'multiAsset' },
   { href: '/#demo', key: 'chatbot' },
-  { href: '/#comment', key: 'beforeAfter' },
+  { href: '/#lecture', key: 'beforeAfter' },
   { href: '/#honnetete', key: 'transparency' },
   { href: '/methodology', key: 'methodology' },
   { href: '/methodology#attributions', key: 'attributions' },

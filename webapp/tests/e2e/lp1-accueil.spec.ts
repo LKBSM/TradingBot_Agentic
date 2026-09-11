@@ -4,33 +4,44 @@ import frMessages from '@/messages/fr.json';
 import enMessages from '@/messages/en.json';
 
 /**
+ * LP-3 — the home page, fr (/) and en (/en), at 1280×800 and 390×844.
+ *
+ * The spec is in two halves on purpose:
+ *
+ *   · everything below `for (const loc of LOCALES)` runs with reduced motion,
+ *     which is the DEGRADED path of the scroll section: every sentence present,
+ *     every layer drawn, chips live. That is the path most assertions want,
+ *     because it is stable and because it is what a real visitor with reduced
+ *     motion, no JS, or a narrow screen gets. Nothing may be missing from it.
+ *
+ *   · the last describe deliberately does NOT reduce motion, and is the only
+ *     place the pinned choreography is exercised — it needs a real viewport to
+ *     scroll, which is exactly what jsdom cannot give home.test.tsx.
+ */
+
+/**
  * The visitor CTA label is READ from the messages, never hardcoded: PAY-2
  * renamed it « Essayer gratuitement » → « S'abonner » and this spec silently
  * rotted for a whole release. What the test guards is the RULE — a logged-out
- * visitor gets the sign-up CTA and no App/Zones/Scanner — not the wording.
+ * visitor gets the sign-up CTA — not the wording.
  */
 function ctaLabel(messages: { nav: { tryFree: string } }): RegExp {
   return new RegExp(messages.nav.tryFree.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 }
 
-/**
- * LP-1 — home page. Runs fr (/) and en (/en) at desktop 1280×800 and mobile
- * 390×844, exercising the full page, each interactive demo in two states, and
- * the pricing block. The page is fully static (illustration data) — no network.
- */
-
 type Loc = {
   code: string;
   path: string;
   h1: RegExp;
+  archive: RegExp;
   chipStr: string;
   chipOb: string;
   chipFvg: string;
   chipLiq: string;
   chochFrag: RegExp;
+  fvgFrag: RegExp;
   liqFrag: RegExp;
   emptyLayers: RegExp;
-  scannerTab: RegExp;
   trend: string;
   higher: string;
   ob: string;
@@ -38,39 +49,39 @@ type Loc = {
   swept: string;
   noCond: RegExp;
   noMatch: RegExp;
-  structureTab: RegExp;
-  fvgFrag: RegExp;
-  miaTab: RegExp;
   miaAction: string;
-  miaChanged: RegExp;
   miaLiveAnswer: string;
   miaOffline: RegExp;
   miaPlaceholder: string;
   miaSend: string;
   miaTyped: string;
-  calcTab: RegExp;
-  calcVerdict: string;
   calcOpen: string;
   calcRow: string;
   illus: RegExp;
-  statStructures: RegExp;
+  marketsLine: RegExp;
+  marketsTickers: RegExp;
   tryFree: RegExp;
-  dot5: RegExp;
+  stepBreak: RegExp;
+  stepLiq: RegExp;
+  /** same labels, unanchored — toContainText sees label + sentence. */
+  stepBreakText: string;
+  stepLiqText: string;
 };
 
 const LOCALES: Loc[] = [
   {
     code: 'fr',
     path: '/',
-    h1: /MIA te le lit/i,
+    h1: /Elle lit la structure/i,
+    archive: /Lecture réelle, archivée/i,
     chipStr: 'BOS / CHOCH',
     chipOb: 'Order Blocks',
     chipFvg: 'Fair Value Gaps',
     chipLiq: 'Liquidité',
     chochFrag: /CHOCH haussier/i,
+    fvgFrag: /Fair Value Gap baissier comblé/i,
     liqFrag: /liquidité achat reste intacte/i,
     emptyLayers: /n'invente rien pour remplir le vide/i,
-    scannerTab: /Définir une stratégie/i,
     trend: 'La tendance structurelle est haussière',
     higher: "L'unité supérieure va dans le même sens",
     ob: 'Le prix est dans un Order Block',
@@ -78,37 +89,36 @@ const LOCALES: Loc[] = [
     swept: 'Une poche a été prise récemment',
     noCond: /et surtout pas tous les marchés/i,
     noMatch: /Ce n'est pas une erreur/i,
-    structureTab: /Lire une structure/i,
-    fvgFrag: /Fair Value Gap baissier comblé/i,
-    miaTab: /Parler à M\.I\.A/i,
     miaAction: 'Montre-moi seulement les OB non testés',
-    miaChanged: /Les couches du graphique ont changé/i,
     miaLiveAnswer: 'Réponse en direct de la démonstration.',
     miaOffline: /La démonstration en direct n'est pas disponible ici/i,
     miaPlaceholder: 'Pose ta question…',
     miaSend: 'Envoyer',
     miaTyped: "Combien coûte l'abonnement ?",
-    calcTab: /Ouvrir le calcul/i,
-    calcVerdict: 'Normale',
     calcOpen: 'Ouvre le calcul',
     calcRow: 'Parcours moyen récent',
     illus: /Données d'illustration/i,
-    statStructures: /structures détectées/i,
+    marketsLine: /80 marchés au programme/i,
+    marketsTickers: /XAUUSD et EURUSD/i,
     tryFree: ctaLabel(frMessages),
-    dot5: /Aller au volet 5/i,
+    stepBreak: /^La cassure$/,
+    stepLiq: /^La liquidité$/,
+    stepBreakText: 'La cassure',
+    stepLiqText: 'La liquidité',
   },
   {
     code: 'en',
     path: '/en',
-    h1: /MIA reads it to you/i,
+    h1: /It reads the structure/i,
+    archive: /A real, archived reading/i,
     chipStr: 'BOS / CHOCH',
     chipOb: 'Order Blocks',
     chipFvg: 'Fair Value Gaps',
     chipLiq: 'Liquidity',
     chochFrag: /bullish CHOCH confirmed/i,
+    fvgFrag: /bearish Fair Value Gap, 60 % filled/i,
     liqFrag: /buy-side liquidity pocket stays intact/i,
     emptyLayers: /invents nothing to fill the void/i,
-    scannerTab: /Define a strategy/i,
     trend: 'The structural trend is bullish',
     higher: 'The higher timeframe agrees',
     ob: 'Price is inside an Order Block',
@@ -116,24 +126,22 @@ const LOCALES: Loc[] = [
     swept: 'A pocket was taken recently',
     noCond: /and above all not every market/i,
     noMatch: /This is not an error/i,
-    structureTab: /Read a structure/i,
-    fvgFrag: /bearish Fair Value Gap, 60 % filled/i,
-    miaTab: /Talk to M\.I\.A/i,
     miaAction: 'Show me only the untested OBs',
-    miaChanged: /The chart layers changed/i,
     miaLiveAnswer: 'Live answer from the demo.',
     miaOffline: /The live demo isn't available here/i,
     miaPlaceholder: 'Ask your question…',
     miaSend: 'Send',
     miaTyped: 'How much is the subscription?',
-    calcTab: /Open the calculation/i,
-    calcVerdict: 'Normal',
     calcOpen: 'Open the calculation',
     calcRow: 'Recent average range',
     illus: /Illustration data/i,
-    statStructures: /structures detected/i,
+    marketsLine: /80 markets planned/i,
+    marketsTickers: /XAUUSD and EURUSD/i,
     tryFree: ctaLabel(enMessages),
-    dot5: /Go to panel 5/i,
+    stepBreak: /^The break$/,
+    stepLiq: /^The liquidity$/,
+    stepBreakText: 'The break',
+    stepLiqText: 'The liquidity',
   },
 ];
 
@@ -143,106 +151,90 @@ const VIEWPORTS = [
 ];
 
 async function open(page: Page, loc: Loc) {
-  // The page uses `scroll-behavior: smooth`; emulate reduced motion so
-  // Playwright's scroll-into-view is instant and click targets stay stable.
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  // Tolerate a cold `next dev` first-compile (CI serves the prebuilt `next
-  // start`, which is faster); the page itself is static once compiled.
   await page.goto(loc.path, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await dismissCookieBanner(page);
-  // Hard-kill smooth scroll and animations for deterministic scroll-into-view:
-  // on this long page a mid-flight smooth scroll makes click targets "unstable".
   await page.addStyleTag({
     content:
       '*,*::before,*::after{scroll-behavior:auto !important;transition-duration:0s !important;animation-duration:0s !important}',
   });
 }
 
-
 for (const loc of LOCALES) {
   for (const vp of VIEWPORTS) {
-    test.describe(`LP-2 accueil · ${loc.code} · ${vp.name}`, () => {
-      // Reduced motion at context creation makes scroll-into-view instant so
-      // click targets stay stable on this long, smooth-scrolling page. A couple
-      // of retries absorb the residual scroll-container timing flake.
+    test.describe(`LP-3 accueil · ${loc.code} · ${vp.name}`, () => {
       test.use({
         viewport: { width: vp.width, height: vp.height },
         contextOptions: { reducedMotion: 'reduce' },
       });
       test.describe.configure({ retries: 2 });
 
-      test('full page: hero, real stats, illustration mention, pricing, legal', async ({ page }) => {
+      test('the opening shows the real product surface and dates it', async ({ page }) => {
         await open(page, loc);
         await expect(page.getByRole('heading', { level: 1 })).toContainText(loc.h1);
-        // real figures, not the maquette fictions — LP-2 band ends on "structures"
-        await expect(page.getByText('22', { exact: true }).first()).toBeVisible();
-        await expect(page.getByText(loc.statStructures).first()).toBeVisible();
-        await expect(page.locator('body')).not.toContainText('480');
-        // illustration mention present at least once
+        // the archived reading is labelled as archived, never passed off as live
+        await expect(page.getByText(loc.archive).first()).toBeVisible();
+        // LP-2S: the market perimeter line, ambition qualified
+        await expect(page.getByText(loc.marketsLine).first()).toBeVisible();
+        await expect(page.getByText(loc.marketsTickers).first()).toBeVisible();
+        // the retired stat banner must not come back
+        await expect(page.locator('body')).not.toContainText('marchés suivis');
+        await expect(page.locator('body')).not.toContainText('markets tracked');
+      });
+
+      test('pricing and the legal mentions survive the redesign', async ({ page }) => {
+        await open(page, loc);
+        await expect(page.getByText(/39 \$/).first()).toBeVisible();
+        const body = page.locator('body');
+        if (loc.code === 'fr') {
+          await expect(body).toContainText('dollars américains');
+          await expect(body).toContainText('risque de perte');
+          await expect(body).toContainText('18 ans');
+        } else {
+          await expect(body).toContainText('US dollars');
+          await expect(body).toContainText('risk of loss');
+        }
         await expect(page.getByText(loc.illus).first()).toBeVisible();
-        // pricing shows currency everywhere
-        await expect(page.getByText('39 $').first()).toBeVisible();
-        await expect(page.getByText(/348 \$ US/).first()).toBeVisible();
       });
 
-      test('reading-space carousel: keyboard + dots navigate panels', async ({ page }) => {
+      test('degraded scroll section: every sentence is there, and a chip rewrites it', async ({ page }) => {
         await open(page, loc);
-        const region = page.locator('[aria-roledescription="carousel"]');
-        await region.scrollIntoViewIfNeeded();
-        await expect(region.getByText(/1 \/ 5/)).toBeVisible();
-        // keyboard: two panels forward
-        await region.focus();
-        await page.keyboard.press('ArrowRight');
-        await expect(region.getByText(/2 \/ 5/)).toBeVisible();
-        await page.keyboard.press('ArrowRight');
-        await expect(region.getByText(/3 \/ 5/)).toBeVisible();
-        // dots: jump to the last panel
-        await region.getByRole('button', { name: loc.dot5 }).click();
-        await expect(region.getByText(/5 \/ 5/)).toBeVisible();
+        // reduced motion ⇒ the whole reading, every layer on
+        await expect(page.getByText(loc.chochFrag).first()).toBeVisible();
+        await expect(page.getByText(loc.fvgFrag).first()).toBeVisible();
+        await expect(page.getByText(loc.liqFrag).first()).toBeVisible();
+        // the chips are the real control — unticking removes THAT sentence
+        await page.getByRole('button', { name: loc.chipStr, exact: true }).click();
+        await expect(page.getByText(loc.chochFrag)).toHaveCount(0);
+        await expect(page.getByText(loc.liqFrag).first()).toBeVisible();
+        // everything off ⇒ the honest empty state
+        for (const chip of [loc.chipOb, loc.chipFvg, loc.chipLiq]) {
+          await page.getByRole('button', { name: chip, exact: true }).click();
+        }
+        await expect(page.getByText(loc.emptyLayers).first()).toBeVisible();
       });
 
-      // The interactive demos are scoped to the #demo section: the reading-space
-      // carousel below reuses some of the same narrated phrases (illustration
-      // data), so a page-wide query would double-count them.
-      test('demo 1 — structure narration rewrites (two states)', async ({ page }) => {
+      test('the scanner demo is reachable without a click and states both empties', async ({ page }) => {
         await open(page, loc);
-        const demo = page.locator('#demo');
-        // state A: all layers → CHOCH in narration
-        await expect(demo.getByText(loc.chochFrag).first()).toBeVisible();
-        // state B: untick the LAYER CHIPS down to liquidity alone — the chips
-        // are the control the side paragraph points at ("untick a layer").
-        await demo.getByRole('button', { name: loc.chipStr }).click();
-        await expect(demo.getByText(loc.chochFrag)).toHaveCount(0);
-        await demo.getByRole('button', { name: loc.chipOb }).click();
-        await demo.getByRole('button', { name: loc.chipFvg }).click();
-        await expect(demo.getByText(loc.liqFrag).first()).toBeVisible();
-        // state C: nothing left → the honest empty state, not an invented filler
-        await demo.getByRole('button', { name: loc.chipLiq }).click();
-        await expect(demo.getByText(loc.emptyLayers).first()).toBeVisible();
+        await page.getByRole('button', { name: loc.trend }).click();
+        await page.getByRole('button', { name: loc.higher }).click();
+        await expect(page.getByText(loc.noCond).first()).toBeVisible();
+        await page.getByRole('button', { name: loc.ob }).click();
+        await page.getByRole('button', { name: loc.untested }).click();
+        await page.getByRole('button', { name: loc.swept }).click();
+        await expect(page.getByText(loc.noMatch).first()).toBeVisible();
       });
 
-      test('demo 2 — scanner honest empty states (two states)', async ({ page }) => {
+      test('the régime demo reveals the raw calculation on demand', async ({ page }) => {
         await open(page, loc);
-        const demo = page.locator('#demo');
-        await demo.getByRole('tab', { name: loc.scannerTab }).click();
-        // state A: no condition → not "all markets" (buttons carry a ✓ prefix
-        // when checked, so match by role name rather than exact text)
-        await demo.getByRole('button', { name: loc.trend }).click();
-        await demo.getByRole('button', { name: loc.higher }).click();
-        await expect(demo.getByText(loc.noCond).first()).toBeVisible();
-        // state B: restrictive combo → "not an error"
-        await demo.getByRole('button', { name: loc.ob }).click();
-        await demo.getByRole('button', { name: loc.untested }).click();
-        await demo.getByRole('button', { name: loc.swept }).click();
-        await expect(demo.getByText(loc.noMatch).first()).toBeVisible();
+        await expect(page.getByText(loc.calcRow)).toHaveCount(0);
+        await page.getByRole('button', { name: loc.calcOpen, exact: true }).click();
+        await expect(page.getByText(loc.calcRow).first()).toBeVisible();
       });
 
-      // MIA-4S — the M.I.A tab is the one demo that calls a backend (the real
-      // agent, on the frozen scenario). Both halves are pinned: the live answer
-      // when the endpoint replies, and the honest degradation when it does not.
-      test('demo 4 — M.I.A answers live and can move the chart layers', async ({ page }) => {
-        await page.route('**/api/demo/chat/stream', (route) =>
-          route.fulfill({
+      test('M.I.A answers live and her action moves the scroll-section chart', async ({ page }) => {
+        await page.route('**/api/demo/chat/stream', async (route) => {
+          await route.fulfill({
             status: 200,
             contentType: 'text/event-stream',
             body:
@@ -250,93 +242,110 @@ for (const loc of LOCALES) {
               `data: ${JSON.stringify({
                 event: 'answer',
                 content: loc.miaLiveAnswer,
-                blocked_reason: null,
-                tool_calls_made: [],
+                messages_left: 4,
                 view_actions: [
                   { action: 'set_layer_visibility', params: { layer: 'fvg', visible: false } },
                 ],
-                messages_left: 5,
               })}\n\n`,
-          }),
-        );
+          });
+        });
         await open(page, loc);
-        const demo = page.locator('#demo');
-        await demo.getByRole('tab', { name: loc.miaTab }).click();
-        await demo.getByRole('button', { name: loc.miaAction }).click();
-        await expect(demo.getByText(loc.miaLiveAnswer).first()).toBeVisible();
-        await expect(demo.getByText(loc.miaChanged).first()).toBeVisible();
-        // the validated action really reached the structure narration
-        await demo.getByRole('tab', { name: loc.structureTab }).click();
-        await expect(demo.getByText(loc.fvgFrag)).toHaveCount(0);
+        await expect(page.getByText(loc.fvgFrag).first()).toBeVisible();
+        await page.getByRole('button', { name: loc.miaAction, exact: true }).click();
+        await expect(page.getByText(loc.miaLiveAnswer).first()).toBeVisible();
+        // her view action reached the chart at the TOP of the page
+        await expect(page.getByText(loc.fvgFrag)).toHaveCount(0);
       });
 
-      test('demo 4 — with no backend, M.I.A degrades to recorded exchanges and says so', async ({ page }) => {
-        await page.route('**/api/demo/chat/stream', (route) => route.abort());
-        await open(page, loc);
-        const demo = page.locator('#demo');
-        await demo.getByRole('tab', { name: loc.miaTab }).click();
-        await demo.getByRole('button', { name: loc.miaAction }).click();
-        await expect(demo.getByText(loc.miaOffline).first()).toBeVisible();
-      });
-
-      test('demo 4 — any question can be typed, the starters are not a menu', async ({ page }) => {
-        await page.route('**/api/demo/chat/stream', (route) =>
-          route.fulfill({
+      test('any question can be typed — the starters are not a menu', async ({ page }) => {
+        await page.route('**/api/demo/chat/stream', async (route) => {
+          await route.fulfill({
             status: 200,
             contentType: 'text/event-stream',
-            body: `data: ${JSON.stringify({
-              event: 'answer',
-              content: loc.miaLiveAnswer,
-              messages_left: 4,
-              view_actions: [],
-            })}\n\n`,
-          }),
-        );
+            body: `data: ${JSON.stringify({ event: 'answer', content: loc.miaLiveAnswer, messages_left: 3 })}\n\n`,
+          });
+        });
         await open(page, loc);
-        const demo = page.locator('#demo');
-        await demo.getByRole('tab', { name: loc.miaTab }).click();
-        await demo.getByLabel(loc.miaPlaceholder).fill(loc.miaTyped);
-        await demo.getByRole('button', { name: loc.miaSend }).click();
-        await expect(demo.getByText(loc.miaLiveAnswer).first()).toBeVisible();
+        await page.getByLabel(loc.miaPlaceholder).fill(loc.miaTyped);
+        await page.getByRole('button', { name: loc.miaSend, exact: true }).click();
+        await expect(page.getByText(loc.miaLiveAnswer).first()).toBeVisible();
       });
 
-      test('demo 5 — régime tile reveals the raw calculation', async ({ page }) => {
+      test('with no backend M.I.A degrades to the recorded exchanges, and says so', async ({ page }) => {
+        await page.route('**/api/demo/chat/stream', (route) => route.abort());
         await open(page, loc);
-        const demo = page.locator('#demo');
-        await demo.getByRole('tab', { name: loc.calcTab }).click();
-        // confirm the pane actually switched before asserting on it
-        await expect(demo.getByText(loc.calcVerdict, { exact: true })).toBeVisible();
-        await expect(demo.getByText(loc.calcRow)).toHaveCount(0);
-        await demo.getByRole('button', { name: loc.calcOpen }).click();
-        await expect(demo.getByText(loc.calcRow).first()).toBeVisible();
+        await page.getByRole('button', { name: loc.miaAction, exact: true }).click();
+        await expect(page.getByText(loc.miaOffline).first()).toBeVisible();
       });
 
       if (vp.name === 'desktop') {
-        test('nav bar: a visitor gets no App/Zones/Scanner, sees the sign-up CTA', async ({ page }) => {
+        test('nav bar: a logged-out visitor sees the sign-up CTA', async ({ page }) => {
           await open(page, loc);
-          const header = page.locator('header').first();
-          // gate the assertions on the resolved logged-out state
-          await expect(header.getByRole('link', { name: loc.tryFree })).toBeVisible();
-          await expect(header.getByRole('link', { name: /^Zones$/ })).toHaveCount(0);
-          await expect(header.getByRole('link', { name: /^Scanner$/ })).toHaveCount(0);
-          await expect(header.getByRole('link', { name: /^App$/ })).toHaveCount(0);
-        });
-
-        test('nav bar: an authenticated visitor gets the product links', async ({ page }) => {
-          // Mock the session probe so the nav renders its logged-in cluster.
-          await page.route('**/api/auth/me', (route) =>
-            route.fulfill({
-              status: 200,
-              contentType: 'application/json',
-              body: JSON.stringify({ id: 'u1', email: 'test@example.com', tier: 'institutional' }),
-            }),
-          );
-          await open(page, loc);
-          const header = page.locator('header').first();
-          await expect(header.getByRole('link', { name: /^Zones$/ }).first()).toBeVisible();
-          await expect(header.getByRole('link', { name: /^Scanner$/ }).first()).toBeVisible();
+          const nav = page.locator('header').first();
+          await expect(nav.getByRole('link', { name: loc.tryFree }).first()).toBeVisible();
         });
       }
     });
   }
 }
+
+/**
+ * The pinned choreography — the ONE orchestrated moment of the page.
+ *
+ * Deliberately outside the loop above, and deliberately WITHOUT reduced motion:
+ * this is the only test that exercises the enhanced path, and it needs a real
+ * viewport to scroll. Desktop and fr only; the degraded path (everything else,
+ * every locale, both viewports) is covered above.
+ */
+test.describe('LP-3 — the reading assembles itself as you scroll', () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+  test.describe.configure({ retries: 2 });
+
+  test('the first step is alone on the chart, the last one has all four layers', async ({ page }) => {
+    const loc = LOCALES[0]!;
+    await page.goto(loc.path, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await dismissCookieBanner(page);
+
+    const section = page.locator('#lecture');
+    await section.scrollIntoViewIfNeeded();
+
+    // step 1 — the break is current, and it is the ONLY layer drawn
+    await section.getByText(loc.stepBreak).first().scrollIntoViewIfNeeded();
+    await expect(section.locator('[aria-current="step"]')).toContainText(loc.stepBreakText);
+    await expect(
+      section.getByRole('button', { name: loc.chipStr, exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      section.getByRole('button', { name: loc.chipLiq, exact: true }),
+    ).toHaveAttribute('aria-pressed', 'false');
+
+    // step 4 — scroll on; the reading has only ever GAINED detail
+    await section.getByText(loc.stepLiq).first().scrollIntoViewIfNeeded();
+    await expect(section.locator('[aria-current="step"]')).toContainText(loc.stepLiqText);
+    for (const chip of [loc.chipStr, loc.chipOb, loc.chipFvg, loc.chipLiq]) {
+      await expect(
+        section.getByRole('button', { name: chip, exact: true }),
+      ).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  test('taking a chip ends the choreography for good — scrolling never steals it back', async ({ page }) => {
+    const loc = LOCALES[0]!;
+    await page.goto(loc.path, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    await dismissCookieBanner(page);
+
+    const section = page.locator('#lecture');
+    await section.getByText(loc.stepLiq).first().scrollIntoViewIfNeeded();
+    // take control: switch the liquidity layer off
+    await section.getByRole('button', { name: loc.chipLiq, exact: true }).click();
+    await expect(page.getByText(loc.liqFrag)).toHaveCount(0);
+
+    // scroll back up to the first step: the scroll position must NOT reassert
+    // a cumulative state and re-draw the layer the reader just removed.
+    await section.getByText(loc.stepBreak).first().scrollIntoViewIfNeeded();
+    await expect(page.getByText(loc.liqFrag)).toHaveCount(0);
+    await expect(
+      section.getByRole('button', { name: loc.chipOb, exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+});

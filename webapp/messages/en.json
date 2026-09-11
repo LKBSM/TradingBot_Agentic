@@ -1,136 +1,8 @@
 {
   "home": {
     "hero": {
-      "pill": "Early access · gold and the euro today",
-      "h1a": "The market already wrote it all.",
-      "h1b": "MIA reads it to you.",
-      "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected automatically and described in plain language. Plus an assistant that answers when you don't understand.",
       "ctaPrimary": "Subscribe",
-      "ctaSecondary": "See the tools",
-      "micro": "Full access as soon as you subscribe · Cancel anytime",
-      "roadmap": "Early access · <b>2 markets today, 50 to 80 planned at launch</b>"
-    },
-    "stats": {
-      "markets": "markets tracked",
-      "combinations": "combinations analysed",
-      "conditions": "search conditions",
-      "timeframes": "timeframes",
-      "structures": "structures detected"
-    },
-    "tools": {
-      "eyebrow": "Five tools, one product",
-      "title": "Everything you need to read a structure",
-      "subtitle": "Each tool answers a question you already ask yourself. The difference is how long it takes you to get the answer.",
-      "app": {
-        "tag": "The reading space",
-        "h3": "Far more than an annotated chart",
-        "p": "Zones are bounded, breaks are dated, liquidity is positioned. Below, a paragraph describes the situation. Beside it, the market regime, the event journal, and M.I.A. <b>Everything you need on one screen.</b>",
-        "b1": "<b>Layered chart</b> — each structure family shows or hides",
-        "b2": "<b>Narrated reading</b> composed from detected facts, never a fixed text",
-        "b3": "<b>Regime panel</b> — trend, volatility, position, agreement across timeframes",
-        "b4": "<b>Event journal</b> — every break time-stamped, clickable on the chart",
-        "visTitle": "Gold · XAU/USD · 15 minutes",
-        "lblLiq": "Liquidity intact",
-        "lblOb": "OB · untested",
-        "lblChoch": "CHOCH ↑",
-        "narr": "Price is <b>currently inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b>. A sell-side liquidity pocket <b>was swept</b> 17 candles ago. The 1h agrees.",
-        "b5": "<b>Six timeframes</b> — from the minute to the day, the reading follows"
-      },
-      "scanner": {
-        "tag": "The scanner",
-        "h3": "You can't watch your markets non-stop. It can.",
-        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 12 market-and-timeframe combinations. Re-evaluated on every candle close.",
-        "b1": "<b>22 factual conditions</b> across structure, zones, liquidity and context",
-        "b2": "<b>What goes against it</b> is shown too — disagreement between units, worn zone",
-        "b3": "<b>No ranking</b>: results are never sorted by « quality »",
-        "b4": "<b>Saved readings</b>: recall your usual conditions, export them from one device to another",
-        "visTitle": "Scanner · 4 active conditions",
-        "chip": {
-          "c1": "bullish trend",
-          "c2": "units aligned",
-          "c3": "inside an OB",
-          "c4": "never tested"
-        },
-        "row": {
-          "gold15": "Gold · 15 min",
-          "euro15": "Euro · 15 min",
-          "goldH4": "Gold · 4h"
-        },
-        "foot": "re-evaluated on every close · 4 min ago"
-      },
-      "zones": {
-        "tag": "The zones",
-        "h3": "A pristine zone and a worn one are not worth the same",
-        "p": "Most tools show you that an Order Block exists. MIA tells you <b>its whole life</b>: when it formed, whether it was touched, at what time, and whether it ended up filled. That's the difference between seeing a rectangle and knowing what it's worth.",
-        "b1": "<b>Full timeline</b>: formed → tested → filled, timestamped",
-        "b2": "<b>Fill rate</b> for a partially filled Fair Value Gap",
-        "b3": "<b>Overlaps</b> with zones detected on other timeframes",
-        "b4": "<b>Hideable one by one</b> to keep a readable chart",
-        "visTitle": "Zones · Gold · 15 minutes",
-        "now": "Now",
-        "card1": {
-          "tag": "ORDER BLOCK ↑",
-          "state": "never tested",
-          "formed": "Formed · 3h 30 ago"
-        },
-        "card2": {
-          "tag": "FAIR VALUE GAP ↓",
-          "state": "60 % filled",
-          "fill": "60 % filled"
-        }
-      },
-      "news": {
-        "tag": "The news",
-        "h3": "Know when the market will move — and what happened the times before",
-        "p": "A calendar of economic releases, tied to the markets they affect. And for each one, <b>what was actually measured at previous releases</b>: the calm before, the turbulence after, the lifespan of the zones created that day.",
-        "b1": "<b>Monthly calendar</b> with local time and the issuing body's time",
-        "b2": "<b>The last twelve published figures</b> of each indicator, as published",
-        "b3": "<b>Measurements recorded</b> at past releases — counts, not forecasts",
-        "b4": "<b>Official sources only</b>: BLS, BEA, Census, Federal Reserve, Eurostat, ECB",
-        "visTitle": "Consumer Price Index · 12 August",
-        "q1": {
-          "q": "Does the market calm down before?",
-          "a": "Across the releases measured, the hour before was calmer <b>10 times out of 12</b>."
-        },
-        "q2": {
-          "q": "How long does it last?",
-          "a": "Most often <b>1 to 3h</b>. From 15 min to 4h 45 depending on the release."
-        },
-        "q3": {
-          "q": "Do the zones created hold?",
-          "a": "Rarely. Of <b>34 zones</b> created, 26 crossed within two hours."
-        },
-        "q4": {
-          "q": "Where does the structure stand?",
-          "a": "Top third of the range <b>8 times out of 12</b>, intact pocket nearby 9 times."
-        },
-        "foot": "Counts of past days. Nothing applies to the upcoming release."
-      },
-      "mia": {
-        "tag": "M.I.A Agent",
-        "h3": "An SMC mentor that never sleeps",
-        "p": "Don't understand why this candle is an Order Block? Ask her. She <b>teaches the concepts and describes what was detected</b> — and she can drive your chart: hide a layer, isolate a zone, switch timeframe.",
-        "b1": "<b>Explains every SMC concept</b> with the example in front of you",
-        "b2": "<b>Anchored to real data</b>: she only cites levels that were actually detected",
-        "b3": "<b>Controls the display</b>: « show me only the untested OBs »",
-        "b4": "<b>On the chart and the publications</b> — never a word of prediction",
-        "visTitle": "M.I.A Agent",
-        "chat": {
-          "u1": "what exactly is an order block?",
-          "a1": "It's the last opposite-direction candle before the move that breaks structure. The one price sits in formed <b>14 candles ago</b>, right before the bullish BOS at 14:15.",
-          "u2": "show me only the untested OBs",
-          "a2": "Done. I hid the FVGs and the liquidity. <b>3 untested Order Blocks</b> remain on screen.",
-          "u3": "do you think it will bounce?",
-          "a3": "I don't answer that. I don't predict price moves — I can describe the state of the zone or explain the concept."
-        }
-      }
-    },
-    "demoSection": {
-      "eyebrow": "Try it without creating an account",
-      "title": "Here's what it looks like",
-      "subtitle": "An illustration reading, editable right here. Click, tick, ask a question — everything works with no account.",
-      "cta": "Subscribe",
-      "illus": "Illustration data · the product shows the real market readings"
+      "roadmap": "Up to 80 markets planned — <b>XAUUSD and EURUSD available today.</b>"
     },
     "demo": {
       "illus": "Illustration data",
@@ -157,10 +29,6 @@
           "ob": "Price is <b>inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, <b>never tested</b>.",
           "fvg": "A <b>bearish Fair Value Gap, 60 % filled</b> sits below price, between 4,020.10 and 4,021.85.",
           "liq": "A <b>buy-side liquidity pocket stays intact</b> at 4,034.20; a sell-side pocket <b>was swept</b> below 4,011.40."
-        },
-        "side": {
-          "title": "The reading updates itself",
-          "desc": "Untick a layer: <b>the paragraph rewrites itself</b> to describe only what stays visible. The narration is never a fixed text — it is composed from what was detected."
         },
         "chips": {
           "ob": "Order Blocks",
@@ -242,12 +110,9 @@
           "send": "Send",
           "thinking": "M.I.A is thinking…",
           "left": "{n} questions left in this demo",
-          "offline": "The live demo isn't available here — these are recorded exchanges.",
-          "note": "This is the real M.I.A, on illustration data. She answers any question about this scenario or about the product."
+          "offline": "The live demo isn't available here — these are recorded exchanges."
         },
         "side": {
-          "title": "Ask her a real question",
-          "desc": "M.I.A explains concepts, describes what was detected and drives the display. <b>She refuses anything that amounts to a prediction</b> — click the last option to see.",
           "try": "To get started"
         },
         "q": {
@@ -293,66 +158,12 @@
         }
       }
     },
-    "how": {
-      "eyebrow": "How it works",
-      "title": "Three minutes to understand your market",
-      "subtitle": "No install, no script to copy, no indicator to tune. You open it and it's ready.",
-      "step1": {
-        "h": "Choose your market",
-        "p": "Gold or the euro, on 6 timeframes. All 12 combinations are already analysed continuously, and the result stays up to date at every candle close."
-      },
-      "step2": {
-        "h": "Read the structure",
-        "p": "Bounded zones, dated breaks, placed liquidity, and a paragraph describing the situation. You see in ten seconds what would have taken you twenty minutes."
-      },
-      "step3": {
-        "h": "Search or go deeper",
-        "p": "Run the scanner to find your conditions elsewhere, open the Zones page for the history, or ask M.I.A what you didn't understand."
-      }
-    },
-    "who": {
-      "eyebrow": "Who it's for",
-      "title": "Built for SMC and ICT traders",
-      "subtitle": "If you draw your Order Blocks by hand every morning, you're exactly the person this product exists for.",
-      "w1": {
-        "h": "You're learning SMC",
-        "p": "Seeing the structure marked correctly, with an agent that explains each element when you ask, replaces dozens of hours of videos.",
-        "lb": "Learn",
-        "items": {
-          "0": "Every concept explained on your market, not in theory",
-          "1": "The detection rules are published — you can check them",
-          "2": "You learn by watching, not by memorising"
-        }
-      },
-      "w2": {
-        "h": "You draw by hand",
-        "p": "You spend time every day marking your zones. MIA does it on gold and the euro, continuously, with the lifecycle as a bonus.",
-        "lb": "Consistency",
-        "items": {
-          "0": "The same rules applied the same way, always",
-          "1": "The full life cycle of each zone, kept",
-          "2": "Nothing forgotten on a tired morning"
-        }
-      },
-      "w3": {
-        "h": "You follow several timeframes",
-        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 12 combinations on every close, without you clicking.",
-        "lb": "Breadth",
-        "items": {
-          "0": "Your conditions checked everywhere at every close",
-          "1": "The unfavourable context shown, not only what confirms",
-          "2": "A calendar of official, verifiable sources"
-        }
-      }
-    },
     "distinguish": {
-      "eyebrow": "What sets us apart",
       "h2": "MIA will never tell you where price is going",
       "p1": "Not because she can't — because <b>nobody knows</b>. The trading-tools market is full of products selling predictions with unverifiable success rates. MIA does something else: it describes what is there, now, and stops there.",
-      "p2": "Concretely, the unfavourable context is shown on equal footing with the favourable, results are never ranked by « quality », and when the analysis doesn't know, the screen tells you instead of guessing. <b>You keep the decision. We give you the reading.</b>"
+      "p2": "Concretely, the unfavourable context is shown on equal footing with the favourable, results are never ranked by « quality », and when the analysis doesn't know, the screen tells you instead of guessing."
     },
     "pricing": {
-      "eyebrow": "Pricing",
       "title": "One subscription, everything included",
       "subtitle": "One subscription, the whole tool: full access as soon as you subscribe, cancel anytime.",
       "paid": {
@@ -373,18 +184,17 @@
       "legal": "Prices in US dollars. M.I.A Markets is an information and education tool: it provides no investment advice, no recommendation, and no cue to act on the markets. Trading carries a risk of loss. For persons aged 18 and over only."
     },
     "faq": {
-      "eyebrow": "Frequently asked",
       "title": "What we're asked most",
       "q1": "Does MIA tell you when to buy or sell?",
-      "a1": "No, and that's a design choice. MIA describes what the market has done and what it's doing now. It doesn't say where price will go and promises no result. <b>The decision to trade stays entirely yours</b> — what the product gives you is a clean, fast reading of the structure.",
+      "a1": "No, and that's a design choice. MIA describes what the market has done and what it's doing now. It doesn't say where price will go and promises no result.",
       "q2": "Do you need to know Smart Money Concepts to use it?",
-      "a2": "No. It's even a good way to learn: every detected element is explained on screen, and M.I.A answers any question about the concepts — what an Order Block is, the difference between BOS and CHOCH, why a zone is considered filled. You see the theory applied to a real market.",
+      "a2": "No. It's even a good way to learn: every detected element is explained on screen, and M.I.A answers any question about the concepts — what an Order Block is, the difference between BOS and CHOCH, why a zone is considered filled.",
       "q3": "Does it replace TradingView?",
-      "a3": "No, and that's not the point. TradingView stays your charting, drawing and execution platform. MIA does the structural reading work: detect, date, track the lifecycle of zones. <b>The two complement each other.</b>",
+      "a3": "No, and that's not the point. TradingView stays your charting, drawing and execution platform. MIA does the structural reading work: detect, date, track the lifecycle of zones.",
       "q4": "Which markets are covered?",
-      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. The subscription gives access to both markets and every timeframe. More markets will follow.",
+      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. More markets will follow.",
       "q5": "How often is the data updated?",
-      "a5": "On every candle close of the timeframe concerned, not on an arbitrary interval. A 15-minute reading refreshes every 15 minutes; a daily reading once a day. <b>Each screen shows the age of its last reading</b>, so you always know what you're looking at.",
+      "a5": "On every candle close of the timeframe concerned, not on an arbitrary interval. <b>Each screen shows the age of its last reading</b>, so you always know what you're looking at.",
       "q6": "Can I cancel whenever I want?",
       "a6": "Yes, from your account, without having to write to anyone. Your access stays active until the end of the period already paid for, then it ends — you don't lose your account.",
       "q7": "Where does the price data come from?",
@@ -393,36 +203,11 @@
       "a8": "Yes, from the browser. The reading space, the scanner, the zones and the calendar are usable on mobile — handy to check a structure without being at your desk."
     },
     "final": {
-      "h2": "Stop drawing. Start reading.",
-      "p": "Subscribe and see what MIA sees on your favourite market. Full access as soon as you subscribe, cancel anytime.",
-      "cta1": "Subscribe",
-      "cta2": "Review the tools"
+      "h2": "You keep the decision. We give you the reading.",
+      "p": "Full access as soon as you subscribe, cancel anytime.",
+      "cta1": "Subscribe"
     },
     "miaSection": {
-      "eyebrow": "What exists nowhere else",
-      "title": "An assistant that explains the market to you",
-      "subtitle": "Most trading tools display. MIA explains. You can talk to her like someone with the chart in front of them.",
-      "badgeName": "M.I.A Agent",
-      "badgeSub": "available on every surface",
-      "chatHeader": "M.I.A Agent · Gold 15 min",
-      "h3": "Ask the question you'd hesitate to ask in a group",
-      "p": "Don't understand why this candle is an Order Block? Want to know what happened on gold yesterday? Don't know what « mitigation » means? <b>Ask her.</b> She answers with the real levels and real timestamps of the market you're looking at.",
-      "questions": {
-        "0": "Explain this CHOCH to me",
-        "1": "What's the difference between BOS and CHOCH?",
-        "2": "How many times has this zone been tested?",
-        "3": "Show me only the untested OBs",
-        "4": "Where is the nearest liquidity?",
-        "5": "What is a Fair Value Gap?"
-      },
-      "chat": {
-        "u1": "why is this candle an order block?",
-        "a1": "It's the last bearish candle before the move that broke structure. It formed <b>at 12:30</b>, just before the bullish BOS at 14:15 at 4,025.10. Its zone spans <b>4,026.80 to 4,028.90</b>.",
-        "u2": "has it been tested?",
-        "a2": "No. <b>Never since it formed.</b> Price entered it 30 minutes ago — that's its first contact.",
-        "u3": "do you think it'll bounce?",
-        "a3": "<b>I won't answer that.</b> I don't predict price moves and I won't tell you when to buy or sell. I can describe the state of the zone or explain the concept."
-      },
       "caps": {
         "c1": {
           "h": "She teaches SMC",
@@ -440,164 +225,48 @@
           "h": "She refuses to guess",
           "p": "No prediction, no call to act, no advice: <b>it's a descriptive tool</b>."
         }
-      }
+      },
+      "p": "Don't understand why this candle is an Order Block? Want to know what happened on gold yesterday? Don't know what « mitigation » means? <b>Ask her.</b> She answers with the real levels and real timestamps of the market you're looking at."
     },
-    "carousel": {
-      "hint": "↔ Scroll to see the other parts of the space",
-      "illus": "Illustration data",
-      "regionAria": "Reading space — carousel",
-      "prevAria": "Previous panel",
-      "nextAria": "Next panel",
-      "dotAria": "Go to panel {n}",
-      "names": {
-        "0": "Chart",
-        "1": "Narrated reading",
-        "2": "Market regime",
-        "3": "Event journal",
-        "4": "Timeframes"
-      },
-      "chart": {
-        "title": "Chart · Gold 15 min",
-        "layers": {
-          "0": "OB",
-          "1": "FVG",
-          "2": "Liquidity",
-          "3": "BOS/CHOCH",
-          "4": "Mitigated"
+    "opening": {
+      "h1": "It reads the structure. It chooses nothing for you.",
+      "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets: detected at every candle close, dated, and described in plain words.",
+      "refusals": {
+        "r1": {
+          "h": "It won't tell you where price is going.",
+          "p": "Nobody knows. A tool that claims otherwise is selling you a certainty it does not have."
         },
-        "obLabel": "OB · untested",
-        "liqLabel": "Buy-side liquidity · intact",
-        "chochLabel": "↑ CHOCH",
-        "bosLabel": "↑ BOS · 4,025.10",
-        "localTime": "Local time · UTC−4"
-      },
-      "narrated": {
-        "title": "Narrated reading · Gold 15 min",
-        "freshness": "Candle closed 4 min ago",
-        "body": "Price is <b>currently inside a bullish Order Block</b> formed 3h 30 ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b> since it formed. A <b>bullish CHOCH confirmed</b> at 4,021.45, followed by a <b>bullish BOS</b> at 4,025.10. A <b>sell-side liquidity pocket was swept</b> below 4,011.40: the wick went under and the candle closed above. A <b>buy-side liquidity pocket remains intact</b> at 4,034.20, i.e. 0.18% above price. The <b>1h agrees</b>; the 4h is in a bearish trend.",
-        "foot": "Recomposed at every close, never a fixed text"
-      },
-      "regime": {
-        "title": "Market regime · Gold 15 min",
-        "tiles": {
-          "0": {
-            "k": "Trend",
-            "v": "Bullish",
-            "n": "since 14:15"
-          },
-          "1": {
-            "k": "Volatility",
-            "v": "Expanded",
-            "n": "7 vs 20 candles"
-          },
-          "2": {
-            "k": "Position in range",
-            "v": "Top third",
-            "n": "4,012 – 4,037"
-          },
-          "3": {
-            "k": "Alignment",
-            "v": "1h agrees",
-            "n": "4h opposed"
-          },
-          "4": {
-            "k": "Maturity",
-            "v": "9 candles",
-            "n": "since the BOS"
-          },
-          "5": {
-            "k": "Density",
-            "v": "8 OB · 12 FVG",
-            "n": "over the window"
-          },
-          "6": {
-            "k": "Last event",
-            "v": "BOS ↑",
-            "n": "at 14:15"
-          },
-          "7": {
-            "k": "Session",
-            "v": "New York",
-            "n": "open"
-          },
-          "8": {
-            "k": "Reference levels",
-            "v": "PDH · PDL",
-            "n": "prior day"
-          }
+        "r2": {
+          "h": "It sorts nothing.",
+          "p": "No ranking, nothing put ahead of the rest. What argues against is shown just as plainly."
         },
-        "foot": "Each tile explains its method on click"
+        "r3": {
+          "h": "It invents no level.",
+          "p": "It cites only what was detected: an invented reference is rejected by the code."
+        }
       },
-      "journal": {
-        "title": "Event journal · Gold 15 min",
-        "rows": {
-          "0": {
-            "kind": "bos",
-            "badge": "BOS ↑",
-            "text": "Bullish break of structure",
-            "time": "14:15"
-          },
-          "1": {
-            "kind": "pocket",
-            "badge": "POCKET",
-            "text": "Sell-side liquidity swept",
-            "time": "13:30"
-          },
-          "2": {
-            "kind": "choch",
-            "badge": "CHOCH ↑",
-            "text": "Change of character confirmed",
-            "time": "12:45"
-          },
-          "3": {
-            "kind": "ob",
-            "badge": "OB ↑",
-            "text": "Order Block formed · 4,026.80–4,028.90",
-            "time": "12:30"
-          },
-          "4": {
-            "kind": "fvg",
-            "badge": "FVG ↓",
-            "text": "Fair Value Gap filled 60%",
-            "time": "11:00"
-          }
-        },
-        "foot": "Click an event and the chart moves to it"
+      "ctaSecondary": "Watch a reading compose itself",
+      "archive": "A real, archived reading: {instrument} on {timeframe}, candle closed on {when}. Nothing was retouched."
+    },
+    "unfold": {
+      "title": "A reading is not a text. It is recomposed at every close.",
+      "lead": "Scroll. Each layer lands as its sentence is written, in the order the analysis builds it.",
+      "step": {
+        "str": "The break",
+        "ob": "The zone",
+        "fvg": "The gap",
+        "liq": "The liquidity"
       },
-      "timeframes": {
-        "title": "Timeframes · Gold",
-        "chips": {
-          "0": "M5",
-          "1": "M15",
-          "2": "H1",
-          "3": "H4",
-          "4": "D1"
-        },
-        "activeChip": "M15",
-        "rows": {
-          "0": {
-            "tf": "M15",
-            "text": "Bullish · expansion",
-            "note": "current reading"
-          },
-          "1": {
-            "tf": "H1",
-            "text": "Bullish · trend",
-            "note": "agrees"
-          },
-          "2": {
-            "tf": "H4",
-            "text": "Bearish · range",
-            "note": "opposed"
-          },
-          "3": {
-            "tf": "D1",
-            "text": "Indeterminate",
-            "note": "no established structure"
-          }
-        },
-        "foot": "Each timeframe has its own reading, re-evaluated at its close"
-      }
+      "hand": "Your turn. <b>Untick a layer</b>: the paragraph describes only what is left on screen.",
+      "handTaken": "You are driving the display now. Scrolling no longer takes it back."
+    },
+    "refuse": {
+      "title": "Ask it to predict. Watch what it answers.",
+      "lead": "This is the real M.I.A, on the scenario above. No prepared answer: ask whatever you like."
+    },
+    "hands": {
+      "title": "The rest, with no account.",
+      "lead": "Three things you can do right here, right now."
     }
   },
   "regimePanel": {
