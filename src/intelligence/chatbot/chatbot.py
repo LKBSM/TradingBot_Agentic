@@ -36,7 +36,7 @@ from src.intelligence.chatbot.constants import (
 )
 from src.intelligence.chatbot.output_filter import OutputFilter
 from src.intelligence.chatbot.signal_summary_provider import SignalSummaryProvider
-from src.intelligence.llm_cost_policy import cache_block_for
+from src.intelligence.llm_cost_policy import cache_block_for, log_usage
 from src.intelligence.chatbot.view_action_filter import (
     ALLOWED_ACTIONS,
     ViewActionValidator,
@@ -60,6 +60,107 @@ DEFAULT_TIMEOUT_S = 20.0
 # alternating transcript (see _truncate_history). Bounds per-turn context.
 MAX_MODEL_HISTORY = 12
 MAX_TOOL_TURNS = 3  # hard cap on tool-use rounds to avoid infinite loops
+
+
+# PERF-3 (B-1) — how many entries of each structure list the get_market_reading
+# tool hands the model.
+#
+# Measured on real stored readings: `structure` is 95.9% of a MarketReading
+# payload, and the payload went to the model WHOLE — 11 000 chars on average,
+# 38 913 at the worst, at full price on every tool call (a tool result sits after
+# the cache breakpoint and changes every turn, so it can never be cached). One
+# call could cost more than the entire cached system prompt.
+#
+# The engine's own journals are far deeper than any answer needs: 48 BOS events
+# on the reading measured here. Capping is safe for FIDELITY only because the
+# counts are declared alongside (see _condense_reading_for_tool) — the model is
+# told how many exist, so "how many order blocks are there?" stays answerable and
+# truthful. Zones are ordered active-first so a cap never hides a live level.
+_TOOL_STRUCTURE_LIMITS: dict[str, int] = {
+    "order_blocks": 8,
+    "fair_value_gaps": 8,
+    "liquidity_pools": 8,
+    "bos_events": 8,
+    "choch_events": 6,
+    # Historical residue — least useful per token.
+    "consumed_order_blocks": 3,
+    "consumed_fair_value_gaps": 3,
+}
+
+
+def _condense_reading_for_tool(payload: dict[str, Any]) -> dict[str, Any]:
+    """Trim a MarketReading payload to what a chat answer actually consumes.
+
+    Only the ``structure`` lists are capped; every OTHER block (header, regime,
+    conditions, events, market_status, reference_levels) is passed through
+    untouched — together they are ~4% of the payload, so there is nothing to win
+    there and plenty of fidelity to lose.
+
+    Honesty rule: a capped list is never silently short. ``structure_totals``
+    reports the true length of every list, and ``_truncated`` names the ones that
+    were cut, so the model can answer counting questions correctly and say what
+    it is not seeing. Active zones sort first, so a cap drops stale history, not
+    a live level.
+    """
+    structure = payload.get("structure")
+    if not isinstance(structure, dict):
+        return payload
+
+    def _active_first(items: list) -> list:
+        # Stable: preserves engine order within each group (journals stay
+        # most-recent-first, which is what the digest relies on).
+        return [i for i in items if _is_active(i)] + [i for i in items if not _is_active(i)]
+
+    def _is_active(item: Any) -> bool:
+        return isinstance(item, dict) and item.get("status") == "active"
+
+    trimmed: dict[str, Any] = {}
+    totals: dict[str, int] = {}
+    truncated: list[str] = []
+    for key, value in structure.items():
+        if not isinstance(value, list):
+            trimmed[key] = value
+            continue
+        totals[key] = len(value)
+        limit = _TOOL_STRUCTURE_LIMITS.get(key)
+        if limit is None or len(value) <= limit:
+            trimmed[key] = value
+            continue
+        trimmed[key] = _active_first(value)[:limit]
+        truncated.append(key)
+
+    out = dict(payload)
+    out["structure"] = trimmed
+    out["structure_totals"] = totals
+    if truncated:
+        out["_truncated"] = {
+            "fields": sorted(truncated),
+            "note": (
+                "Listes raccourcies pour la conversation : seules les entrées les "
+                "plus pertinentes (actives d'abord) sont fournies. Les effectifs "
+                "réels de CHAQUE liste sont dans structure_totals — utilise-les "
+                "pour toute question de dénombrement, et dis que tu n'as pas le "
+                "détail complet plutôt que de compter ce qui est affiché ici."
+            ),
+        }
+    return out
+
+
+def _schemas_chars(schemas: Any) -> int:
+    """Serialised size of the tool definitions, for the cached-prefix estimate.
+
+    An approximation of what the API renders for ``tools`` — close enough to
+    decide whether a prefix clears a token minimum, and the only measure
+    available without calling ``count_tokens``. Never raises: a build with
+    non-serialisable schemas simply contributes 0 to the estimate.
+    """
+    if not schemas:
+        return 0
+    try:
+        return len(json.dumps(schemas, ensure_ascii=False))
+    except (TypeError, ValueError):
+        return 0
+
 
 # Perimeter derived from the single sources (TF-1): the chat covers every
 # displayed instrument/timeframe, never a hand-listed subset.
@@ -453,6 +554,12 @@ class Chatbot:
         #                         BEFORE the variable trailing block, so the
         #                         MIA-2 cache breakpoint keeps working.
         self._tool_schemas = tool_schemas if tool_schemas is not None else TOOL_SCHEMAS
+        # PERF-3 — size of the tool definitions. They render BEFORE the system
+        # blocks (order: tools -> system -> messages), so a breakpoint on a system
+        # block caches them too: they belong to the SAME cached prefix and must be
+        # counted when deciding whether that prefix reaches the model's minimum.
+        # Serialised once here — the schemas never change after construction.
+        self._tool_schemas_chars = _schemas_chars(self._tool_schemas)
         self._tool_handlers = dict(tool_handlers or {})
         self._extra_system_blocks = list(extra_system_blocks or [])
         # Language of the VERBATIM safety templates (Couches 1-4). None = French,
@@ -588,6 +695,11 @@ class Chatbot:
                     tools=self._tool_schemas,
                     timeout=self._timeout_s,
                 )
+                # PERF-3 (B-2) — the only production evidence that the prompt
+                # cache is actually being served. cache_read_input_tokens staying
+                # at 0 across turns means the breakpoint is not taking, which
+                # Anthropic reports no other way.
+                log_usage(logger, "chatbot", response, model=self._model)
             except Exception as exc:  # timeout / rate limit / network
                 logger.warning("chatbot LLM call failed: %s — fail-safe template", exc)
                 yield {
@@ -761,9 +873,16 @@ class Chatbot:
         so its 60s-TTL refresh never invalidates the cache. Content is identical
         to the old single-string prompt — only the summary's position changed.
 
-        Falls back to a single plain string if the static prefix is somehow below
-        the cache threshold (it is ~2k tokens, so this never triggers in practice)
-        — same text, just uncached.
+        PERF-3 — the breakpoint decision now reasons on the REAL cached prefix.
+        A request renders as ``tools -> system -> messages``, so a breakpoint on a
+        system block caches the tool definitions with it; measuring the system text
+        alone under-counted the prefix by ~44% on the production build. Both
+        breakpoints are therefore given the size of what precedes them, and the
+        running model, so ``cache_block_for`` can flag a prefix too short to cache
+        on this model instead of failing silently.
+
+        Falls back to a single plain string only when nothing here is long enough
+        to be worth a breakpoint at all — same text, just uncached.
         """
         signal_text = SIGNAL_CONTEXT_TEMPLATE.format(
             signal_summary=json.dumps(signal_summary, ensure_ascii=False)
@@ -773,16 +892,36 @@ class Chatbot:
         # BEFORE the variable signal block: byte-stable themselves, so they cache
         # too, and they can never edit or weaken the rules above them.
         extra = self._extra_system_blocks
-        static_block = cache_block_for(SYSTEM_PROMPT_STATIC)
-        if static_block is None:
-            return "\n\n".join([SYSTEM_PROMPT_STATIC, *extra, signal_text])
-        blocks: list[dict[str, Any]] = [static_block]
+        tools_chars = self._tool_schemas_chars
+
+        blocks: list[dict[str, Any]] = [{"type": "text", "text": SYSTEM_PROMPT_STATIC}]
         for text in extra:
             blocks.append({"type": "text", "text": text})
-        if blocks[-1] is not static_block:
-            cached_tail = cache_block_for(blocks[-1]["text"])
+
+        # Breakpoint 1 — the byte-stable prefix: tool definitions + identity/rules.
+        static_block = cache_block_for(
+            SYSTEM_PROMPT_STATIC, model=self._model, prefix_chars=tools_chars
+        )
+        if static_block is not None:
+            blocks[0] = static_block
+
+        # Breakpoint 2 — a restricted build's own stable tail (MIA-4S). Everything
+        # above it is in its prefix: tools + static + the earlier extra blocks.
+        if extra:
+            prefix_chars = (
+                tools_chars
+                + len(SYSTEM_PROMPT_STATIC)
+                + sum(len(t) for t in extra[:-1])
+            )
+            cached_tail = cache_block_for(
+                blocks[-1]["text"], model=self._model, prefix_chars=prefix_chars
+            )
             if cached_tail is not None:
                 blocks[-1] = cached_tail
+
+        if not any("cache_control" in b for b in blocks):
+            return "\n\n".join([SYSTEM_PROMPT_STATIC, *extra, signal_text])
+
         blocks.append({"type": "text", "text": signal_text})
         return blocks
 
@@ -908,7 +1047,9 @@ class Chatbot:
                 instrument = tool_input.get("instrument")
                 timeframe = tool_input.get("timeframe")
                 reading = self._assembler.get_or_generate(instrument, timeframe)
-                return reading.model_dump(mode="json")
+                # PERF-3 (B-1): the API and the chart still receive the FULL
+                # reading — only what travels into the conversation is capped.
+                return _condense_reading_for_tool(reading.model_dump(mode="json"))
             if name == "get_signal_summary":
                 return self._summary_provider.get()
             if name == "get_ob_diagnostic":
