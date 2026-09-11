@@ -19,6 +19,8 @@ from typing import Any, Optional
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.conftest_translate_throttle import fresh_translate_throttle  # noqa: F401
+
 from src.api.app import create_app
 from src.api.routes.conditions_scan import ScanCondition
 from src.api.signal_store import SignalStore
