@@ -60,7 +60,16 @@ const FORBIDDEN: [RegExp, string][] = [
   [/XAUUSD:\s*\d/, 'inline market decimals map'],
   [/\bMARKET_GLYPH\b\s*[:=]\s*\{/, 'inline market glyph map'],
 ];
-const ALLOW = new Set(['markets.ts', 'markets.generated.ts']);
+// market-catalog*.ts hold the MKT-1 UX-test catalogue: a DISPLAY-ONLY list that
+// deliberately enumerates ~100 markets. It is not the enumeration this guard
+// abolishes (that one is the real perimeter, recopied by hand) — it is a
+// generated file, gated off by default, and it never feeds ALL_MARKET_IDS.
+const ALLOW = new Set([
+  'markets.ts',
+  'markets.generated.ts',
+  'market-catalog.ts',
+  'market-catalog.generated.ts',
+]);
 
 /**
  * What the guard scans: PRODUCT source only. A test may legitimately pin a

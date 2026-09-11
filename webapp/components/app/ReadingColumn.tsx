@@ -18,7 +18,7 @@ import {
   useLatestPrice,
   type ReadingSource,
 } from '@/lib/market-reading/hooks';
-import { CandlesError } from '@/lib/market-reading/api-client';
+import { CandlesError, MarketNotCoveredError } from '@/lib/market-reading/api-client';
 import { useLivePrice } from '@/lib/market-reading/live-price';
 import { useMarketClosed } from '@/lib/market-reading/session';
 import { deriveMarketStatus, type MarketStatusView } from '@/lib/market-reading/status';
@@ -243,6 +243,9 @@ function buildChartSlot(
       <ChartUnavailable
         onRetry={onRetryCandles}
         reason={candlesError instanceof CandlesError ? candlesError.reason : undefined}
+        notCoveredMarket={
+          candlesError instanceof MarketNotCoveredError ? candlesError.market : null
+        }
       />
     );
   }

@@ -1,17 +1,19 @@
 'use client';
 
 import * as React from 'react';
-import { Compass, LineChart, Loader2, RefreshCw, ServerCrash } from 'lucide-react';
+import { Compass, LineChart, Loader2, MapPinOff, RefreshCw, ServerCrash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  MarketNotCoveredError,
   MarketReadingError,
   MarketReadingNoDataError,
   MarketReadingNotAvailableError,
   MarketReadingValidationError,
   type CandlesErrorReason,
 } from '@/lib/market-reading/api-client';
+import { catalogLabel } from '@/lib/market-catalog';
 
 /**
  * Shown in the centre column when no combo is selected yet. The wording uses
@@ -47,6 +49,29 @@ export function ReadingErrorState({
 }) {
   const t = useTranslations('app');
   const isValidation = error instanceof MarketReadingValidationError;
+
+  // MKT-1 test UX — "the engine does not follow this market" is NOT a failure:
+  // it is a fact about coverage, and no retry can change it. It therefore gets
+  // its own card (own title, no Réessayer button) rather than being folded into
+  // the 400 "combinaison non prise en charge" copy, which describes a different
+  // thing. Same card shell as every other state — extended, not replaced.
+  if (error instanceof MarketNotCoveredError) {
+    return (
+      <Card className="w-full border-dashed border-border/60 bg-transparent shadow-none">
+        <CardContent className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+          <MapPinOff className="h-8 w-8 text-muted-foreground/60" aria-hidden />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">
+              {t('placeholders.marketNotCoveredTitle')}
+            </p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              {t('placeholders.marketNotCoveredBody', { market: catalogLabel(error.market) })}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Distinct honest copy per failure mode (PERF-1): the user must be able to tell
   // "trop lent", "serveur injoignable", "aucune donnée" and "combo non supporté"
@@ -119,6 +144,7 @@ export function SlowLoadHint({ afterMs = 6000 }: { afterMs?: number }) {
 export function ChartUnavailable({
   onRetry,
   reason,
+  notCoveredMarket,
 }: {
   onRetry?: () => void;
   /**
@@ -128,6 +154,12 @@ export function ChartUnavailable({
    * a missing/unknown reason falls back to the generic chart body.
    */
   reason?: CandlesErrorReason;
+  /**
+   * MKT-1 test UX — set when the market is listed for display only. No candle
+   * was ever requested for it, so the placeholder says the market is not
+   * followed instead of implying a feed that failed. No retry (nothing to retry).
+   */
+  notCoveredMarket?: string | null;
 }) {
   const t = useTranslations('app');
   const bodyKey =
@@ -145,14 +177,22 @@ export function ChartUnavailable({
       // doesn't shift the content below it (CLS).
       className="flex h-[280px] w-full flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border/60 bg-muted/30 px-6 py-10 text-center sm:h-[340px]"
     >
-      <LineChart className="h-7 w-7 text-muted-foreground/60" aria-hidden />
+      {notCoveredMarket ? (
+        <MapPinOff className="h-7 w-7 text-muted-foreground/60" aria-hidden />
+      ) : (
+        <LineChart className="h-7 w-7 text-muted-foreground/60" aria-hidden />
+      )}
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">
-          {t('placeholders.chartUnavailableTitle')}
+          {t(notCoveredMarket ? 'placeholders.marketNotCoveredTitle' : 'placeholders.chartUnavailableTitle')}
         </p>
-        <p className="max-w-xs text-xs text-muted-foreground">{t(bodyKey)}</p>
+        <p className="max-w-xs text-xs text-muted-foreground">
+          {notCoveredMarket
+            ? t('placeholders.marketNotCoveredChart', { market: catalogLabel(notCoveredMarket) })
+            : t(bodyKey)}
+        </p>
       </div>
-      {onRetry && (
+      {onRetry && !notCoveredMarket && (
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>
           <RefreshCw className="h-4 w-4" aria-hidden />
           {t('placeholders.retry')}
