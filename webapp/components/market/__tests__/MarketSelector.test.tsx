@@ -104,4 +104,56 @@ describe('MarketSelector — bar (header) variant', () => {
     fireEvent.click(within(list).getByText('Euro / Dollar (EUR/USD)'));
     expect(onSelect).toHaveBeenCalledWith({ instrument: 'EURUSD', timeframe: 'M15' });
   });
+
+  // ── VZ-5 — anti-duplication, the two paths the founder reported ───────────
+  // The column form has had this guard since APP-1; the bar form never did, and
+  // that is exactly where the omission survived. Both paths are locked here.
+
+  it('VZ-5 — pinning from the dropdown lists the market ONCE, not twice', () => {
+    render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Marchés/i }));
+    // EURUSD (not the active market, so the closed trigger never counts).
+    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+
+    fireEvent.click(screen.getByLabelText(/Épingler Euro \/ Dollar/i));
+
+    // It moved INTO « Épinglés » — it did not get added on top of the full list.
+    expect(screen.getByText('Épinglés')).toBeTruthy();
+    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+  });
+
+  it('VZ-5 — searching then pinning from the result lists the market ONCE', () => {
+    render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Marchés/i }));
+    fireEvent.change(screen.getByLabelText(/Rechercher un marché/i), {
+      target: { value: 'euro' },
+    });
+    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+
+    // Pin straight from the filtered result — the path that made the duplicate
+    // appear under the user's eyes, the search field being right above it.
+    fireEvent.click(screen.getByLabelText(/Épingler Euro \/ Dollar/i));
+
+    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+  });
+
+  it('VZ-5 — every market pinned → the bar form repeats nothing either', () => {
+    render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Marchés/i }));
+    fireEvent.click(screen.getByLabelText(/Épingler Euro/i));
+    fireEvent.click(screen.getByLabelText(/Épingler Or/i));
+
+    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    // « Or (XAU/USD) » is also the closed trigger's label → dropdown row + trigger.
+    expect(screen.getAllByText('Or (XAU/USD)')).toHaveLength(2);
+  });
+
+  it('VZ-5 — a search matching nothing still states it explicitly', () => {
+    render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Marchés/i }));
+    fireEvent.change(screen.getByLabelText(/Rechercher un marché/i), {
+      target: { value: 'zzzz' },
+    });
+    expect(screen.getByText(/Aucun marché ne correspond/i)).toBeTruthy();
+  });
 });

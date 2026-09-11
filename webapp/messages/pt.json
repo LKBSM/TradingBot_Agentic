@@ -2619,7 +2619,7 @@
     "refreshing": "refreshing…",
     "filterLabel": "Filter",
     "filterAria": "Filter the zones",
-    "sortLabel": "Sort",
+    "sortLabel": "Sorted by",
     "sortAria": "Sort the zones",
     "loading": "Loading the zones…",
     "errorMessage": "The zones are not available for this combination.",
@@ -2773,7 +2773,7 @@
       "unhide": "Show"
     },
     "badge": {
-      "count": "{count, plural, one {# zone} other {# zones}}"
+      "count": "{count, plural, one {<n>#</n> zone tracked} other {<n>#</n> zones tracked}}"
     },
     "deeplink": {
       "staleNotice": "This zone is no longer detected in the current reading."

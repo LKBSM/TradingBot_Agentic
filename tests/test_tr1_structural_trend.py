@@ -14,7 +14,11 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import pytest
 
-from src.intelligence.conditions_scanner import PALETTE, _TREND_ADJ, _eval_mtf_aligned
+from src.intelligence.conditions_scanner import (
+    PALETTE,
+    _TREND_ADJ,
+    _eval_higher_tf_agrees,
+)
 from src.intelligence.market_reading_mappers import (
     _structural_bias_from_candle_dicts,
     candles_to_regime,
@@ -63,8 +67,11 @@ def _ev(direction: str, bars_ago: int, level: float = 4050.0) -> dict:
     }
 
 
-def _reading(trend: str) -> dict:
-    return {"regime": {"trend": trend}, "header": {"close_price": 4050.0}}
+def _reading(trend: str, timeframe: str = "M15") -> dict:
+    return {
+        "regime": {"trend": trend},
+        "header": {"close_price": 4050.0, "timeframe": timeframe},
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -136,27 +143,49 @@ def test_structural_trend_is_unit_agnostic_all_six(unit):
 
 
 # --------------------------------------------------------------------------- #
-# Multi-timeframe alignment / scanner
+# Alignement avec l'unité supérieure / scanner
+#
+# SC-1 a remplacé le `mtf_aligned` à 3 unités fixes par `higher_tf_agrees` : une
+# comparaison RELATIVE à l'unité immédiatement supérieure, qui vaut sur les six
+# unités (un jeu fixe casse en haut du périmètre). Les garde-fous TR-1 portés
+# ici sont les mêmes : une unité SANS tendance structurelle ne doit jamais être
+# comptée comme un accord, et une absence ne doit jamais se lire comme un « non ».
 # --------------------------------------------------------------------------- #
-def test_scanner_alignment_all_bullish_is_met():
+def test_scanner_higher_tf_same_direction_is_met_and_names_the_unit():
     trends = {"H4": "bullish", "H1": "bullish", "M15": "bullish"}
-    res = _eval_mtf_aligned(_reading("bullish"), "bullish", trends)
+    res = _eval_higher_tf_agrees(_reading("bullish", "M15"), "same", trends)
     assert res["met"] is True
+    assert res["available"] is True
+    # l'unité comparée est NOMMÉE dans le détail (libellé lisible, pas l'id brut)
+    assert "1 h" in res["detail"].lower()
 
 
-def test_scanner_alignment_indeterminate_unit_never_aligned_denominator_visible():
-    trends = {"H4": "bullish", "H1": "bullish", "M15": "indeterminate"}
-    res = _eval_mtf_aligned(_reading("bullish"), "any", trends)
+def test_scanner_higher_tf_opposite_direction_is_a_real_no():
+    trends = {"H1": "bearish"}
+    res = _eval_higher_tf_agrees(_reading("bullish", "M15"), "same", trends)
     assert res["met"] is False
-    assert res["available"] is True  # a real 'not aligned', NOT a data gap
-    assert "sur 3" in res["detail"]  # adjusted denominator is visible
-    assert "indétermin" in res["detail"].lower()
+    assert res["available"] is True  # un vrai désaccord, PAS un trou de données
 
 
-def test_scanner_alignment_missing_reading_is_unavailable_not_a_no():
-    trends = {"H4": "bullish", "H1": "bullish"}  # M15 reading absent
-    res = _eval_mtf_aligned(_reading("bullish"), "any", trends)
+def test_scanner_indeterminate_higher_unit_is_non_evaluable_never_an_agreement():
+    trends = {"H1": "indeterminate"}
+    res = _eval_higher_tf_agrees(_reading("bullish", "M15"), "same", trends)
+    assert res["met"] is False
+    assert res["available"] is False  # non évaluable, jamais compté comme accord
+    assert "tendance structurelle" in res["detail"].lower()
+
+
+def test_scanner_indeterminate_current_unit_is_non_evaluable():
+    trends = {"H1": "bullish"}
+    res = _eval_higher_tf_agrees(_reading("indeterminate", "M15"), "same", trends)
+    assert res["met"] is False
     assert res["available"] is False
+
+
+def test_scanner_no_higher_unit_tracked_is_unavailable_not_a_no():
+    res = _eval_higher_tf_agrees(_reading("bullish", "M15"), "same", {})
+    assert res["available"] is False
+    assert "supérieure" in res["detail"].lower()
 
 
 # --------------------------------------------------------------------------- #
@@ -168,7 +197,7 @@ _FORBIDDEN_FORCE = ["forte", "solide", "en place", "s'essouffle", "essouffle"]
 def test_scanner_trend_copy_has_no_strength_vocabulary():
     strings: list[str] = []
     for p in PALETTE:
-        if p["type"] in ("mtf_aligned", "trend_is"):
+        if p["type"] in ("higher_tf_agrees", "trend_is"):
             strings.append(p["label"])
             strings.append(p["description"])
     strings.extend(_TREND_ADJ.values())

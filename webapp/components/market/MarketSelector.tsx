@@ -137,6 +137,53 @@ const GROUP_KEY: Record<CatalogGroup, string> = {
   crypto: 'sidebar.groupCrypto',
 };
 
+interface MarketPartition {
+  /** Pinned markets matching the query — the « Épinglés » section. */
+  pinnedMarkets: string[];
+  /** Matching markets NOT already pinned — the « Marchés » section. */
+  unpinnedMarkets: string[];
+  /** Whether the query matches any market at all (drives the empty message). */
+  hasResults: boolean;
+  /** Whether the « Marchés » section carries anything new worth rendering. */
+  showAllSection: boolean;
+}
+
+/**
+ * VZ-5 — the SINGLE partition of the registry into « Épinglés » / « Marchés ».
+ *
+ * Root cause it closes: this split used to be recomputed inline inside each
+ * variant. APP-1 added the mutual exclusion to the column form only, so the bar
+ * form kept rendering the FULL list under the pinned section — a pinned market
+ * appeared twice (and pinning straight from the dropdown's own search made the
+ * duplicate appear under the user's eyes). Both forms now read the split from
+ * here, so a future fourth shell cannot reintroduce the omission.
+ *
+ * « Marchés » lists only what « Épinglés » does NOT already show, and hides
+ * entirely when that leaves nothing new — a section with no new content does not
+ * show. The empty-search message still appears when nothing matches at all
+ * (honest: never a silent fallback).
+ *
+ * MKT-1: this partitions the REAL registry only. The display-only catalogue is
+ * grouped separately, so its hits are folded in at the call site (see
+ * `hasAnyResults`) — otherwise a query matching only catalogue markets would
+ * still print « aucun marché ne correspond » above the groups that DO match.
+ */
+function partitionMarkets(
+  query: string,
+  pinned: string[],
+  isPinned: (id: string) => boolean,
+): MarketPartition {
+  const allMarkets = MARKET_SPECS.map((s) => s.id).filter((id) => marketMatches(id, query));
+  const pinnedMarkets = pinned.filter((id) => marketMatches(id, query));
+  const unpinnedMarkets = allMarkets.filter((id) => !isPinned(id));
+  return {
+    pinnedMarkets,
+    unpinnedMarkets,
+    hasResults: allMarkets.length > 0,
+    showAllSection: allMarkets.length === 0 || unpinnedMarkets.length > 0,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Root
 // ─────────────────────────────────────────────────────────────────────────────
@@ -320,29 +367,20 @@ function ColumnSelector({
 
   const activeMarket = reflectActive ? active?.instrument ?? null : null;
 
-  // Memoised: at 100 entries the filter would otherwise re-run on every
-  // keystroke in every mounted variant. Cheap to memoise, and it keeps typing
-  // free of work the render does not need.
-  const allMarkets = React.useMemo(
-    () => MARKET_SPECS.map((s) => s.id).filter((id) => marketMatches(id, query)),
-    [query],
-  );
-  const pinnedMarkets = React.useMemo(
-    () => pinned.filter((id) => marketMatches(id, query)),
-    [pinned, query],
+  // APP-1 défaut B / VZ-5 — the pinned/unpinned split lives in ONE place now.
+  const { pinnedMarkets, unpinnedMarkets, hasResults, showAllSection } = partitionMarkets(
+    query,
+    pinned,
+    isPinned,
   );
 
+  // MKT-1 — catalogue hits count as results too, so the real section does not
+  // claim "aucun marché ne correspond" while matching categories render below.
   const catalogByGroup = useCatalogGroups(query);
   const catalogHits = catalogByGroup.reduce((n, g) => n + g.entries.length, 0);
-  const hasResults = allMarkets.length > 0 || catalogHits > 0;
+  const hasAnyResults = hasResults || catalogHits > 0;
+  const showRealSection = !hasAnyResults || (showAllSection && unpinnedMarkets.length > 0);
   const searching = normalize(query).length > 0;
-
-  // APP-1 — the « Marchés » section lists only what « Épinglés » does NOT already
-  // show. With the 2-market product both pinned, it would just repeat the pinned
-  // list, so it is hidden entirely (a section with no NEW content does not show).
-  // The empty-search message still appears when nothing matches at all.
-  const unpinnedMarkets = allMarkets.filter((id) => !isPinned(id));
-  const showAllSection = !hasResults || unpinnedMarkets.length > 0;
 
   const rail = variant === 'rail';
   // Only the UX-test mode renames the section: with the flag off the rail reads
@@ -423,9 +461,10 @@ function ColumnSelector({
         </div>
       )}
 
-      {/* Markets not already pinned (APP-1) — hidden when it would only repeat
-          « Épinglés »; still shows the empty-search message when nothing matches. */}
-      {showAllSection && (
+      {/* Markets not already pinned (APP-1/VZ-5) — hidden when it would only
+          repeat « Épinglés »; still shows the empty-search message when nothing
+          matches ANYWHERE (catalogue included, cf. showRealSection). */}
+      {showRealSection && (
         <div className={rail ? undefined : 'space-y-1.5'}>
           {rail ? (
             <div className="rail-lbl">{realSectionLabel}</div>
@@ -434,7 +473,7 @@ function ColumnSelector({
               {realSectionLabel}
             </p>
           )}
-          {hasResults ? (
+          {hasAnyResults ? (
             <ul className={rail ? undefined : 'space-y-1'}>
               {unpinnedMarkets.map((id) => (
                 <li key={id}>
@@ -703,17 +742,19 @@ function BarSelector({
     };
   }, [open]);
 
-  const allMarkets = React.useMemo(
-    () => MARKET_SPECS.map((s) => s.id).filter((id) => marketMatches(id, query)),
-    [query],
-  );
-  const pinnedMarkets = React.useMemo(
-    () => pinned.filter((id) => marketMatches(id, query)),
-    [pinned, query],
+  // VZ-5 — same single partition as the column form: a pinned market is listed
+  // under « Épinglés » and NOWHERE else. Before, this form rendered the full
+  // registry below the pinned section, so pinning (in particular straight from
+  // the search field right above) duplicated the row on screen.
+  const { pinnedMarkets, unpinnedMarkets, hasResults, showAllSection } = partitionMarkets(
+    query,
+    pinned,
+    isPinned,
   );
 
   const catalogByGroup = useCatalogGroups(query);
   const catalogHits = catalogByGroup.reduce((n, g) => n + g.entries.length, 0);
+  const hasAnyResults = hasResults || catalogHits > 0;
   const searching = normalize(query).length > 0;
 
   const pick = (id: string) => {
@@ -777,30 +818,33 @@ function BarSelector({
               </div>
             )}
 
-            {allMarkets.length > 0 || catalogHits > 0 ? (
-              <div className="max-h-64 space-y-1 overflow-y-auto">
-                <ul className="space-y-0.5">
-                  {allMarkets.map((id) => (
-                    <li key={id}>
-                      <BarRow id={id} active={activeMarket === id} pinned={isPinned(id)} onPick={() => pick(id)} onTogglePin={() => toggle(id)} />
-                    </li>
+            {(hasAnyResults || showAllSection) &&
+              (hasAnyResults ? (
+                <div className="max-h-64 space-y-1 overflow-y-auto">
+                  {unpinnedMarkets.length > 0 && (
+                    <ul className="space-y-0.5">
+                      {unpinnedMarkets.map((id) => (
+                        <li key={id}>
+                          <BarRow id={id} active={activeMarket === id} pinned={isPinned(id)} onPick={() => pick(id)} onTogglePin={() => toggle(id)} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {catalogByGroup.map(({ group, entries }) => (
+                    <CatalogGroupSection
+                      key={group}
+                      variant="bar"
+                      group={group}
+                      entries={entries}
+                      activeMarket={activeMarket}
+                      forceOpen={searching}
+                      onPick={pick}
+                    />
                   ))}
-                </ul>
-                {catalogByGroup.map(({ group, entries }) => (
-                  <CatalogGroupSection
-                    key={group}
-                    variant="bar"
-                    group={group}
-                    entries={entries}
-                    activeMarket={activeMarket}
-                    forceOpen={searching}
-                    onPick={pick}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="px-1 py-4 text-center text-sm text-muted-foreground">{t('sidebar.noResults', { query })}</p>
-            )}
+                </div>
+              ) : (
+                <p className="px-1 py-4 text-center text-sm text-muted-foreground">{t('sidebar.noResults', { query })}</p>
+              ))}
           </div>
         )}
       </div>
