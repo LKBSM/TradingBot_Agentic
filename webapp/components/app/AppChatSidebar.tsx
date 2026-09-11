@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
+import { catalogLabel, isCatalogOnly } from '@/lib/market-catalog';
 import type { Combo } from '@/lib/market-reading/store';
 
 /** Icons for the on-brand starter questions (text is localized in-component). */
@@ -63,8 +64,15 @@ export function AppChatSidebar({
     icon: s.icon,
   }));
 
+  // MKT-1 — a market from the UX-test catalogue has NO reading behind it, so
+  // M.I.A has nothing to comment on. Offering « Décompose la structure actuelle »
+  // there would invite a question about data that does not exist — the same
+  // dishonesty the empty state exists to avoid. Treated like "no combo picked":
+  // no starters, and a subtitle that says why. (Flag off → always false.)
+  const notCovered = isCatalogOnly(active?.instrument);
+
   const contextLabel = active
-    ? `· ${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+    ? `· ${notCovered ? catalogLabel(active.instrument) : formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
     : `· ${t('chat.pickComboPrompt')}`;
 
   const headerActions = (
@@ -142,11 +150,23 @@ export function AppChatSidebar({
       contextLabel={contextLabel}
       headerActions={headerActions}
       statusLine={statusLine}
-      welcomeTitle={active ? t('chat.welcomeTitleActive') : t('chat.welcomeTitleIdle')}
-      welcomeSubtitle={
-        active ? t('chat.welcomeSubtitleActive') : t('chat.welcomeSubtitleIdle')
+      welcomeTitle={
+        notCovered
+          ? t('chat.welcomeTitleNotCovered')
+          : active
+            ? t('chat.welcomeTitleActive')
+            : t('chat.welcomeTitleIdle')
       }
-      starters={active ? STARTERS : []}
+      welcomeSubtitle={
+        notCovered
+          ? t('chat.welcomeSubtitleNotCovered', {
+              market: catalogLabel(active?.instrument ?? ''),
+            })
+          : active
+            ? t('chat.welcomeSubtitleActive')
+            : t('chat.welcomeSubtitleIdle')
+      }
+      starters={active && !notCovered ? STARTERS : []}
       offlineNote={t('chat.offlineNote')}
       complianceLine={t('chat.complianceLine')}
     />

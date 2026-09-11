@@ -2084,7 +2084,9 @@
       "collapseToBubble": "Réduire en bulle",
       "modeNotSynced": "Ton choix d'affichage — non synchronisé.",
       "columnNeedsWidth": "Colonne disponible sur un écran plus large.",
-      "dockToColumn": "Afficher en colonne"
+      "dockToColumn": "Afficher en colonne",
+      "welcomeTitleNotCovered": "Aucune lecture sur ce marché",
+      "welcomeSubtitleNotCovered": "Le moteur ne suit pas encore {market} : il n’y a aucune lecture à commenter. Choisis un marché suivi pour poser une question."
     },
     "placeholders": {
       "emptyReading": "Sélectionnez une combinaison à gauche pour afficher sa lecture de marché.",

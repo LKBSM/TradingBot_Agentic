@@ -2047,7 +2047,9 @@
       "collapseToBubble": "Verkleinen tot bel",
       "modeNotSynced": "Je weergavekeuze — niet gesynchroniseerd.",
       "columnNeedsWidth": "Kolom beschikbaar op een breder scherm.",
-      "dockToColumn": "Vastzetten als kolom"
+      "dockToColumn": "Vastzetten als kolom",
+      "welcomeTitleNotCovered": "Geen analyse voor deze markt",
+      "welcomeSubtitleNotCovered": "De engine volgt {market} nog niet: er is geen analyse om te bespreken. Kies een gevolgde markt om een vraag te stellen."
     },
     "placeholders": {
       "emptyReading": "Selecteer links een combinatie om de marktlezing ervan weer te geven.",

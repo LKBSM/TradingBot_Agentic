@@ -2047,7 +2047,9 @@
       "collapseToBubble": "Zwiń do dymka",
       "modeNotSynced": "Twój wybór widoku — niezsynchronizowany.",
       "columnNeedsWidth": "Kolumna dostępna na szerszym ekranie.",
-      "dockToColumn": "Zadokuj jako kolumnę"
+      "dockToColumn": "Zadokuj jako kolumnę",
+      "welcomeTitleNotCovered": "Brak odczytu dla tego rynku",
+      "welcomeSubtitleNotCovered": "Silnik nie śledzi jeszcze {market}: nie ma żadnego odczytu do omówienia. Wybierz śledzony rynek, aby zadać pytanie."
     },
     "placeholders": {
       "emptyReading": "Wybierz kombinację po lewej, aby wyświetlić jej odczyt rynku.",
