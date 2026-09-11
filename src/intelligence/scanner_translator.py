@@ -109,6 +109,44 @@ def _fold(text: str) -> str:
     return stripped.lower()
 
 
+# ── SC-4 — the phrase a condition came from (verified, never taken on trust) ──
+#
+# SC-4 runs the translation WHILE the user types. A condition the user removes
+# by hand must stay removed until the words that produced it are rewritten —
+# which means every condition has to carry the fragment of the sentence it came
+# from. The model is asked to cite it (it already does so for ``assumptions``),
+# but a citation is CHECKED here before it is believed: it is kept only when it
+# really occurs in the user's own text, compared accent-folded and
+# whitespace-normalised. Anything else becomes ``None`` — we never invent an
+# origin, and a condition whose origin could not be verified simply falls back
+# to the weaker identity-only rule on the client.
+MAX_SOURCE_PHRASE = 120
+
+
+def _normalize_ws(text: str) -> str:
+    """Fold accents/case and collapse every whitespace run to a single space."""
+    return " ".join(_fold(text).split())
+
+
+def verify_source_phrase(raw: Any, source_text: Optional[str]) -> Optional[str]:
+    """Return the model's citation ONLY if it occurs verbatim in ``source_text``.
+
+    Verbatim is judged after :func:`_normalize_ws`, so casing, accents and
+    spacing may differ (the model routinely re-cases what it quotes) but the
+    words must be the user's own. Returns ``None`` when the citation is missing,
+    empty, or absent from the text. ``None`` means "origin unknown" — never
+    "no origin", and never a guess.
+    """
+    if not isinstance(raw, str):
+        return None
+    phrase = raw.strip()[:MAX_SOURCE_PHRASE].strip()
+    if not phrase or not source_text:
+        return None
+    if _normalize_ws(phrase) not in _normalize_ws(source_text):
+        return None
+    return phrase
+
+
 _REFUSAL_PATTERNS: Tuple[Tuple[str, "re.Pattern[str]"], ...] = (
     # ranking / quality ordering ("les meilleurs", "best", "top setups",
     # "le plus sûr / rentable", "lequel trader", "classe les marchés").
@@ -216,19 +254,31 @@ def _sanitize_assumption(raw: Any, valid_types: set[str]) -> Optional[Dict[str, 
     }
 
 
-def _dedupe(conditions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _dedupe(
+    conditions: List[Dict[str, Any]], sources: List[Optional[str]]
+) -> Tuple[List[Dict[str, Any]], List[Optional[str]]]:
+    """Drop duplicate conditions, keeping ``sources`` aligned index-for-index.
+
+    The FIRST occurrence wins, source phrase included. When the same condition
+    was cited from two different fragments, the second citation is lost — but
+    the client's removal rule keys on (condition, phrase), so a condition whose
+    kept phrase disappears from the text is simply re-derived from the other
+    one, which is the honest outcome.
+    """
     seen: set[str] = set()
     out: List[Dict[str, Any]] = []
-    for cond in conditions:
+    out_sources: List[Optional[str]] = []
+    for cond, source in zip(conditions, sources):
         key = repr(sorted(cond.items()))
         if key in seen:
             continue
         seen.add(key)
         out.append(cond)
-    return out
+        out_sources.append(source)
+    return out, out_sources
 
 
-def sanitize_translation(payload: Any) -> Dict[str, Any]:
+def sanitize_translation(payload: Any, source_text: Optional[str] = None) -> Dict[str, Any]:
     """Turn a raw model tool-input into the validated, wire-safe translation.
 
     This is the authoritative gate: it never trusts the model. A refusal short
@@ -240,6 +290,7 @@ def sanitize_translation(payload: Any) -> Dict[str, Any]:
         "outcome": OUTCOME_NONE,
         "refusal": None,
         "conditions": [],
+        "condition_sources": [],
         "assumptions": [],
         "untranslatable": [],
     }
@@ -253,12 +304,14 @@ def sanitize_translation(payload: Any) -> Dict[str, Any]:
             "outcome": OUTCOME_REFUSED,
             "refusal": {"kind": refusal["kind"]},
             "conditions": [],
+            "condition_sources": [],
             "assumptions": [],
             "untranslatable": [],
         }
 
     # 2) Validate each proposed condition.
     conditions: List[Dict[str, Any]] = []
+    condition_sources: List[Optional[str]] = []
     untranslatable: List[Dict[str, Any]] = []
     raw_conditions = payload.get("conditions")
     if isinstance(raw_conditions, list):
@@ -266,6 +319,12 @@ def sanitize_translation(payload: Any) -> Dict[str, Any]:
             clean, reason = sanitize_condition(raw)
             if clean is not None:
                 conditions.append(clean)
+                # SC-4: the citation rides ALONGSIDE the condition, never inside
+                # it — ``ScanCondition`` forbids extra fields, and ``conditions``
+                # must stay POST-able to the scan verbatim.
+                condition_sources.append(
+                    verify_source_phrase(raw.get("source_phrase") if isinstance(raw, dict) else None, source_text)
+                )
             elif reason == "out_of_palette" and isinstance(raw, dict):
                 # A type the model invented outside the palette — name it rather
                 # than swallow it. Bad-value / malformed are silent drops (the
@@ -274,7 +333,7 @@ def sanitize_translation(payload: Any) -> Dict[str, Any]:
                     "fragment": str(raw.get("type"))[:160],
                     "category": "unsupported",
                 })
-    conditions = _dedupe(conditions)
+    conditions, condition_sources = _dedupe(conditions, condition_sources)
 
     # 3) Untranslatable fragments the model reported.
     raw_untr = payload.get("untranslatable")
@@ -306,6 +365,7 @@ def sanitize_translation(payload: Any) -> Dict[str, Any]:
         "outcome": outcome,
         "refusal": None,
         "conditions": conditions,
+        "condition_sources": condition_sources,
         "assumptions": assumptions,
         "untranslatable": untranslatable,
     }
@@ -337,6 +397,17 @@ def _condition_item_schema() -> Dict[str, Any]:
             "max_bars": {"type": "integer", "enum": [5, 10, 20, 50]},
             "max_touches": {"type": "integer", "enum": [1, 2, 3]},
             "proximity_pct": {"type": "number", "enum": [0.1, 0.25, 0.5, 1.0]},
+            # SC-4 — the fragment of the trader's own sentence this condition
+            # came from. Optional on purpose: an invented citation is worse than
+            # none, and the server rejects any that is not verbatim in the text.
+            "source_phrase": {
+                "type": "string",
+                "description": (
+                    "Le fragment EXACT de la phrase du trader qui a produit cette "
+                    "condition, recopié mot pour mot. N'invente rien : si aucun "
+                    "fragment précis ne la porte, omets ce champ."
+                ),
+            },
         },
         "required": ["type"],
         "additionalProperties": False,
@@ -443,7 +514,12 @@ SYSTEM_PROMPT = (
     "'conditions' vide. Le scanner ne trie jamais les résultats.\n"
     "6. La phrase peut être en français ou en anglais ; les fragments que tu "
     "cites dans 'untranslatable'/'assumptions' doivent reprendre les mots de "
-    "l'utilisateur.\n\n"
+    "l'utilisateur.\n"
+    "7. Pour CHAQUE condition, renseigne 'source_phrase' avec le fragment EXACT "
+    "de la phrase du trader qui l'a produite, recopié mot pour mot (mêmes mots, "
+    "même ordre). Si aucun fragment précis ne porte la condition, OMETS le champ "
+    "plutôt que d'en inventer un : une citation absente de la phrase est rejetée "
+    "par le serveur.\n\n"
     "Repères de vocabulaire (non exhaustif) : « Order Block/OB » → price_in_ob ; "
     "« jamais testé/vierge » → zone_untested ; « FVG/Fair Value Gap » → "
     "price_in_fvg ; « tendance haussière/baissière » → trend_is ; « unité "
@@ -484,6 +560,7 @@ class ScannerTranslator:
                 "outcome": OUTCOME_EMPTY,
                 "refusal": None,
                 "conditions": [],
+                "condition_sources": [],
                 "assumptions": [],
                 "untranslatable": [],
             }
@@ -495,6 +572,7 @@ class ScannerTranslator:
                 "outcome": OUTCOME_REFUSED,
                 "refusal": {"kind": kind},
                 "conditions": [],
+                "condition_sources": [],
                 "assumptions": [],
                 "untranslatable": [],
             }
@@ -507,11 +585,14 @@ class ScannerTranslator:
                 "outcome": OUTCOME_ERROR,
                 "refusal": None,
                 "conditions": [],
+                "condition_sources": [],
                 "assumptions": [],
                 "untranslatable": [],
             }
 
-        return sanitize_translation(payload)
+        # ``cleaned`` is the text the citations are checked against: the model
+        # can only be believed about words the user actually wrote.
+        return sanitize_translation(payload, cleaned)
 
     def _call_llm(self, text: str, locale: str) -> Dict[str, Any]:
         lang = "en" if str(locale).lower().startswith("en") else "fr"
@@ -555,6 +636,7 @@ __all__ = [
     "build_tool_schema",
     "sanitize_translation",
     "sanitize_condition",
+    "verify_source_phrase",
     "detect_refusal",
     "CONTROL_DOMAINS",
     "REFUSAL_KINDS",

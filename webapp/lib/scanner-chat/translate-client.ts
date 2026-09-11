@@ -46,8 +46,31 @@ export interface TranslateResult {
   refusal: TranslateRefusal | null;
   /** Wire-shaped conditions, ready to POST verbatim to /api/conditions-scan. */
   conditions: ScanCondition[];
+  /**
+   * SC-4 — for each condition, ALIGNED BY INDEX, the fragment of the user's own
+   * sentence it was derived from. The server only keeps a citation it verified
+   * verbatim in the text, so `null` means "origin unknown" — never a guess. The
+   * live-typing flow needs this to tell a condition the CURRENT text still
+   * produces from one the user removed by hand (see `reconciliation.ts`).
+   *
+   * Optional on the wire so a response from an older server (or a cached one)
+   * still parses; readers must tolerate a short or missing array.
+   */
+  condition_sources?: (string | null)[];
   assumptions: TranslateAssumption[];
   untranslatable: TranslateUntranslatable[];
+}
+
+/** 429 — the SC-4 per-account/per-IP cap on this endpoint. Carries the server's
+ *  Retry-After so the caller can back off rather than hammer. */
+export class TranslateRateLimitedError extends Error {
+  readonly code = 'translate_rate_limited';
+  readonly retryAfterS: number;
+  constructor(retryAfterS: number) {
+    super('translate_rate_limited');
+    this.name = 'TranslateRateLimitedError';
+    this.retryAfterS = retryAfterS;
+  }
 }
 
 export class TranslateUnavailableError extends Error {
@@ -109,6 +132,10 @@ export async function translateStrategy(
     callerSignal?.removeEventListener('abort', onCallerAbort);
   }
 
+  if (res.status === 429) {
+    const header = Number(res.headers.get('retry-after'));
+    throw new TranslateRateLimitedError(Number.isFinite(header) && header > 0 ? header : 60);
+  }
   if (res.status === 503) {
     const detail = await readErrorDetail(res);
     throw new TranslateUnavailableError(detail ?? 'translator_unavailable');

@@ -3320,11 +3320,19 @@
         "body": "Não digo o que negociar, nem quando comprar ou vender. O scanner mostra onde estão presentes as condições que TU descreveste; a decisão continua a ser tua."
       }
     },
+    "live": {
+      "reading": "Estou a ler a tua frase…",
+      "read": "Leitura atualizada.",
+      "capped": "Leitura automática em pausa neste separador. Usa o botão para ler agora.",
+      "proposalNote": "Proposto a partir do teu texto — retira ou ajusta o que quiseres.",
+      "honestyPending": "Ainda estou a ler a tua frase. O que supus e o que não consegui traduzir aparecem assim que parares de escrever."
+    },
     "errors": {
       "unavailable": "A tradução não está disponível neste ambiente. Podes compor à mão.",
       "failed": "A tradução falhou. Tenta de novo ou compõe à mão.",
       "empty": "Escreve primeiro a tua estratégia.",
       "scanUnavailable": "O serviço de análise não está disponível neste ambiente.",
+      "rateLimited": "Demasiadas traduções em pouco tempo. Tenta novamente daqui a pouco.",
       "scanFailed": "A análise falhou. Tenta de novo dentro de momentos."
     }
   }

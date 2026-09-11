@@ -3320,11 +3320,19 @@
         "body": "Nie mówię, czym handlować ani kiedy kupować lub sprzedawać. Skaner pokazuje, gdzie występują warunki, które TY opisałeś; decyzja pozostaje twoja."
       }
     },
+    "live": {
+      "reading": "Czytam twoje zdanie…",
+      "read": "Odczyt aktualny.",
+      "capped": "Automatyczne czytanie wstrzymane w tej karcie. Użyj przycisku, aby przeczytać teraz.",
+      "proposalNote": "Zaproponowane na podstawie twojego tekstu — usuń lub zmień, co chcesz.",
+      "honestyPending": "Wciąż czytam twoje zdanie. To, co założyłam, i to, czego nie zdołałam przetłumaczyć, pojawi się, gdy przestaniesz pisać."
+    },
     "errors": {
       "unavailable": "Tłumaczenie nie jest dostępne w tym środowisku. Możesz ułożyć ręcznie.",
       "failed": "Tłumaczenie nie powiodło się. Spróbuj ponownie lub ułóż ręcznie.",
       "empty": "Najpierw napisz swoją strategię.",
       "scanUnavailable": "Usługa skanowania nie jest dostępna w tym środowisku.",
+      "rateLimited": "Zbyt wiele tłumaczeń w krótkim czasie. Spróbuj ponownie za chwilę.",
       "scanFailed": "Skanowanie nie powiodło się. Spróbuj ponownie za chwilę."
     }
   }

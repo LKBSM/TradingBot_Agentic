@@ -3320,11 +3320,19 @@
         "body": "Ik zeg niet wat je moet verhandelen, noch wanneer je moet kopen of verkopen. De scanner toont waar de door JOU beschreven voorwaarden aanwezig zijn; de beslissing blijft aan jou."
       }
     },
+    "live": {
+      "reading": "Ik lees je zin…",
+      "read": "Lezing bijgewerkt.",
+      "capped": "Automatisch lezen gepauzeerd op dit tabblad. Gebruik de knop om nu te lezen.",
+      "proposalNote": "Voorgesteld op basis van je tekst — verwijder of pas aan wat je wilt.",
+      "honestyPending": "Ik lees je zin nog. Wat ik heb aangenomen en wat ik niet kon vertalen verschijnt zodra je stopt met typen."
+    },
     "errors": {
       "unavailable": "De vertaling is niet beschikbaar in deze omgeving. Je kunt handmatig samenstellen.",
       "failed": "De vertaling is mislukt. Probeer opnieuw of stel handmatig samen.",
       "empty": "Schrijf eerst je strategie.",
       "scanUnavailable": "De scandienst is niet beschikbaar in deze omgeving.",
+      "rateLimited": "Te veel vertalingen in korte tijd. Probeer het zo opnieuw.",
       "scanFailed": "De scan is mislukt. Probeer het zo meteen opnieuw."
     }
   }

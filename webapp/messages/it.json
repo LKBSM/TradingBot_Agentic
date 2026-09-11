@@ -3320,11 +3320,19 @@
         "body": "Non dico cosa fare trading, né quando comprare o vendere. Lo scanner mostra dove sono presenti le condizioni che TU hai descritto; la decisione resta tua."
       }
     },
+    "live": {
+      "reading": "Sto leggendo la tua frase…",
+      "read": "Lettura aggiornata.",
+      "capped": "Lettura automatica in pausa su questa scheda. Usa il pulsante per leggere ora.",
+      "proposalNote": "Proposto dal tuo testo: togli o modifica quello che vuoi.",
+      "honestyPending": "Sto ancora leggendo la tua frase. Ciò che ho supposto e ciò che non ho potuto tradurre compaiono appena smetti di scrivere."
+    },
     "errors": {
       "unavailable": "La traduzione non è disponibile in questo ambiente. Puoi comporre a mano.",
       "failed": "La traduzione è fallita. Riprova o componi a mano.",
       "empty": "Scrivi prima la tua strategia.",
       "scanUnavailable": "Il servizio di scansione non è disponibile in questo ambiente.",
+      "rateLimited": "Troppe traduzioni in poco tempo. Riprova tra un istante.",
       "scanFailed": "La scansione è fallita. Riprova tra un istante."
     }
   }

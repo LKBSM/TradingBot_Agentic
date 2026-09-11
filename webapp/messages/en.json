@@ -3320,11 +3320,19 @@
         "body": "I don't say what to trade, nor when to buy or sell. The scanner shows where conditions YOU described are present; the decision stays yours."
       }
     },
+    "live": {
+      "reading": "Reading your sentence…",
+      "read": "Reading up to date.",
+      "capped": "Automatic reading paused on this tab. Use the button to read now.",
+      "proposalNote": "Proposed from your text — remove or adjust anything.",
+      "honestyPending": "Still reading your sentence. What I assumed and what I could not translate appear as soon as you stop typing."
+    },
     "errors": {
       "unavailable": "Translation isn't available in this environment. You can compose by hand.",
       "failed": "Translation failed. Try again, or compose by hand.",
       "empty": "Write your strategy first.",
       "scanUnavailable": "The scan service isn't available in this environment.",
+      "rateLimited": "Too many translations in a short time. Try again in a moment.",
       "scanFailed": "The scan failed. Try again in a moment."
     }
   }

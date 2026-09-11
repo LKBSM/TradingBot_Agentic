@@ -19,6 +19,8 @@ shape — model, forced tool_choice — is pinned in test_scanner_translator.py)
 
 from __future__ import annotations
 
+from tests.conftest_translate_throttle import fresh_translate_throttle  # noqa: F401
+
 from typing import Any, Optional
 
 from fastapi.testclient import TestClient
