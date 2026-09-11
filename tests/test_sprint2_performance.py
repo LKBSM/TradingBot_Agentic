@@ -661,7 +661,12 @@ class TestVectorizedRiskCalculator:
 
         assert corr.shape == (2, 2)
         assert corr[0, 0] == pytest.approx(1.0)
-        assert corr[0, 1] == corr[1, 0]  # Symmetric
+        # Symétrie, comparée AVEC tolérance : les deux cellules hors diagonale
+        # sont sommées dans un ordre différent, donc BLAS peut renvoyer des
+        # valeurs distantes d'un ULP (vu sur le runner CI :
+        # 0.6811405918134973 contre 0.6811405918134972) alors que l'égalité
+        # stricte passe en local.
+        assert corr[0, 1] == pytest.approx(corr[1, 0])
 
     def test_portfolio_var(self):
         """Test portfolio VaR."""

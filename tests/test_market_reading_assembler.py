@@ -485,6 +485,62 @@ def test_build_failure_with_nothing_stored_raises(fixed_clock):
         assembler.get_or_generate("XAUUSD", "M15")
 
 
+# ---------------------------------------------------------------------------
+# Un payload stocké peut survivre à son schéma — et c'est ARRIVÉ en production :
+# la mission « lecture narrée » a restreint conditions.description_source à
+# Literal['engine_template'] SANS bumper READING_LOGIC_VERSION, donc les lignes
+# écrites par l'ancien chemin Haiku restaient « version courante » sur le papier
+# et faisaient lever model_validate. XAUUSD H1/H4 et EURUSD H1 ne servaient plus
+# rien du tout. Un payload illisible doit se comporter comme un CACHE MISS,
+# jamais comme une exception.
+# ---------------------------------------------------------------------------
+def _poisoned_payload(fixed_clock) -> dict:
+    """Lecture stockée portant le stamp de logique COURANT, mais une valeur de
+    champ que le schéma n'accepte plus (la forme exacte vue en production)."""
+    payload = dict(_seed_current_version_reading(fixed_clock))
+    payload["conditions"] = {
+        **payload["conditions"], "description_source": "haiku_generated",
+    }
+    assert payload["_logic_version"] == READING_LOGIC_VERSION
+    return payload
+
+
+def test_unparseable_stored_reading_is_rebuilt_not_raised(fixed_clock):
+    provider = _MockDataProvider(_build_candles(57))
+    readings_store = _MockReadingsStore(prepopulated=_poisoned_payload(fixed_clock))
+    assembler = MarketReadingAssembler(
+        data_provider=provider,
+        readings_store=readings_store,
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+
+    reading = assembler.get_or_generate("XAUUSD", "M15")
+
+    assert reading is not None  # pas d'exception : la lecture est reconstruite
+    assert provider.call_count == 1
+    assert len(readings_store.save_calls) == 1
+    # La ligne empoisonnée est remplacée par une lecture conforme.
+    assert readings_store.save_calls[0][3]["conditions"]["description_source"] == (
+        "engine_template"
+    )
+
+
+def test_unparseable_stored_reading_is_not_served_when_the_build_fails(fixed_clock):
+    # Le repli « sers la dernière lecture stockée » ne doit pas ressusciter un
+    # payload illisible : sans rien de parsable, l'échec est dit franchement.
+    assembler = MarketReadingAssembler(
+        data_provider=_FailingDataProvider(),
+        readings_store=_MockReadingsStore(prepopulated=_poisoned_payload(fixed_clock)),
+        candles_store=_MockCandlesStore(),
+        smc_pipeline=_stub_smc_pipeline,
+        clock=fixed_clock,
+    )
+    with pytest.raises(Exception):
+        assembler.get_or_generate("XAUUSD", "M15")
+
+
 def test_liquidity_kill_switch_empties_pools(fixed_clock, monkeypatch):
     # One reversible env value masks liquidity at the serve layer, on every
     # response, without touching the stored data (LQ-D1 kill switch).

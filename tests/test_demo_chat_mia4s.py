@@ -214,7 +214,12 @@ def test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule() -> None
         assert token in scope, "the rule must name the vocabulary it forbids repeating"
     # And the set stays bounded — a new source dragging in more triggers is a
     # decision, not an accident.
-    assert present <= {"acheter", "vendre", "trader", "risqué", "garantie"}, sorted(present)
+    # (« risqués » est l'accord pluriel de « risqué », ajouté au jeu de jetons par
+    # MIA-5 : c'est le même mot, dans la même citation déjà acceptée — pas une
+    # nouvelle source de vocabulaire.)
+    assert present <= {
+        "acheter", "vendre", "trader", "risqué", "risqués", "garantie",
+    }, sorted(present)
 
 
 @pytest.mark.parametrize("locale", ["fr", "en", "de"])
