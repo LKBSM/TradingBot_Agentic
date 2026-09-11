@@ -1,152 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import styles from './lp1.module.css';
-import { DemoQuotaError, applyDemoViewActions, askDemoMia } from '@/lib/landing/demo-chat';
 import { CandleSvg } from './CandleSvg';
 import { ZoneRect } from './ZoneRect';
-import { buildCandles, priceBounds, yPct } from './chart';
+import { yPct } from './chart';
+import { LEVEL_KEYS, useBounds } from './structure-chart';
 import {
-  DEMO_CLOSES,
   DEMO_LEVELS,
   DEMO_MARKETS,
   DEMO_ZONES,
-  DEMO_MIA,
   DEMO_REGIME,
   type DemoZone,
-  type LayerKey,
 } from './data';
-
-type Layers = Record<LayerKey, boolean>;
-const ALL_ON: Layers = { ob: true, fvg: true, liq: true, str: true };
-
-const LEVEL_KEYS: readonly (keyof typeof DEMO_LEVELS)[] = [
-  'obLow', 'obHigh', 'fvgLow', 'fvgHigh', 'liqIntact', 'liqSwept', 'chochLevel', 'bosLevel', 'currentPrice',
-];
-
-function useBounds() {
-  const candles = buildCandles(DEMO_CLOSES);
-  return priceBounds(candles, LEVEL_KEYS.map((k) => DEMO_LEVELS[k]));
-}
-
-/** Shared structure chart — rendered full in the Structure pane and compact in
- * the MIA action preview, both bound to the same `layers`. */
-function StructureChart({ layers }: { layers: Layers }) {
-  const t = useTranslations('home');
-  const b = useBounds();
-  const L = DEMO_LEVELS;
-  const lay = (on: boolean) => `${styles.lay} ${on ? styles.layOn : ''}`;
-  return (
-    <div className={styles.dchart}>
-      <CandleSvg width={560} height={250} extra={LEVEL_KEYS.map((k) => L[k])} />
-
-      <div className={lay(layers.ob)} aria-hidden={!layers.ob}>
-        <ZoneRect
-          kind="ob"
-          style={{
-            left: '60%', right: '64px', top: `${yPct(L.obHigh, b)}%`,
-            height: `${yPct(L.obLow, b) - yPct(L.obHigh, b)}%`,
-          }}
-          labelStyle={{ left: '60.5%', top: `${yPct(L.obHigh, b) - 8}%` }}
-          label={t('demo.structure.labels.ob')}
-        />
-      </div>
-
-      <div className={lay(layers.fvg)} aria-hidden={!layers.fvg}>
-        <ZoneRect
-          kind="fvg"
-          style={{
-            left: '36%', right: '64px', top: `${yPct(L.fvgHigh, b)}%`,
-            height: `${yPct(L.fvgLow, b) - yPct(L.fvgHigh, b)}%`,
-          }}
-          labelStyle={{ left: '36.5%', top: `${yPct(L.fvgHigh, b) - 8}%` }}
-          label={t('demo.structure.labels.fvg')}
-        />
-      </div>
-
-      <div className={lay(layers.liq)} aria-hidden={!layers.liq}>
-        <div style={{ position: 'absolute', left: '10px', right: '64px', top: `${yPct(L.liqIntact, b)}%`, height: '1.5px', background: 'var(--liq)', opacity: 0.85 }} />
-        <div className={styles.dl} style={{ left: '12px', top: `${yPct(L.liqIntact, b) - 8}%`, background: 'rgba(214,162,74,.16)', color: 'var(--liq)' }}>
-          {t('demo.structure.labels.liqIntact')}
-        </div>
-        <div style={{ position: 'absolute', left: '10px', right: '64px', top: `${yPct(L.liqSwept, b)}%`, height: '1px', background: 'repeating-linear-gradient(90deg,var(--liq) 0 4px,transparent 4px 8px)', opacity: 0.5 }} />
-        <div className={styles.dl} style={{ left: '12px', top: `${yPct(L.liqSwept, b) + 2}%`, background: 'rgba(214,162,74,.10)', color: 'var(--faint)' }}>
-          {t('demo.structure.labels.liqSwept')}
-        </div>
-      </div>
-
-      <div className={lay(layers.str)} aria-hidden={!layers.str}>
-        <div className={styles.dl} style={{ left: '34%', top: `${yPct(L.chochLevel, b) - 4}%`, background: 'rgba(55,185,140,.16)', color: 'var(--bull)' }}>
-          {t('demo.structure.labels.choch')}
-        </div>
-        <div className={styles.dl} style={{ left: '58%', top: `${yPct(L.bosLevel, b) - 10}%`, background: 'rgba(55,185,140,.16)', color: 'var(--bull)' }}>
-          {t('demo.structure.labels.bos')}
-        </div>
-      </div>
-
-      <div style={{ position: 'absolute', right: '8px', top: `${yPct(L.currentPrice, b) - 4}%`, fontFamily: 'var(--font-mono)', fontSize: '10px', background: 'var(--acc)', color: 'var(--acc-txt)', padding: '2px 7px', borderRadius: '4px', fontWeight: 700 }}>
-        4&nbsp;026,77
-      </div>
-    </div>
-  );
-}
-
-function StructureNarration({ layers }: { layers: Layers }) {
-  const t = useTranslations('home');
-  const order: LayerKey[] = ['str', 'ob', 'fvg', 'liq'];
-  const active = order.filter((k) => layers[k]);
-  const rich = (key: string): ReactNode => t.rich(key, { b: (c) => <b>{c}</b> });
-  if (active.length === 0) {
-    return <div className={styles.dnarr}><span style={{ color: 'var(--faint)' }}>{t('demo.structure.empty')}</span></div>;
-  }
-  return (
-    <div className={styles.dnarr}>
-      <b>{t('demo.structure.prefix')}</b>{' '}
-      {active.map((k, i) => (
-        <span key={k}>{rich(`demo.structure.frag.${k}`)}{i < active.length - 1 ? ' ' : ''}</span>
-      ))}
-    </div>
-  );
-}
-
-function StructurePane({ layers, setLayers }: { layers: Layers; setLayers: (l: Layers) => void }) {
-  const t = useTranslations('home');
-  const chip = (k: LayerKey, color: string) => (
-    <button
-      type="button"
-      className={`${styles.dchip} ${layers[k] ? styles.dchipOn : styles.dchipOff}`}
-      aria-pressed={layers[k]}
-      onClick={() => setLayers({ ...layers, [k]: !layers[k] })}
-    >
-      <span className={styles.sq} style={{ background: color }} />
-      {t(`demo.structure.chips.${k}`)}
-    </button>
-  );
-  return (
-    <div className={styles.dgrid}>
-      <div>
-        <div className={styles.dchips}>
-          {chip('ob', 'var(--bear)')}
-          {chip('fvg', 'var(--fvg-l)')}
-          {chip('liq', 'var(--liq)')}
-          {chip('str', 'var(--dim)')}
-        </div>
-        <StructureChart layers={layers} />
-        <StructureNarration layers={layers} />
-        <div className={styles.illus}>{t('demo.illus')}</div>
-      </div>
-      {/* The side column states the promise; the LAYER CHIPS above the chart are
-       * what delivers it — each chip toggles `layers`, and StructureNarration
-       * recomposes the paragraph from what stays on. No duplicate shortcut
-       * buttons here: a promise of interactivity must point at the real control. */}
-      <div className={styles.dside}>
-        <h4>{t('demo.structure.side.title')}</h4>
-        <p>{t.rich('demo.structure.side.desc', { b: (c) => <b>{c}</b> })}</p>
-      </div>
-    </div>
-  );
-}
 
 function ScannerPane() {
   const t = useTranslations('home');
@@ -334,186 +201,6 @@ function ZonesPane() {
   );
 }
 
-/** One exchange in the M.I.A tab. `scripted` marks a recorded fallback answer,
- * which is labelled as such rather than passed off as a live reply. */
-interface MiaExchange {
-  question: string;
-  answer: ReactNode;
-  refusal: boolean;
-  scripted: boolean;
-  showsChart: boolean;
-}
-
-/**
- * MIA-4S — the M.I.A tab talks to the REAL agent (same orchestrator, same four
- * defence layers) over the public showcase endpoint, on the frozen illustration
- * scenario and nothing else.
- *
- * The five prompts on the right are STARTERS, not a menu: any question can be
- * typed. When the endpoint is unavailable (no backend, quota reached, network
- * blocked) the tab degrades to the recorded exchanges — clearly labelled as
- * recorded, never presented as a live answer.
- */
-function MiaPane({ layers, setLayers, jumpToStructure }: { layers: Layers; setLayers: (l: Layers) => void; jumpToStructure: () => void }) {
-  const t = useTranslations('home');
-  const locale = useLocale();
-  const [thread, setThread] = useState<MiaExchange[]>([]);
-  const [draft, setDraft] = useState('');
-  const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [closed, setClosed] = useState(false);
-  const [left, setLeft] = useState<number | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: 'nearest' });
-  }, [thread, pending]);
-
-  const rich = (key: string): ReactNode => t.rich(key, { b: (c) => <b>{c}</b> });
-
-  /** The recorded exchange for a starter — the offline fallback, and the only
-   * place the scripted answers survive. */
-  const scriptedFor = (question: string): MiaExchange | null => {
-    const ex = DEMO_MIA.find((d) => t(`demo.mia.q.${d.key}.q`) === question);
-    if (!ex) return null;
-    if (ex.action) {
-      const next: Layers = { ob: false, fvg: false, liq: false, str: false };
-      ex.action.only.forEach((k) => { next[k] = true; });
-      setLayers(next);
-    }
-    return {
-      question,
-      answer: rich(`demo.mia.q.${ex.key}.a`),
-      refusal: ex.kind === 'refusal',
-      scripted: true,
-      showsChart: Boolean(ex.action),
-    };
-  };
-
-  const ask = async (question: string) => {
-    const trimmed = question.trim();
-    if (!trimmed || pending || closed) return;
-    setDraft('');
-    setPending(true);
-    setNotice(null);
-    const history = thread.flatMap((x) => [
-      { role: 'user' as const, content: x.question },
-      { role: 'assistant' as const, content: typeof x.answer === 'string' ? x.answer : '' },
-    ]).filter((m) => m.content);
-
-    try {
-      const answer = await askDemoMia({ question: trimmed, history, locale });
-      setLeft(answer.messagesLeft);
-      const next = applyDemoViewActions(layers, answer.viewActions);
-      const changed = answer.viewActions.length > 0;
-      if (changed) setLayers(next);
-      setThread((prev) => [...prev, {
-        question: trimmed,
-        answer: answer.text,
-        refusal: Boolean(answer.blockedReason),
-        scripted: false,
-        showsChart: changed,
-      }]);
-    } catch (err) {
-      if (err instanceof DemoQuotaError) {
-        // A quota is a product rule, not a failure: say it plainly and stop.
-        setThread((prev) => [...prev, {
-          question: trimmed,
-          answer: err.message,
-          refusal: false,
-          scripted: false,
-          showsChart: false,
-        }]);
-        setClosed(true);
-        setLeft(0);
-      } else {
-        // No backend here (static host, offline, blocked): fall back to the
-        // recorded exchange when the question is one of the starters, and say
-        // that it is recorded.
-        const fallback = scriptedFor(trimmed);
-        setNotice(t('demo.mia.live.offline'));
-        if (fallback) setThread((prev) => [...prev, fallback]);
-      }
-    } finally {
-      setPending(false);
-    }
-  };
-
-  return (
-    <div className={styles.dgrid}>
-      <div>
-        <div className={styles.mchat}>
-          {thread.length === 0 && !pending && (
-            <div className={styles.mbA} style={{ opacity: 0.7 }}>{t('demo.mia.greeting')}</div>
-          )}
-          {thread.map((x, idx) => (
-            <div key={`${idx}-${x.question}`} style={{ display: 'contents' }}>
-              <div className={styles.mbU} style={{ alignSelf: 'flex-end' }}>{x.question}</div>
-              <div className={x.refusal ? styles.mbNo : styles.mbA} style={{ alignSelf: 'flex-start' }}>
-                {x.answer}
-              </div>
-              {x.showsChart && (
-                <div style={{ alignSelf: 'stretch' }}>
-                  <div className={styles.mbAction}>{t('demo.mia.actionNote')}</div>
-                  <StructureChart layers={layers} />
-                  <button type="button" className={styles.opt} style={{ marginTop: '8px', marginBottom: 0 }} onClick={jumpToStructure}>
-                    {t('demo.mia.actionCta')}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-          {pending && (
-            <div className={styles.mbA} style={{ alignSelf: 'flex-start', opacity: 0.7 }} aria-live="polite">
-              {t('demo.mia.live.thinking')}
-            </div>
-          )}
-          <div ref={endRef} />
-        </div>
-        <form
-          className={styles.mform}
-          onSubmit={(e) => { e.preventDefault(); void ask(draft); }}
-        >
-          <input
-            className={styles.minput}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={t('demo.mia.live.placeholder')}
-            aria-label={t('demo.mia.live.placeholder')}
-            maxLength={600}
-            disabled={closed}
-          />
-          <button type="submit" className={styles.msend} disabled={pending || closed || !draft.trim()}>
-            {t('demo.mia.live.send')}
-          </button>
-        </form>
-        {notice && <div className={styles.illus}>{notice}</div>}
-        {left != null && !notice && (
-          <div className={styles.illus}>{t('demo.mia.live.left', { n: left })}</div>
-        )}
-        <div className={styles.illus}>{t('demo.illus')}</div>
-      </div>
-      <div className={styles.dside}>
-        <h4>{t('demo.mia.side.title')}</h4>
-        <p>{t.rich('demo.mia.side.desc', { b: (c) => <b>{c}</b> })}</p>
-        <p style={{ fontSize: '13px', color: 'var(--faint)' }}>{t('demo.mia.live.note')}</p>
-        <div className={styles.try}>{t('demo.mia.side.try')}</div>
-        {DEMO_MIA.map((ex) => (
-          <button
-            key={ex.key}
-            type="button"
-            className={styles.opt}
-            disabled={pending || closed}
-            onClick={() => void ask(t(`demo.mia.q.${ex.key}.q`))}
-          >
-            {t(`demo.mia.q.${ex.key}.q`)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function CalculPane() {
   const t = useTranslations('home');
   const [open, setOpen] = useState(false);
@@ -526,7 +213,7 @@ function CalculPane() {
       <div>
         <div className={styles.tile}>
           <div className={styles.tileTop}>
-            <span className={styles.eyebrow} style={{ margin: 0 }}>{t('demo.calcul.tileLabel')}</span>
+            <span className={styles.tileLabel}>{t('demo.calcul.tileLabel')}</span>
           </div>
           <div className={styles.tileVerdict}>{t('demo.calcul.verdict')}</div>
           <div className={styles.tileSub}>{t('demo.calcul.sub')}</div>
@@ -555,48 +242,30 @@ function CalculPane() {
   );
 }
 
-const TAB_KEYS = ['structure', 'scanner', 'zones', 'mia', 'calcul'] as const;
-
-function TabIcon({ which }: { which: (typeof TAB_KEYS)[number] }) {
-  const paths: Record<string, ReactNode> = {
-    structure: <><path d="M4 20V10M9 20V4M14 20v-7M19 20V8" /></>,
-    scanner: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /></>,
-    zones: <><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>,
-    mia: <><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4z" /></>,
-    calcul: <><path d="M4 6h16M4 12h16M4 18h10" /></>,
-  };
-  return <svg viewBox="0 0 24 24">{paths[which]}</svg>;
-}
+/**
+ * LP-3 — the three hands-on demos that are still their own thing.
+ *
+ * They used to sit behind a five-tab strip, each tab wearing a stock icon in a
+ * tinted rounded square. Two of the five have moved: "Lire une structure" is now
+ * the scroll section at the top of the page, and "Parler à M.I.A" has its own
+ * block. What is left is three named panels, stacked and open — no tab strip, no
+ * icons. A visitor scrolling past sees all three exist, instead of discovering
+ * two of them only by clicking.
+ */
+const PANELS = ['scanner', 'zones', 'calcul'] as const;
 
 export function DemoTabs() {
   const t = useTranslations('home');
-  const [tab, setTab] = useState(0);
-  const [layers, setLayers] = useState<Layers>({ ...ALL_ON });
-
   return (
-    <div className={styles.demo}>
-      <div className={styles.dtabs} role="tablist" aria-label={t('demoSection.title')}>
-        {TAB_KEYS.map((k, i) => (
-          <button
-            key={k}
-            type="button"
-            role="tab"
-            aria-selected={tab === i}
-            className={`${styles.dtab} ${tab === i ? styles.dtabOn : ''}`}
-            onClick={() => setTab(i)}
-          >
-            <span className={styles.dtabIc} style={{ background: 'var(--acc-dim)', color: 'var(--acc)' }}><TabIcon which={k} /></span>
-            {t(`demo.tabs.${k}`)}
-          </button>
-        ))}
-      </div>
-      <div className={styles.dpane} role="tabpanel">
-        {tab === 0 && <StructurePane layers={layers} setLayers={setLayers} />}
-        {tab === 1 && <ScannerPane />}
-        {tab === 2 && <ZonesPane />}
-        {tab === 3 && <MiaPane layers={layers} setLayers={setLayers} jumpToStructure={() => setTab(0)} />}
-        {tab === 4 && <CalculPane />}
-      </div>
+    <div className={styles.hands}>
+      {PANELS.map((k) => (
+        <section key={k} className={styles.hand}>
+          <h3 className={styles.handH}>{t(`demo.tabs.${k}`)}</h3>
+          {k === 'scanner' && <ScannerPane />}
+          {k === 'zones' && <ZonesPane />}
+          {k === 'calcul' && <CalculPane />}
+        </section>
+      ))}
     </div>
   );
 }

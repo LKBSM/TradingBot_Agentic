@@ -8,8 +8,6 @@ import { ReadingChart } from '@/components/app/ReadingChart';
 import { ScanResults } from '@/components/scanner/ScanResults';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatComposer } from '@/components/chat/ChatComposer';
-import { MiaSection } from '@/components/landing/lp1/MiaSection';
-import { ReadingCarousel } from '@/components/landing/lp1/ReadingCarousel';
 import type { ZoneLifecycle } from '@/lib/zones/lifecycle';
 import {
   SAMPLE_READING_XAU_H4,
@@ -221,14 +219,6 @@ export function DesignGallery() {
         </State>
       </Surface>
 
-      <Surface id="landing" title="Blocs de la page d’accueil (déjà statiques)">
-        <State name="section-mia">
-          <MiaSection />
-        </State>
-        <State name="carrousel-lectures">
-          <ReadingCarousel />
-        </State>
-      </Surface>
     </div>
   );
 }
