@@ -90,6 +90,7 @@ function Zone({ name, note, zone }: { name: string; note?: string; zone: ZoneLif
         onToggleHide={noop}
         onShowOnChart={noop}
         onSelect={noop}
+        detailHref="/zones/z1"
         onNavigateToZone={noop}
       />
     </State>

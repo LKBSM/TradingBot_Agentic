@@ -34,6 +34,7 @@ import {
 import { cn } from '@/lib/utils';
 import { PriceFreshnessBadge } from '@/components/market-reading/PriceFreshnessBadge';
 import { useChat } from '@/components/chat/ChatProvider';
+import { useLocalizedHref } from '@/lib/i18n/href';
 import { ZoneLifecycleCard } from './ZoneLifecycleCard';
 
 const POLL_MS = 60_000;
@@ -97,6 +98,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   // ORIENTS it: it binds the page combo (so get_market_reading targets it) and
   // sets/clears the selected-zone focus. It never owns a separate chat engine.
   const { openForCombo, setFocus } = useChat();
+  const lh = useLocalizedHref();
 
   const FILTERS = FILTER_VALUES.map((value) => ({ value, label: t(`filters.${value}`) }));
   const SORTS = SORT_VALUES.map((value) => ({ value, label: t(`sorts.${value}`) }));
@@ -364,6 +366,18 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
   );
 
 
+  // VZ-4 — the zone's own page. The REAL engine id goes in the path; the combo
+  // travels as query so the sheet reads the same reading (mission §4 id lock).
+  const detailHref = React.useCallback(
+    (zoneId: string) =>
+      lh(
+        `/zones/${encodeURIComponent(zoneId)}?instrument=${encodeURIComponent(
+          instrument,
+        )}&timeframe=${encodeURIComponent(timeframe)}`,
+      ),
+    [lh, instrument, timeframe],
+  );
+
   const cardFor = (zone: ZoneLifecycle) => (
     <ZoneLifecycleCard
       key={zone.id}
@@ -379,6 +393,7 @@ export function ZonesWorkspace({ locale }: { locale: string }) {
       onShowOnChart={showOnChart}
       onSelect={selectZone}
       onNavigateToZone={navigateToZone}
+      detailHref={detailHref(zone.id)}
       isSelected={zone.id === selectedId}
       cardRef={setCardRef(zone.id)}
     />

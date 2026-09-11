@@ -32,6 +32,30 @@ const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
 ];
 
 /**
+ * VZ-4 — starters for the zone surfaces. They are CONTEXTUAL through the SAME
+ * mechanism the panel already had (the `starters` prop + the shared `focus`), not
+ * a second injection path: when the one conversation is oriented on a zone, the
+ * empty-state chips ask about THAT zone.
+ *
+ * The first three are factual questions the agent answers from its tools —
+ * formation, containment, contact count.
+ *
+ * The fourth is deliberately a PROBE: it asks for a forecast, and the product
+ * answers it with a refusal. It is shipped because that refusal is now
+ * DETERMINISTIC — the ``prediction`` bucket of Couche 1 intercepts it before any
+ * LLM call and serves the dedicated forecast refusal. (It was withheld earlier in
+ * VZ-4: at diagnostic time no layer caught it, so the chip would have invited the
+ * one answer this surface must never produce. `tests/test_vz4_zone_refusal.py`
+ * locks the behaviour in both directions.)
+ */
+const ZONE_STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
+  { id: 'formed', icon: <LineChart className="h-4 w-4" aria-hidden /> },
+  { id: 'nested', icon: <LayoutPanelTop className="h-4 w-4" aria-hidden /> },
+  { id: 'tested', icon: <HelpCircle className="h-4 w-4" aria-hidden /> },
+  { id: 'probe', icon: <HelpCircle className="h-4 w-4" aria-hidden /> },
+];
+
+/**
  * /app disposition of the SINGLE M.I.A panel (MIA-3). This is not a second panel:
  * it wraps the shared {@link MiaPanel} and only supplies the /app-specific chrome
  * — the live combo context label, the bubble↔column display-mode toggle, the
@@ -54,7 +78,8 @@ export function AppChatSidebar({
   onSetDisplayMode?: (mode: 'column' | 'bubble') => void;
 }) {
   const t = useTranslations('app');
-  const { turns, resetTurns } = useChat();
+  const tz = useTranslations('zones');
+  const { turns, resetTurns, focus } = useChat();
   const empty = turns.length === 0;
 
   const STARTERS: ReadonlyArray<WelcomeSuggestion> = STARTER_META.map((s) => ({
@@ -62,6 +87,13 @@ export function AppChatSidebar({
     text: t(`chat.starter_${s.id}`),
     icon: s.icon,
   }));
+  const ZONE_STARTERS: ReadonlyArray<WelcomeSuggestion> = ZONE_STARTER_META.map((s) => ({
+    id: `zone-${s.id}`,
+    text: tz(`detail.starters.${s.id}`),
+    icon: s.icon,
+  }));
+  // The subject drives the chips — one panel, one conversation, contextual chips.
+  const starters = focus?.kind === 'zone' ? ZONE_STARTERS : STARTERS;
 
   const contextLabel = active
     ? `· ${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
@@ -146,7 +178,7 @@ export function AppChatSidebar({
       welcomeSubtitle={
         active ? t('chat.welcomeSubtitleActive') : t('chat.welcomeSubtitleIdle')
       }
-      starters={active ? STARTERS : []}
+      starters={active ? starters : []}
       offlineNote={t('chat.offlineNote')}
       complianceLine={t('chat.complianceLine')}
     />

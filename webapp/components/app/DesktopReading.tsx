@@ -192,14 +192,15 @@ export function DesktopReading({
     [selectedId, validZoneIds, applyActions],
   );
 
-  // "En savoir plus" → open the Zones page on this zone's card (deep-link). An
-  // unknown/stale id is handled honestly by the Zones page itself.
+  // VZ-4 — "En savoir plus" opens the zone's OWN page. Both entry points (this
+  // list and the compact /zones card) lead to the same `/zones/<engine id>`
+  // sheet. An unknown/stale id is handled honestly by that page itself.
   const openZonePage = React.useCallback(
     (id: string) => {
       const combo = active
-        ? `&instrument=${active.instrument}&timeframe=${active.timeframe}`
+        ? `?instrument=${active.instrument}&timeframe=${active.timeframe}`
         : '';
-      router.push(lh(`/zones?zone=${encodeURIComponent(id)}${combo}`));
+      router.push(lh(`/zones/${encodeURIComponent(id)}${combo}`));
     },
     [active, router, lh],
   );

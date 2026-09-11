@@ -82,6 +82,7 @@ describe('DS-1 presentation components — no network', () => {
         onToggleHide={noop}
         onShowOnChart={noop}
         onSelect={noop}
+        detailHref="/zones/z1"
         onNavigateToZone={noop}
       />,
     );
