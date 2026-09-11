@@ -455,14 +455,23 @@ Cette PR répare la collecte : la suite s'exécute pour la première fois (**12 
 |---|---|---|
 | `test_mc1_market_closed_wiring::test_get_or_generate_makes_no_call_and_no_save_when_closed` | la graine du test écrivait le payload à la main, **sans son `_logic_version`** ; les deux branches qui servent une lecture stockée l'exigent, donc la lecture repartait en reconstruction et le verrou d'émission du week-end était mesuré à côté. Vérifié pré-existant par contrôle (l'échec persiste avec l'assembleur d'`origin/main`). | **corrigé** — la graine passe par `_persist_reading`, le même chemin que le produit |
 | `test_sprint2_performance::test_correlation_matrix` | égalité stricte entre deux cellules symétriques sommées dans un ordre différent : un ULP d'écart sur le runner (`…4973` contre `…4972`), vert en local | **corrigé** — comparaison `pytest.approx` |
-| `test_calendar_values::test_enricher_flags_revision_across_cycles` | l'événement revient `actual_state='unfetched'`, `value_series=[]` : la valeur n'est pas enrichie du tout. Reproductible en local. Piste : le cache de points + le rafraîchissement de fond introduits par NW-7b (`597c8f7`, « stop BLS quota drain »). | **NON corrigé** — diagnostiquer le comportement voulu (une révision doit-elle être vue dans la fenêtre de cache ?) est une décision produit, pas un ajustement de test |
+| `test_calendar_values::test_enricher_flags_revision_across_cycles` | l'événement revenait `actual_state='unfetched'`, `value_series=[]`. **Deux causes, dont une VRAIE de production** (voir ci-dessous). | **corrigé** |
 
-Le troisième reste rouge : la PR **améliore** donc strictement l'état de la CI (de « rien ne s'exécute » à « un échec connu, documenté »), sans le maquiller.
+### Le troisième cachait un vrai bug produit
+
+Le rafraîchissement du calendrier écrit les **DATES d'abord** (événements sans valeur), **puis les VALEURS**. L'écriture du store est un `INSERT OR REPLACE` qui recopiait `e.actual` tel quel : la première des deux écritures **remettait donc `actual` à NULL**. Tant que le rafraîchissement était synchrone, la fenêtre était invisible ; depuis CAL-1 il tourne **en tâche de fond** et la requête sert le cache immédiatement — une lecture tombant dans cette fenêtre affiche « valeur non récupérée » pour une publication dont le chiffre est connu.
+
+Correctif (`calendar_cache_store.upsert_events`) : **une valeur déjà stockée n'est jamais remplacée par une absence** — seulement par une AUTRE valeur. Cohérent avec ce que la docstring du store promettait déjà (« Never deletes »). `actual` et `previous` sont concernés.
+
+Seconde cause, côté test : il attendait qu'une révision récupérée *pendant* l'appel soit visible dans la réponse **de ce même appel**, ce que le rafraîchissement asynchrone ne permet plus. Le test déclenche désormais les deux cycles explicitement (`_do_refresh`) — il porte sur l'enrichisseur et la détection de révision, pas sur l'ordonnancement.
+
+**`algo-tests` passe donc au vert pour la première fois depuis SC-1** : 4459 tests exécutés.
 
 ---
 
 ## 10. Ce qui reste ouvert
 
 - **Discipline de schéma** : la cause racine du bug n° 2 est un schéma restreint **sans bump de `READING_LOGIC_VERSION`**. Le parseur tolérant absorbe la conséquence ; la règle (« restreindre un champ = bumper la version ») reste à tenir à la main.
+- **Discipline de test asynchrone** : `get_calendar` ne rend jamais visible, dans SA réponse, une valeur récupérée pendant l'appel (le rafraîchissement est en tâche de fond depuis CAL-1). Tout test qui l'oublie mesure l'ordonnancement au lieu de la logique.
 - **`il faut`** est un jeton interdit (catégorie recommandation) qui peut légitimement apparaître dans une explication (« il faut une clôture au-delà du niveau »). Aucun cas n'a été capturé sur les runs de cette mission : pas de carve-out sans preuve — la discipline suivie ici est de ne toucher au filtre que sur une sortie réellement observée.
 - **Variance de tour** : « le marché est ouvert là ? » a répondu une fois par une question de cadrage (« quel marché t'intéresse ? ») au lieu du fait. C'est le cas « information manquante » autorisé par le format ; à surveiller pendant la session manuelle.

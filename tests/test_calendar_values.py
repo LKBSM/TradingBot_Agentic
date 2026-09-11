@@ -180,16 +180,33 @@ def test_enricher_caches_value_fetch_within_ttl(tmp_path):
 
 
 def test_enricher_flags_revision_across_cycles(tmp_path):
+    """Deux cycles, deux valeurs : la révision est vue, et le premier chiffre gardé.
+
+    Les deux rafraîchissements sont déclenchés EXPLICITEMENT. Depuis CAL-1 le
+    rafraîchissement est asynchrone : ``get_calendar`` lance un thread et sert
+    immédiatement le cache, donc une valeur récupérée pendant l'appel n'est jamais
+    visible dans la réponse de CE même appel. Ce test porte sur l'enrichisseur et
+    sur la détection de révision au stockage, pas sur l'ordonnancement — il les
+    appelle donc directement.
+    """
     store = CalendarCacheStore(db_path=str(tmp_path / "cal.db"))
     ev = _pe("past_series", when=NOW - timedelta(days=5))
-    CalendarService(provider=_Prov([ev]), store=store, market_map=MAP, ttl_seconds=0,
-                    clock=lambda: NOW, value_fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.4)})
-                    ).get_calendar(now=NOW, lookback_minutes=30 * 1440, lookahead_minutes=1440)
-    resp2 = CalendarService(
+    CalendarService(
+        provider=_Prov([ev]), store=store, market_map=MAP, ttl_seconds=0,
+        clock=lambda: NOW, value_fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.4)}),
+    )._do_refresh(NOW)
+
+    svc2 = CalendarService(
         provider=_Prov([ev]), store=store, market_map=MAP, ttl_seconds=0,
         clock=lambda: NOW + timedelta(minutes=5),
         value_fetcher=MultiValueFetcher({"bls": _FakeFetcher(3.6)}),
-    ).get_calendar(now=NOW + timedelta(minutes=5), lookback_minutes=30 * 1440, lookahead_minutes=1440)
+    )
+    svc2._do_refresh(NOW + timedelta(minutes=5))
+    resp2 = svc2.get_calendar(
+        now=NOW + timedelta(minutes=5),
+        lookback_minutes=30 * 1440,
+        lookahead_minutes=1440,
+    )
     e = resp2.events[0]
     assert e.actual == 3.6
     assert e.actual_initial == 3.4      # first print preserved
