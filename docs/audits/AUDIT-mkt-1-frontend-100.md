@@ -196,10 +196,41 @@ Variante graphique : *« Aucune bougie n'existe pour {marché} : le moteur ne su
 - `mkt1-no-invented-data.test.tsx` (11) — les 4 hooks n'émettent **aucune requête** pour un marché du catalogue ; un marché **réel** est toujours requêté normalement ; l'état vide nomme le marché, n'offre aucun « Réessayer », n'est pas confondu avec la copie « combinaison non prise en charge », et **ne contient aucun chiffre**.
 - `mkt1-catalog-off.test.tsx` (7) — drapeau off : aucun bandeau, aucune catégorie, en-tête « Marchés » d'origine, aucun marché du catalogue listé ni trouvable ; un lien profond vers un marché du catalogue suit le chemin ordinaire (400 backend), sans qu'aucun état MKT-1 ne fuite.
 
-### Ce qui n'a PAS été vérifié
+### Playwright — 8/8 aux deux viewports, drapeau ACTIVÉ
 
-- **La suite de tests complète n'a pas pu être exécutée** : la machine a saturé sa mémoire (l'exécution a été tuée par le système, deux fois). Les tests directement impactés ont été lancés et passent, mais je ne peux pas affirmer « 0 régression » sur l'ensemble du dépôt.
-- **Playwright n'a pas été exécuté** et **aucune capture n'a été produite**, pour la même raison. La spec `mkt1-catalog.spec.ts` est livrée et prête (2 viewports × 4 scénarios), avec le mode d'emploi en tête de fichier.
+> ⚠️ Ces captures montrent un **état de test**, pas l'état par défaut. Elles ont été
+> prises sur un build fait avec `NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST=1`. Sans
+> cette variable, rien de tout cela n'apparaît.
+
+| Scénario | 1280×800 | 390×844 |
+|---|---|---|
+| Catalogue visible et groupé (bandeau + ratio + « Suivis par le moteur ») | ✅ | ✅ |
+| 6 catégories repliées par défaut, dépliables | ✅ | ✅ |
+| État vide honnête, **aucune requête `/api/` fuitée**, aucun canvas, aucun « Réessayer » | ✅ | ✅ |
+| Recherche à 100 entrées (par catégorie, < 5 s, sans catégories parasites) | ✅ | ✅ |
+
+Captures dans `docs/audits/mkt-1-shots/` (8 fichiers).
+
+### 🔴 Le défaut que Playwright a trouvé — et que les tests unitaires avaient manqué
+
+La première exécution a montré que **cliquer un marché du catalogue ne menait nulle
+part** : la page restait sur « Or (XAU/USD) ». L'état vide était donc **inatteignable
+dans le produit réel**, alors que mes 40 tests unitaires passaient.
+
+Cause : `resolveComboFromQuery` (source unique lue par 5 composants) rejetait tout
+instrument hors `SUPPORTED_INSTRUMENTS` et retombait silencieusement sur le combo par
+défaut. Mes tests vérifiaient que le sélecteur **émet** le bon combo et que les hooks
+**refusent** la donnée — mais personne ne vérifiait que la vue **acceptait** le marché
+entre les deux. *Sélectionner un marché* et *refuser ses données* sont deux choses
+différentes ; je n'avais testé que la seconde.
+
+Correctif : la fonction accepte un marché du catalogue **quand le drapeau est on**, pour
+que la vue puisse **dire** que le marché n'est pas suivi. Aucun chemin de données ne
+s'ouvre pour autant — les 4 hooks le refusent toujours avant tout fetch. Deux tests de
+non-régression ont été ajoutés (un par état du drapeau).
+
+C'est la justification concrète de l'exigence Playwright de la mission : sans elle,
+cette fonctionnalité aurait été livrée cassée avec une suite unitaire verte.
 
 ---
 
@@ -243,6 +274,20 @@ webapp/lib/markets.ts               webapp/lib/market-reading/perimeter.ts
 ---
 
 ## 9. Ce qui reste ouvert
+
+0. **🔴 M.I.A propose d'analyser un marché qui n'a aucune donnée.** Visible sur
+   `mkt-1-shots/etat-vide-desktop.png` : pendant que la colonne centrale dit
+   honnêtement « Pas encore disponible sur ce marché », le panneau M.I.A à droite
+   affiche « BTCUSD · 15 minutes » et propose *« Décompose la structure actuelle »*
+   et *« Montre-moi les Order Blocks actifs »*. M.I.A ne peut rien inventer (le
+   backend ne connaît pas ce marché), mais **les suggestions invitent à demander
+   des données qui n'existent pas** — ce qui contredit l'esprit de la mission.
+   
+   **Non corrigé volontairement** : le panneau M.I.A appartient aux missions MIA-1
+   à MIA-5, et la PR #209 (MIA-5) est ouverte dessus en ce moment. Le correctif
+   tiendrait en quelques lignes (masquer les suggestions, ou les remplacer par une
+   ligne d'indisponibilité, quand `isCatalogOnly(active.instrument)`). **Votre
+   arbitrage** : ici, ou dans une mission M.I.A.
 
 1. **La liste des 100 marchés est la mienne** (§3). Si votre fichier de référence réapparaît, il doit la remplacer — c'est une édition du JSON + `node scripts/gen_market_catalog.mjs`, rien d'autre.
 2. **Séparation visuelle test/réel** (§5) : appliquée sur ma recommandation, pas sur votre arbitrage explicite.

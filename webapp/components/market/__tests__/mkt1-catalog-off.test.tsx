@@ -5,6 +5,7 @@ import { MarketSelector } from '../MarketSelector';
 import { useMarketReading } from '@/lib/market-reading/hooks';
 import { MARKET_SPECS } from '@/lib/markets';
 import { CATALOG_UX_TEST_ENABLED } from '@/lib/market-catalog';
+import { resolveComboFromQuery } from '@/lib/conditions/app-link';
 import messages from '@/messages/fr.json';
 
 /**
@@ -71,6 +72,17 @@ describe('MKT-1 — with no env var set, the UX-test catalogue does not exist', 
       target: { value: 'BTCUSD' },
     });
     expect(screen.getByText(/Aucun marché ne correspond/)).toBeInTheDocument();
+  });
+});
+
+describe('MKT-1 — with the flag off, a catalogue market is not a valid target', () => {
+  it('resolveComboFromQuery rejects it, exactly as before the mission', () => {
+    expect(resolveComboFromQuery('BTCUSD', 'M15')).toBeNull();
+    // The real perimeter is of course untouched.
+    expect(resolveComboFromQuery('XAUUSD', 'M15')).toEqual({
+      instrument: 'XAUUSD',
+      timeframe: 'M15',
+    });
   });
 });
 

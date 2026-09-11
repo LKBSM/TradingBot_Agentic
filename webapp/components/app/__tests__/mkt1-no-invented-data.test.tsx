@@ -24,6 +24,7 @@ const { MarketNotCoveredError } = await import('@/lib/market-reading/api-client'
 const { ReadingErrorState, ChartUnavailable } = await import(
   '@/components/app/ReadingPlaceholders'
 );
+const { resolveComboFromQuery } = await import('@/lib/conditions/app-link');
 
 function render(ui: React.ReactElement) {
   return rtlRender(
@@ -79,6 +80,25 @@ describe('MKT-1 — a catalogue market triggers NO request at all', () => {
   it('a REAL market is still fetched normally — the guard is narrow', async () => {
     renderHook(() => useMarketReading('XAUUSD', 'M15', { source: 'live' }));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+  });
+});
+
+describe('MKT-1 — a catalogue market is a REACHABLE view', () => {
+  // Regression guard for a real defect the Playwright run caught and the unit
+  // tests had missed: resolveComboFromQuery rejected any market outside the real
+  // perimeter, so clicking one in the column silently fell back to XAUUSD and the
+  // honest empty state was never reachable in the product. Selecting a market and
+  // refusing its DATA are two different things.
+  it('resolves as a valid combo so the view can say the market is not followed', () => {
+    expect(resolveComboFromQuery('BTCUSD', 'M15')).toEqual({
+      instrument: 'BTCUSD',
+      timeframe: 'M15',
+    });
+  });
+
+  it('still rejects a genuinely unknown market, and an unknown timeframe', () => {
+    expect(resolveComboFromQuery('NOTAMARKET', 'M15')).toBeNull();
+    expect(resolveComboFromQuery('BTCUSD', 'M7')).toBeNull();
   });
 });
 
