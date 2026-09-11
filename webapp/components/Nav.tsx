@@ -21,7 +21,6 @@ import { SUPPORTED_LOCALES } from '@/i18n';
 const ANCHORS = [
   { href: '#mia', key: 'mia' },
   { href: '#demo', key: 'demo' },
-  { href: '#outils', key: 'tools' },
   { href: '#tarifs', key: 'pricing' },
   { href: '#faq', key: 'faq' },
 ] as const;

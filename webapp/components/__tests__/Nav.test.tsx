@@ -48,15 +48,23 @@ afterEach(() => {
 });
 
 describe('Nav — marketing landing', () => {
-  it('shows the LP-2 marketing section anchors (M.I.A · Démo · Outils · Tarifs · FAQ)', () => {
+  it('shows the marketing section anchors (M.I.A · Démo · Tarifs · FAQ)', () => {
     hoisted.pathname = '/';
     render(<Nav />);
     const nav = screen.getByRole('navigation', { name: /sections du site/i });
     expect(within(nav).getByText('M.I.A')).toBeInTheDocument();
     expect(within(nav).getByText('Démo')).toBeInTheDocument();
-    expect(within(nav).getByText('Outils')).toBeInTheDocument();
     expect(within(nav).getByText('Tarifs')).toBeInTheDocument();
     expect(within(nav).getByText('FAQ')).toBeInTheDocument();
+  });
+
+  // LP-3 a supprimé la section #outils de l'accueil : un lien de nav vers une
+  // ancre inexistante ne mène nulle part, donc l'entrée doit rester absente.
+  it('does not offer "Outils" — the #outils section no longer exists', () => {
+    hoisted.pathname = '/';
+    render(<Nav />);
+    const nav = screen.getByRole('navigation', { name: /sections du site/i });
+    expect(within(nav).queryByText('Outils')).toBeNull();
   });
 
   it('exposes a session-aware account control (Connexion when logged out)', async () => {

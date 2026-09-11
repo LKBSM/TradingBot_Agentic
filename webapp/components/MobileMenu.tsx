@@ -38,7 +38,6 @@ const PRODUCT_LINKS = [
 const MARKETING_ANCHORS = [
   { href: '/#mia', key: 'mia' as const },
   { href: '/#demo', key: 'demo' as const },
-  { href: '/#outils', key: 'tools' as const },
   { href: '/#tarifs', key: 'pricing' as const },
   { href: '/#faq', key: 'faq' as const },
 ];
