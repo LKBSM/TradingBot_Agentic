@@ -23,6 +23,18 @@ logger = logging.getLogger(__name__)
 ANNUAL_LEAD_DAYS = 30
 NOTICE_KIND = "annual_30d"
 
+# PAY-3 (G5) - LEGAL LOCK. The notice below is a TEMPLATE. Under the Quebec
+# Consumer Protection Act the wording of a renewal notice is not a detail, and
+# nothing goes out to a real customer before a lawyer has approved this exact
+# text. Having SMTP configured is NOT approval - the two are different questions,
+# and conflating them is how an unreviewed legal notice ships by accident.
+# Set this to 1 ONLY after the text has been validated.
+TEXT_APPROVED_ENV = "RENEWAL_NOTICE_TEXT_APPROVED"
+
+
+def _text_approved() -> bool:
+    return os.environ.get(TEXT_APPROVED_ENV, "0").strip().lower() in {"1", "true", "yes", "on"}
+
 
 def _app_url() -> str:
     return os.environ.get("APP_URL", "http://localhost:3000").rstrip("/")
@@ -68,6 +80,18 @@ def _send_email(to_email: str, subject: str, body: str) -> bool:
     return True
 
 
+# ---------------------------------------------------------------------------
+# GABARIT A FAIRE VALIDER PAR L'AVOCAT (PAY-3, D)
+# ---------------------------------------------------------------------------
+# Points que le texte doit couvrir, selon la LPC :
+#   - la date exacte du prochain prelevement ;
+#   - le montant et la cadence ;
+#   - le fait que la resiliation est possible a tout moment, aussi simplement
+#     que la souscription (Customer Portal), sans frais ni penalite ;
+#   - l'absence de clause de "vente finale" ;
+#   - le lien direct vers la page de gestion de l'abonnement.
+# Tant que RENEWAL_NOTICE_TEXT_APPROVED n'est pas a 1, rien ne part.
+# ---------------------------------------------------------------------------
 def _notice_body(period_end: float) -> tuple[str, str]:
     when = time.strftime("%Y-%m-%d", time.gmtime(period_end))
     subject = "Renouvellement de votre abonnement M.I.A Markets"
@@ -95,6 +119,14 @@ def send_due_renewal_notices(store: Any, *, now: Optional[float] = None) -> int:
     if not _smtp_configured():
         logger.info("renewal notices: SMTP not configured — skipping")
         return 0
+    if not _text_approved():
+        # The lock, not a bug: the template has not been validated by counsel.
+        logger.warning(
+            "renewal notices: template NOT approved (%s is not set) — nothing "
+            "sent. Have the text validated, then set %s=1.",
+            TEXT_APPROVED_ENV, TEXT_APPROVED_ENV,
+        )
+        return 0
 
     now = time.time() if now is None else now
     lead = ANNUAL_LEAD_DAYS * 86400.0
@@ -119,4 +151,9 @@ def send_due_renewal_notices(store: Any, *, now: Optional[float] = None) -> int:
     return sent
 
 
-__all__ = ["send_due_renewal_notices", "ANNUAL_LEAD_DAYS", "NOTICE_KIND"]
+__all__ = [
+    "ANNUAL_LEAD_DAYS",
+    "NOTICE_KIND",
+    "TEXT_APPROVED_ENV",
+    "send_due_renewal_notices",
+]

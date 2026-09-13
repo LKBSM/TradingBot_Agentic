@@ -73,6 +73,10 @@ class TestSendJob:
     def test_sends_once_and_is_idempotent(self, store, monkeypatch):
         monkeypatch.setenv("STRIPE_PRICE_ANNUAL", ANNUAL)
         monkeypatch.setenv("SMTP_HOST", "smtp.test")
+        # PAY-3 (G5): SMTP being ready is no longer enough — the notice text must
+        # also be approved by counsel. This test is about idempotency, so it opts
+        # in explicitly; the lock itself is covered by test_pay3_zone_and_health.
+        monkeypatch.setenv(rn.TEXT_APPROVED_ENV, "1")
         sent = []
         monkeypatch.setattr(rn, "_send_email", lambda to, s, b: sent.append(to) or True)
 
