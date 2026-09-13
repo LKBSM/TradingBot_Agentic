@@ -1,10 +1,12 @@
 /**
- * LP-1 / LP-2 — SINGLE SOURCE OF TRUTH for the home-page stats banner.
+ * LP-1 / LP-2 — SINGLE SOURCE OF TRUTH for the perimeter figures the home page
+ * advertises.
  *
- * Every number the landing advertises about the product's real perimeter lives
- * here, tied to the real config it mirrors, so the banner can never drift into
- * fiction. A test (home.test.tsx) asserts the banner renders THESE values and
- * nothing hard-coded elsewhere.
+ * LP-3 removed the four-tile stats banner from the hero (founder decision), but
+ * these figures did NOT become decorative: they are what the pricing card, the
+ * FAQ and the "how it works" copy claim about the real perimeter. They live
+ * here, tied to the real config they mirror, so the copy can never drift into
+ * fiction. A test asserts they still match their sources.
  *
  * Reality check (verified 2026-08-06, do not inflate):
  *   · markets      = SUPPORTED_INSTRUMENTS  → XAUUSD, EURUSD          (perimeter.ts)
@@ -49,16 +51,3 @@ export const LANDING_STATS = {
 } as const;
 
 export type LandingStatKey = keyof typeof LANDING_STATS;
-
-/**
- * Order the four tiles appear in the banner (LP-2 v3):
- * markets · timeframes · conditions · structures.
- * `combinations` stays in LANDING_STATS (a real, tested figure reused elsewhere)
- * but is not one of the four banner tiles.
- */
-export const LANDING_STAT_ORDER: readonly LandingStatKey[] = [
-  'markets',
-  'timeframes',
-  'conditions',
-  'structures',
-];

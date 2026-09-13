@@ -7,15 +7,7 @@
       "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected automatically and described in plain language. Plus an assistant that answers when you don't understand.",
       "ctaPrimary": "Subscribe",
       "ctaSecondary": "See the tools",
-      "micro": "Full access as soon as you subscribe · Cancel anytime",
-      "roadmap": "Early access · <b>2 markets today, 50 to 80 planned at launch</b>"
-    },
-    "stats": {
-      "markets": "markets tracked",
-      "combinations": "combinations analysed",
-      "conditions": "search conditions",
-      "timeframes": "timeframes",
-      "structures": "structures detected"
+      "micro": "Full access as soon as you subscribe · Cancel anytime"
     },
     "tools": {
       "eyebrow": "Five tools, one product",

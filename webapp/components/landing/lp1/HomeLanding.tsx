@@ -8,7 +8,6 @@ import { DemoTabs } from './DemoTabs';
 import { MiaSection } from './MiaSection';
 import { ReadingCarousel } from './ReadingCarousel';
 import { CandleSvg } from './CandleSvg';
-import { LANDING_STATS, LANDING_STAT_ORDER } from '@/lib/landing/stats';
 import { PRICING } from '@/lib/pricing.generated';
 
 function Check() {
@@ -49,7 +48,7 @@ export function HomeLanding() {
 
   return (
     <div className={styles.page}>
-      {/* HERO + STATS */}
+      {/* HERO */}
       <div className={styles.hero}>
         <div className={styles.aura} aria-hidden="true" />
         <div className={styles.wrap}>
@@ -62,16 +61,6 @@ export function HomeLanding() {
               <a className={`${styles.btn} ${styles.btnLg}`} href="#demo">{t('hero.ctaSecondary')}</a>
             </div>
             <div className={styles.micro}>{t('hero.micro')}</div>
-
-            <div className={styles.stats}>
-              {LANDING_STAT_ORDER.map((k) => (
-                <div key={k} className={styles.stat}>
-                  <div className={styles.statN}>{LANDING_STATS[k]}</div>
-                  <div className={styles.statL}>{t(`stats.${k}`)}</div>
-                </div>
-              ))}
-            </div>
-            <div className={styles.roadmap}>{rich('hero.roadmap')}</div>
           </div>
         </div>
       </div>

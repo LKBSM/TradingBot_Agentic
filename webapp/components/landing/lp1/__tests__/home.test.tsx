@@ -87,23 +87,38 @@ describe('LP-1 home — forbidden vocabulary', () => {
 });
 
 describe('LP-1 home — honest figures', () => {
-  it('the stats banner renders the real numbers from the single source', () => {
-    render(<HomeLanding />);
-    // LP-2 banner: markets · timeframes · conditions · structures
-    expect(screen.getByText('marchés suivis')).toBeInTheDocument();
-    expect(screen.getByText('unités de temps')).toBeInTheDocument();
-    expect(screen.getByText('conditions de recherche')).toBeInTheDocument();
-    expect(screen.getByText('structures détectées')).toBeInTheDocument();
-    // the distinctive figures come straight from LANDING_STATS
+  /**
+   * LP-3 removed the four-tile stats banner from the hero (founder decision).
+   * The FIGURES did not go away — they moved into the copy that still claims a
+   * perimeter (pricing, FAQ, "how it works"). So the guard splits in two: the
+   * single source keeps its invariants, and the banner must not grow back.
+   */
+  it('the single source still holds the real, non-inflated figures', () => {
     expect(String(LANDING_STATS.conditions)).toBe('22');
     expect(String(LANDING_STATS.structures)).toBe('7');
-    expect(screen.getByText('22')).toBeInTheDocument();
   });
 
-  it('the 4th banner figure is sourced from STRUCTURE_TYPES, never a literal', () => {
-    // §C4: the "structures détectées" tile must equal the single source length.
+  it('the structures figure is sourced from STRUCTURE_TYPES, never a literal', () => {
     expect(LANDING_STATS.structures).toBe(STRUCTURE_TYPES.length);
     expect(STRUCTURE_TYPES.length).toBe(7);
+  });
+
+  it('the hero no longer carries the stats banner or the roadmap line', () => {
+    render(<HomeLanding />);
+    // The four tile labels and the ambition line are gone from the page AND
+    // from the messages — a re-render of either would fail here first.
+    expect(screen.queryByText('marchés suivis')).not.toBeInTheDocument();
+    expect(screen.queryByText('unités de temps')).not.toBeInTheDocument();
+    expect(screen.queryByText('conditions de recherche')).not.toBeInTheDocument();
+    expect(screen.queryByText('structures détectées')).not.toBeInTheDocument();
+    expect(document.body.textContent ?? '').not.toMatch(/50 à 80 prévus au lancement/);
+  });
+
+  it('the perimeter figures the copy still claims are the real ones', () => {
+    render(<HomeLanding />);
+    const txt = document.body.textContent ?? '';
+    // The pricing card and the FAQ are where the perimeter is now stated.
+    expect(txt).toMatch(new RegExp(`${LANDING_STATS.conditions} conditions factuelles`));
   });
 
   it('does not advertise the maquette fictions (80 markets / 480 combinations)', () => {
