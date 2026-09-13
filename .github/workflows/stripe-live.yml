@@ -1,0 +1,171 @@
+name: Stripe live journey (PAY-3 G1)
+
+# LE test qui rend impossible le scénario le plus coûteux : le webhook cesse de
+# mettre à jour l'état, le client paie, Stripe est content, l'app le croit non
+# abonné, et personne ne le sait.
+#
+# Il pousse une VRAIE carte de test à travers le Checkout hébergé, attend le
+# VRAI webhook (relayé par `stripe listen`), et échoue si l'accès ne s'ouvre pas
+# dans le délai imparti.
+#
+# CE WORKFLOW NE SE DÉSACTIVE PAS pour faire passer un déploiement :
+#   · pas de `continue-on-error` ;
+#   · pas de `if:` qui puisse le sauter sur une branche ;
+#   · PAY3_LIVE_REQUIRED=1 fait qu'une configuration MANQUANTE est un échec,
+#     jamais un skip silencieux.
+# Si ce job est rouge, c'est la panne qu'il faut réparer — pas le job.
+#
+# Il tourne aussi tous les jours : un webhook peut mourir le mardi d'après un
+# déploiement vert du lundi.
+#
+# SECRETS REQUIS (mode TEST uniquement — une clé sk_live_ fait échouer le test) :
+#   STRIPE_SECRET_KEY      sk_test_…
+#   STRIPE_PRICE_MONTHLY   price_… du mensuel, dans le MÊME mode
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'src/billing/**'
+      - 'src/api/routes/account_billing.py'
+      - 'src/api/subscription_gate.py'
+      - 'webapp/tests/live/**'
+      - '.github/workflows/stripe-live.yml'
+  schedule:
+    - cron: '17 11 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: stripe-live-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-journey:
+    name: Une vraie carte de test doit ouvrir l'accès
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_PRICE_MONTHLY: ${{ secrets.STRIPE_PRICE_MONTHLY }}
+      PAY3_API_BASE: http://127.0.0.1:8000
+      PAY3_LIVE_REQUIRED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      # Un secret absent doit se voir ICI, avec un message clair — pas se
+      # déguiser en test « passé ».
+      - name: Les clés de test sont-elles présentes ?
+        run: |
+          missing=""
+          [ -n "$STRIPE_SECRET_KEY" ] || missing="$missing STRIPE_SECRET_KEY"
+          [ -n "$STRIPE_PRICE_MONTHLY" ] || missing="$missing STRIPE_PRICE_MONTHLY"
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets manquants :$missing — la seule défense automatisée contre « payé mais pas d'accès » ne peut pas tourner."
+            exit 1
+          fi
+          case "$STRIPE_SECRET_KEY" in
+            sk_live_*)
+              echo "::error::STRIPE_SECRET_KEY est une clé LIVE. Ce test pousse une carte à travers Checkout et ne doit jamais toucher un compte réel."
+              exit 1;;
+          esac
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Dépendances backend
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "fastapi>=0.104.0" "uvicorn>=0.24.0" "pydantic>=2.0.0" \
+            "itsdangerous>=2.1.0" "argon2-cffi>=23.1.0" \
+            "python-dotenv>=1.0.0" "stripe>=7.0.0" \
+            "pandas>=2.0.0" "numpy<2.0.0"
+
+      - name: Stripe CLI
+        run: |
+          curl -fsSL https://github.com/stripe/stripe-cli/releases/download/v1.21.8/stripe_1.21.8_linux_x86_64.tar.gz \
+            | tar xz -C /usr/local/bin stripe
+          stripe --version
+
+      # Le secret de signature doit être connu AVANT de démarrer le backend :
+      # c'est lui qui permet de vérifier la signature des événements relayés.
+      - name: Secret de signature du relais
+        run: |
+          whsec=$(stripe listen --print-secret --api-key "$STRIPE_SECRET_KEY")
+          if [ -z "$whsec" ]; then
+            echo "::error::stripe listen --print-secret n'a rien renvoyé"; exit 1
+          fi
+          echo "::add-mask::$whsec"
+          echo "STRIPE_WEBHOOK_SECRET=$whsec" >> "$GITHUB_ENV"
+
+      - name: Démarrer le backend (mur ACTIVÉ)
+        env:
+          ENVIRONMENT: ci
+          SUBSCRIPTION_GATE_ENFORCED: '1'   # sans ça le test ne prouverait rien
+          EMAIL_VERIFICATION_ENFORCED: '0'  # pas de SMTP dans un runner
+          SESSION_SECRET: ci-pay3-live-session-secret
+          SESSION_COOKIE_SECURE: '0'
+          APP_PUBLIC_URL: http://127.0.0.1:3000
+          API_PUBLIC_URL: http://127.0.0.1:8000
+          SCHEDULER_ENABLED: '0'
+          NEWS_PIPELINE_ENABLED: '0'
+          LIVE_TICK_ENABLED: '0'
+        run: |
+          python -m uvicorn src.api.app:create_app --factory --host 127.0.0.1 --port 8000 \
+            > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "backend prêt"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::le backend n'a pas démarré"; tail -50 backend.log; exit 1
+
+      - name: Relayer les webhooks Stripe vers le backend
+        run: |
+          nohup stripe listen --api-key "$STRIPE_SECRET_KEY" \
+            --forward-to http://127.0.0.1:8000/api/billing/webhook \
+            --events checkout.session.completed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.paid,invoice.payment_succeeded,invoice.payment_failed \
+            > stripe-listen.log 2>&1 &
+          disown || true
+          for i in $(seq 1 30); do
+            grep -q "Ready!" stripe-listen.log && { echo "relais prêt"; exit 0; }
+            sleep 1
+          done
+          echo "::error::le relais 'stripe listen' n'a pas démarré"; cat stripe-listen.log; exit 1
+
+      - name: Playwright (chromium)
+        working-directory: webapp
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Le paiement doit ouvrir l'accès
+        working-directory: webapp
+        run: npx playwright test -c playwright.live.config.ts
+
+      # `if: always()` ne sert QUE à récupérer les journaux d'un échec — il ne
+      # rend jamais le job vert.
+      - name: Journaux (diagnostic d'échec)
+        if: always()
+        run: |
+          echo "===== backend ====="; tail -120 backend.log || true
+          echo "===== stripe listen ====="; tail -120 stripe-listen.log || true
+
+      - name: Traces Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stripe-live-traces
+          path: webapp/test-results
+          retention-days: 7
+          if-no-files-found: ignore

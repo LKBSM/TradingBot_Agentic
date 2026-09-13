@@ -87,7 +87,8 @@ jobs:
             "pydantic>=2.0.0" "scipy>=1.11.0" \
             "sentry-sdk[fastapi]>=2.0" "fastapi>=0.104.0" \
             "itsdangerous>=2.1.0" "argon2-cffi>=23.1.0" \
-            "pytest>=7.0.0" "pytest-cov>=4.0.0"
+            "pytest>=7.0.0" "pytest-cov>=4.0.0" \
+            "httpx>=0.27.0"
 
       - name: Run Phase 1 tests with coverage
         # Curated subset that doesn't depend on local CSVs. Expands as more
@@ -125,6 +126,13 @@ jobs:
             tests/test_tier_rate_limiter.py \
             tests/test_webhook_drain_worker.py \
             tests/test_admin_action_log.py \
+            tests/test_pay3_payment_journey.py \
+            tests/test_pay3_zone_and_health.py \
+            tests/test_account_billing.py \
+            tests/test_billing.py \
+            tests/test_pay2_access.py \
+            tests/test_subscription_gate_paid_only.py \
+            tests/test_renewal_notices_pay1.py \
             -m "not live and not benchmark" \
             --cov=src/agents/data \
             --cov=src/research \
