@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import styles from './lp1.module.css';
 import { DemoTabs } from './DemoTabs';
+import { HeroStage } from './HeroStage';
 import { MiaSection } from './MiaSection';
 import { ReadingCarousel } from './ReadingCarousel';
 import { CandleSvg } from './CandleSvg';
@@ -48,19 +49,22 @@ export function HomeLanding() {
 
   return (
     <div className={styles.page}>
-      {/* HERO */}
+      {/* HERO — LP-3: full height, the argument left, the product playing right. */}
       <div className={styles.hero}>
         <div className={styles.aura} aria-hidden="true" />
         <div className={styles.wrap}>
           <div className={styles.heroIn}>
-            <div className={styles.pill}><span className={styles.dot} />{t('hero.pill')}</div>
-            <h1 className={styles.h1}>{t('hero.h1a')} <em>{t('hero.h1b')}</em></h1>
-            <p className={styles.lead}>{t('hero.lead')}</p>
-            <div className={styles.ctas}>
-              <a className={`${styles.btn} ${styles.btnPri} ${styles.btnLg}`} href={lh('/inscription')}>{t('hero.ctaPrimary')}</a>
-              <a className={`${styles.btn} ${styles.btnLg}`} href="#demo">{t('hero.ctaSecondary')}</a>
+            <div className={styles.heroTxt}>
+              <div className={styles.pill}><span className={styles.dot} />{t('hero.pill')}</div>
+              <h1 className={styles.h1}>{t('hero.h1a')} <em>{t('hero.h1b')}</em></h1>
+              <p className={styles.lead}>{t('hero.lead')}</p>
+              <div className={styles.ctas}>
+                <a className={`${styles.btn} ${styles.btnPri} ${styles.btnLg}`} href={lh('/inscription')}>{t('hero.ctaPrimary')}</a>
+                <a className={`${styles.btn} ${styles.btnLg}`} href="#demo">{t('hero.ctaSecondary')}</a>
+              </div>
+              <div className={styles.micro}>{t('hero.micro')}</div>
             </div>
-            <div className={styles.micro}>{t('hero.micro')}</div>
+            <HeroStage />
           </div>
         </div>
       </div>

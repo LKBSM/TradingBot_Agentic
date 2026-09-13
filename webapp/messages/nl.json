@@ -7,7 +7,12 @@
       "lead": "Order Blocks, Fair Value Gaps, structuurbreuken, liquiditeitszones — automatisch gedetecteerd en beschreven in heldere taal. Plus een assistent die antwoordt wanneer je iets niet begrijpt.",
       "ctaPrimary": "Abonneren",
       "ctaSecondary": "Bekijk de tools",
-      "micro": "Volledige toegang zodra je je abonneert · Altijd opzegbaar"
+      "micro": "Volledige toegang zodra je je abonneert · Altijd opzegbaar",
+      "stage": {
+        "loading": "De grafiek laadt",
+        "reading": "M.I.A leest de structuur",
+        "done": "lezing actueel"
+      }
     },
     "tools": {
       "eyebrow": "Vijf tools, één product",

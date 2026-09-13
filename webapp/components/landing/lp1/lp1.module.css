@@ -44,14 +44,26 @@
 .btnMd { font-size: 14.5px; padding: 12px 24px; }
 .btnLg { font-size: 15.5px; padding: 14px 30px; }
 
-/* HERO */
-.hero { position: relative; padding: 72px 0 56px; overflow: hidden; }
-.aura {
-  position: absolute; width: 1000px; height: 540px; left: 50%; top: -230px;
-  transform: translateX(-50%); pointer-events: none;
-  background: radial-gradient(ellipse at center, var(--acc-dim), transparent 66%);
+/* HERO (LP-3 « plein cadre ») — full height, two columns: the argument on the
+   left, the product playing on the right. The nav is 56px (h-14), so the hero
+   claims the rest of the first screen and nothing else competes with it. */
+.hero {
+  position: relative; overflow: hidden;
+  min-height: calc(100vh - 56px);
+  display: flex; align-items: center;
+  padding: 48px 0;
 }
-.heroIn { position: relative; text-align: center; }
+/* ONE discreet brass halo, behind the product window rather than over the title. */
+.aura {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 62% 56% at 72% 44%, var(--acc-dim), transparent 66%);
+  opacity: 0.75;
+}
+.heroIn {
+  position: relative; display: grid; grid-template-columns: 0.92fr 1.08fr;
+  gap: 46px; align-items: center; width: 100%;
+}
+.heroTxt { text-align: left; }
 .pill {
   display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono);
   font-size: 11.5px; padding: 6px 14px; border-radius: 30px; border: 1px solid var(--line-2);
@@ -63,7 +75,100 @@
 .lead { font-size: 18px; color: var(--dim); max-width: 660px; margin: 0 auto 30px; line-height: 1.62; }
 .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
 .micro { font-family: var(--font-mono); font-size: 12px; color: var(--faint); }
+/* left-aligned only inside the hero — `.ctas` is shared with the closing call. */
+.heroTxt .lead { margin-left: 0; margin-right: 0; }
+.heroTxt .ctas { justify-content: flex-start; }
+@media (max-width: 1080px) {
+  .hero { min-height: 0; padding: 56px 0 48px; }
+  .heroIn { grid-template-columns: 1fr; gap: 34px; }
+  .aura { background: radial-gradient(ellipse 90% 46% at 50% 26%, var(--acc-dim), transparent 66%); }
+}
 @media (max-width: 760px) { .h1 { font-size: 34px; } .lead { font-size: 16px; } }
+
+/* HERO STAGE -------------------------------------------------------------
+   The product window. It frames the REAL structure visual (StructureVisual),
+   so everything below is chrome + the arrival choreography. */
+.stage {
+  position: relative; border: 1px solid var(--line-2); border-radius: 16px;
+  background: var(--lp-card2); overflow: hidden;
+  box-shadow: 0 30px 70px -30px color-mix(in srgb, var(--bg) 92%, transparent);
+}
+.stageTop {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 14px; border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--faint);
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+/* The three status labels are stacked: the box keeps the width of the longest
+   so the header never reflows as the arrival advances. */
+.stageStatus { position: relative; display: inline-grid; }
+.stageSt { grid-area: 1 / 1; white-space: nowrap; }
+.stSt1, .stSt2 { opacity: 0; }
+.stSt3 { opacity: 1; color: var(--dim); }
+.stageMkt { white-space: nowrap; }
+.stageBody { padding: 13px 14px 14px; }
+.stageChips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 11px; }
+/* Decision (e): the hero chart is shorter than the demo's so the refusal that
+   closes the sequence stays above the fold on a 800px-tall laptop. */
+.stage .dchart { height: 218px; }
+.stageRead { margin-top: 11px; }
+.stageRead .dnarr { margin-top: 0; min-height: 74px; }
+.stageChat {
+  display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
+  padding: 12px 14px; border-top: 1px solid var(--line);
+}
+.stageBubQ { align-self: flex-end; }
+.stageBubA { align-self: flex-start; }
+.stageIllus {
+  font-family: var(--font-mono); font-size: 10px; color: var(--faint);
+  padding: 0 14px 11px;
+}
+@media (max-width: 760px) { .stage .dchart { height: 182px; } }
+
+/* ARRIVAL SEQUENCE -------------------------------------------------------
+   Every rule below lives inside `prefers-reduced-motion: no-preference`. That
+   is the whole reduced-motion story: outside it, none of these rules exist and
+   the window is painted finished — by the SERVER, before a line of JS runs.
+   `[data-seq=done]` is the visitor's off switch: it drops every animation, so
+   each element falls back to the opacity its own class gives it. */
+@keyframes lp3-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lp3-rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes lp3-swap { 0%, 100% { opacity: 0; } 6%, 94% { opacity: 1; } }
+/* Failsafe: if JS never arrives, the reading un-hides on its own at 2.4 s
+   rather than staying blank forever on a public page. */
+@keyframes lp3-narr-failsafe { from { visibility: hidden; } to { visibility: visible; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 1. the candles draw left to right (delay is per candle, set inline) */
+  .cdl { animation: lp3-in 220ms ease-out both; }
+
+  /* 2. then the four families land, in reading order */
+  .stage .layStr { animation: lp3-in 450ms ease-out 1200ms both; }
+  .stage .layOb  { animation: lp3-in 450ms ease-out 1500ms both; }
+  .stage .layFvg { animation: lp3-in 450ms ease-out 1800ms both; }
+  .stage .layLiq { animation: lp3-in 450ms ease-out 2100ms both; }
+
+  /* 3. the reading writes itself (JS drives the characters; this only keeps the
+        finished paragraph from flashing before the typewriter takes over) */
+  .stage[data-seq='idle'] .stageRead { animation: lp3-narr-failsafe 1ms linear 2400ms both; }
+
+  /* 4. the status label follows what the window is actually doing */
+  .stSt1 { animation: lp3-swap 1200ms steps(1, end) 0ms both; }
+  .stSt2 { animation: lp3-swap 4150ms steps(1, end) 1200ms both; }
+  .stSt3 { animation: lp3-in 300ms ease-out 5350ms both; }
+
+  /* 5. and the exchange that ends on a refusal */
+  .stageBubQ { animation: lp3-rise 320ms ease-out 5700ms both; }
+  .stageBubA { animation: lp3-rise 320ms ease-out 6500ms both; }
+
+  /* the visitor took over — everything snaps to its finished state at once */
+  .stage[data-seq='done'] .cdl,
+  .stage[data-seq='done'] .lay,
+  .stage[data-seq='done'] .stageSt,
+  .stage[data-seq='done'] .stageRead,
+  .stage[data-seq='done'] .stageBubQ,
+  .stage[data-seq='done'] .stageBubA { animation: none !important; }
+}
 
 /* FEATURE ROW */
 .feat { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; margin-bottom: 88px; }

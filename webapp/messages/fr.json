@@ -7,7 +7,12 @@
       "lead": "Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés automatiquement et décrits en langage clair. Et un assistant qui répond quand tu ne comprends pas.",
       "ctaPrimary": "S'abonner",
       "ctaSecondary": "Voir les outils",
-      "micro": "Accès complet dès l'abonnement · Résiliable à tout moment"
+      "micro": "Accès complet dès l'abonnement · Résiliable à tout moment",
+      "stage": {
+        "loading": "Le graphique se charge",
+        "reading": "M.I.A lit la structure",
+        "done": "lecture à jour"
+      }
     },
     "tools": {
       "eyebrow": "Cinq outils, un même produit",

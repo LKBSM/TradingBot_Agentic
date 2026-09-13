@@ -7,7 +7,12 @@
       "lead": "Order Blocks, Fair Value Gaps, Strukturbrüche, Liquiditätszonen — automatisch erkannt und in klarer Sprache beschrieben. Und ein Assistent, der antwortet, wenn du etwas nicht verstehst.",
       "ctaPrimary": "Abonnieren",
       "ctaSecondary": "Werkzeuge ansehen",
-      "micro": "Voller Zugang ab dem Abo · Jederzeit kündbar"
+      "micro": "Voller Zugang ab dem Abo · Jederzeit kündbar",
+      "stage": {
+        "loading": "Das Chart lädt",
+        "reading": "M.I.A liest die Struktur",
+        "done": "Lesung aktuell"
+      }
     },
     "tools": {
       "eyebrow": "Fünf Werkzeuge, ein Produkt",

@@ -7,7 +7,12 @@
       "lead": "Order Blocks, Fair Value Gaps, złamania struktury, strefy płynności — wykrywane automatycznie i opisane prostym językiem. Plus asystent, który odpowiada, gdy czegoś nie rozumiesz.",
       "ctaPrimary": "Subskrybuj",
       "ctaSecondary": "Zobacz narzędzia",
-      "micro": "Pełny dostęp od chwili subskrypcji · Anuluj w dowolnym momencie"
+      "micro": "Pełny dostęp od chwili subskrypcji · Anuluj w dowolnym momencie",
+      "stage": {
+        "loading": "Wykres się ładuje",
+        "reading": "M.I.A czyta strukturę",
+        "done": "odczyt aktualny"
+      }
     },
     "tools": {
       "eyebrow": "Pięć narzędzi, jeden produkt",
