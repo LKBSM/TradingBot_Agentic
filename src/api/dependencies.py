@@ -72,3 +72,6 @@ class AppState:
     # Prototype — live-tick zone interaction (LIVE_TICK_ENABLED, dev/free tier).
     # Single shared Twelve Data WS connection feeding the /api/live-price SSE.
     live_tick_bridge: Optional[Any] = None  # src.intelligence.data_providers.TwelveDataLiveTickBridge
+    # BKP-1 — daily SQLite backup to object storage. In-process because a Render
+    # cron job cannot be given the persistent disk the databases live on.
+    backup_daemon: Optional[Any] = None  # src.persistence.backup_daemon.BackupDaemon

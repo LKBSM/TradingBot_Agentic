@@ -110,6 +110,20 @@ async def _build_health(request: Request) -> HealthResponse:
         except Exception:
             pass
 
+    # BKP-1 — is the data actually backed up? Read off the local state file the
+    # backup daemon writes, so this costs no request to the object store. A
+    # stale backup degrades the service's health: the product sells the history
+    # of each zone, and an unbacked-up history is one disk failure from gone.
+    backup = None
+    try:
+        from src.persistence.backup_service import health_snapshot
+
+        backup = health_snapshot()
+        if backup is not None and not backup.get("fresh"):
+            status = SystemStatus.DEGRADED
+    except Exception:
+        pass
+
     return HealthResponse(
         status=status,
         uptime_seconds=round(time.time() - _BOOT_TIME, 2),
@@ -125,6 +139,7 @@ async def _build_health(request: Request) -> HealthResponse:
         cache_size=cache_size,
         operational_kill_switch=operational_kill_switch,
         data_provider_credits=data_provider_credits,
+        backup=backup,
     )
 
 
