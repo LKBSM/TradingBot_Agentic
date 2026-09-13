@@ -232,3 +232,240 @@ Le code est livré et testé. Avant fusion sur `main`, **tu** dois :
 
 **La fusion sur `main` n'intervient qu'après ta confirmation live et ton constat des deux
 parcours.**
+
+---
+---
+
+# PAY-3 — REPRISE DU 2026-09-13 : les trous que l'audit ci-dessus n'avait pas fermés
+
+**Branche** : `feat/pay-3-acces` (worktree dédié `C:\MyPythonProjects\wt-pay-3-acces`,
+depuis `origin/main` = `9de5138`).
+**Posture** : le parcours d'accès était déjà bâti (PAY-1, PAY-2, PRIX-1, PAY-3a→e, tous
+fusionnés). Cette reprise ne le refait pas : elle ferme ce qui manquait encore, et
+énonce ce qui a été décidé de ne pas faire.
+
+---
+
+## 0. Résumé exécutif
+
+| Sujet | Constat à l'ouverture | Livré |
+|---|---|---|
+| **Le test vivant (G1)** | `4242` n'apparaissait dans **aucun test**. Pire : `ci.yml` lançait une liste curée d'une trentaine de fichiers où **aucun test de paiement** ne figurait. Le scénario le plus coûteux n'avait **aucune défense automatisée**. | Test Playwright qui pousse une vraie carte de test à travers le Checkout hébergé, attend le webhook, échoue bruyamment à 90 s. Workflow dédié non contournable + les 7 fichiers de tests paiement enfin lancés par la CI. |
+| **Géo CA/US (G2)** | Aucun `allowed_countries`, aucun `billing_address_collection` dans le dépôt. Restriction inexistante. | Adresse de facturation obligatoire au Checkout + filet webhook (annulation, remboursement, statut `blocked_region`) + écran dédié + règle Radar documentée. |
+| **Webhook mort (G4)** | `/api/billing/sync` sauvait le client **et masquait la panne** : rien n'alertait. | Chaque sauvetage compté, journalisé en ERROR, poussé sur le canal d'alerte. |
+| **Préavis annuel (G5)** | Conditionné à la seule présence de `SMTP_HOST`. « Peut-on envoyer » valait « a-t-on le droit ». | Verrou explicite `RENEWAL_NOTICE_TEXT_APPROVED` (défaut : rien ne part). |
+| **Clerk** | Demandé par la mission. | **Non fait — décision fondateur.** Voir §5. |
+| **39,99 $** | Mission 39,99 $, dépôt 39 $. | **39 $ maintenu — décision fondateur.** |
+
+**Tests** : backend **220 passés** (7 suites paiement + 6 suites auth), dont **24 nouveaux**
+(`tests/test_pay3_zone_and_health.py`) ; front **tsc 0**, **build vert**, **vitest 9/9**
+(SubscriptionGate), **Playwright 16/16** (`pay3-etats.spec.ts`, fr × 1280×800 + 390×844).
+
+---
+
+## 1. G1 — le test vivant, et pourquoi il n'en existait pas
+
+### Le constat
+`git grep 4242` ne trouvait le numéro de carte que dans des `.md` et des CSV de données.
+Les 8 tests PAY-3 existants utilisent un `FakeStripeClient` — utile, mais structurellement
+incapable d'attraper la classe de panne qui compte : c'est exactement ainsi qu'un
+`verify_webhook` renvoyant un objet `stripe.Event` (dont `.get()` lève `AttributeError`) est
+passé en production, **le faux client, lui, renvoyant un `dict`**.
+
+Et `ci.yml` ne lançait **aucun** de ces tests. La suite paiement existait sans jamais tourner.
+
+### Ce qui est livré
+`webapp/tests/live/stripe-live-journey.spec.ts` + `webapp/playwright.live.config.ts` :
+
+1. compte jetable créé par la vraie route d'inscription ;
+2. **on vérifie d'abord que le mur MORD** (402) — sans quoi un vert ne prouverait rien :
+   un `SUBSCRIPTION_GATE_ENFORCED` oublié passerait pour un succès ;
+3. vraie session Checkout, vraie page hébergée, carte `4242 4242 4242 4242`,
+   pays **CA** (la zone est respectée : c'est le chemin nominal qu'on mesure ici) ;
+4. attente de l'accès, 90 s maximum, 2 s entre deux sondages ;
+5. échec **bruyant** avec la liste ordonnée de ce qu'il faut vérifier ;
+6. puis contrôle que le mur s'est vraiment ouvert sur la route de données.
+
+**Ce qu'il ne fait surtout pas** : appeler `POST /api/billing/sync`. La réconciliation
+directe sauverait le client et rendrait le test vert **alors même que le webhook est mort** —
+elle masquerait précisément la panne que ce test existe pour détecter. Seul le chemin webhook
+est mesuré.
+
+**Ce qui l'empêche d'être désactivé** :
+- une clé `sk_live_` fait **échouer** le test (il pousse un vrai numéro de carte) ;
+- `PAY3_LIVE_REQUIRED=1` (posé par le workflow) fait d'une configuration manquante un
+  **échec**, pas un skip silencieux ;
+- `retries: 0` : une réussite au second essai masquerait la latence anormale recherchée ;
+- dans `.github/workflows/stripe-live.yml` : aucun `continue-on-error`, aucun `if:` qui
+  puisse sauter le job ; le seul `if: always()` ne sert qu'à récupérer les journaux d'un échec.
+
+**Quand il tourne** : push sur `main`, PR touchant la facturation, **et une fois par jour** —
+un webhook peut mourir le mardi après un déploiement vert du lundi.
+
+### Ce qui reste à faire avant que ce filet soit réellement armé
+Deux secrets GitHub, en **mode test** : `STRIPE_SECRET_KEY` (`sk_test_…`) et
+`STRIPE_PRICE_MONTHLY`. Tant qu'ils sont absents, le job échoue avec un message explicite —
+c'est voulu : un filet non armé doit se voir.
+
+> **Honnêteté sur ce qui n'a pas pu être vérifié ici** : ce workflow n'a jamais été exécuté.
+> Aucune clé Stripe n'est présente dans cet environnement, et GitHub Actions ne tourne pas
+> en local. Le YAML est validé (`yaml.safe_load`), les sélecteurs de la page Checkout sont
+> ceux de la page hébergée actuelle, mais **le premier vrai passage est à faire par toi** —
+> vraisemblablement en `workflow_dispatch` une fois les secrets posés.
+
+---
+
+## 2. G2 — la zone de vente Canada + États-Unis
+
+### La contrainte technique, d'abord
+**Stripe Checkout n'offre aucune liste blanche de pays de facturation** pour un abonnement
+(`allowed_countries` ne concerne qu'une adresse de *livraison*). Il n'existe donc pas de
+« cocher CA et US » — d'où deux couches, et il faut les deux.
+
+| Couche | Où | Ce qu'elle fait |
+|---|---|---|
+| 1 — **Radar** | Tableau de bord Stripe (**action fondateur**) | `Block if :card_country: not in ('CA','US')` — empêche le paiement d'aboutir. |
+| 2 — **filet webhook** | `src/billing/geo.py` + `account_billing.py` | Une session hors zone qui aboutit quand même est **annulée**, **remboursée**, et persistée en `blocked_region`. |
+
+La couche 2 seule laisserait l'argent arriver avant d'être rendu ; la couche 1 seule est un
+réglage de tableau de bord qu'aucun test ne voit. Ensemble, elles échouent fermé.
+
+### Décisions de conception
+- `billing_address_collection: "required"` au Checkout : **sans adresse, il n'y a pas de pays
+  à lire**, donc pas de filet. C'est ce paramètre qui rend la couche 2 possible ; il est
+  verrouillé par un test qui inspecte les paramètres envoyés à Stripe.
+- **Un pays inconnu n'est jamais un motif de refus.** On ne bloque que sur un pays réellement
+  lu. Refuser sur une absence d'adresse enfermerait dehors un client légitime pour une
+  variation de forme d'événement — et Radar, lui, bloque la carte sans avoir besoin d'adresse.
+- `BILLING_ALLOWED_COUNTRIES` permet d'élargir la zone par configuration. **Une valeur vide
+  retombe sur `CA,US`** : une coquille dans une variable d'environnement ne doit jamais ouvrir
+  le monde entier.
+- **Le remboursement est automatique.** Annuler un abonnement ne rend pas l'argent ; garder
+  un paiement pour un service qu'on refuse de rendre n'est pas défendable, encore moins sous
+  la LPC. Si le remboursement échoue, il est journalisé « REFUND BY HAND » — et le refus
+  d'accès, lui, passe quand même.
+- **Une panne Stripe pendant l'annulation ne peut pas ouvrir l'accès** : le statut
+  `blocked_region` est persisté même si l'appel d'annulation lève (test dédié).
+
+### L'écran
+`blocked_region` retombait sur l'écran « expiré », donc sur le choix de formule : on
+réinvitait à payer un client dont le paiement venait d'être annulé et remboursé. Il a
+maintenant son écran — motif nommé, remboursement dit explicitement, **aucune formule,
+aucun bouton de gestion**. Corollaire corrigé : au retour de Checkout, le spinner de
+confirmation aurait tourné 24 tentatives sur un refus qui ne changera jamais ; un refus est
+une réponse **arrivée**, pas une réponse en attente.
+
+---
+
+## 3. G4 — un webhook mort ne peut plus se cacher derrière son propre contournement
+
+`POST /api/billing/sync` (PAY-3e) réconcilie depuis l'API Stripe quand aucun webhook n'arrive.
+C'est une bonne défense — mais elle **masquait** la panne : vu de l'extérieur tout allait
+bien pendant que le webhook pouvait être mort depuis une semaine, tous les autres clients
+enfermés dehors.
+
+Désormais (`src/billing/webhook_health.py`), quand la réconciliation trouve un abonnement
+**actif** que notre base ignorait : compteur incrémenté, ERROR journalisé avec la marche à
+suivre, alerte poussée sur `DISCORD_WEBHOOK_URL` si configuré. **Un sauvetage isolé n'est pas
+un incident** (le premier appel après Checkout peut devancer la livraison Stripe) ; un
+compteur qui monte, si.
+
+*Réserve assumée* : l'état est en mémoire de processus, donc remis à zéro à chaque
+redéploiement. C'est un **signal**, pas une piste d'audit — la piste d'audit est la table
+`processed_webhooks`. Si tu veux une métrique durable, c'est une mission séparée.
+
+---
+
+## 4. G5 — le préavis de renouvellement, verrouillé
+
+Le préavis annuel à 30 jours existait depuis PAY-1 mais ne dépendait que de `SMTP_HOST`.
+« Peut-on envoyer » et « a-t-on le droit d'envoyer **ce texte-là** » sont deux questions
+différentes ; les confondre est la façon dont un texte juridique non relu part par accident.
+
+`RENEWAL_NOTICE_TEXT_APPROVED` (défaut `0`) : rien ne part, et un WARNING nomme la variable
+pour que l'arrêt ne soit jamais silencieux. Le gabarit est annoté des points que le texte doit
+couvrir (date et montant du prélèvement, résiliation aussi simple que la souscription, aucune
+clause de vente finale, lien direct vers la gestion).
+
+**Le texte reste à faire valider par l'avocat. Ne pose `=1` qu'après.**
+
+---
+
+## 5. Ce qui a été décidé de NE PAS faire (et pourquoi)
+
+### Clerk — écarté
+La mission demandait Clerk. Constat : **aucune clé Clerk n'existe**, et surtout
+`AUDIT-pay-1.md` §1 avait déjà tranché par écrit, sur un motif juridique —
+*« Clerk = US-only sans choix de région → transfert hors Québec permanent »* (Loi 25).
+L'auth maison en place est Argon2id + sessions opaques révocables + Google OAuth +
+vérification e-mail : migrer signifierait jeter ce code, ajouter une dépendance, et
+contredire une analyse déjà rendue. **Décision fondateur : on garde l'auth maison.**
+Si un fournisseur managé devient souhaitable, le candidat documenté est Supabase Auth
+(région Montréal `ca-central-1`), pas Clerk.
+
+Conséquence : la partie A de la mission (identité, fusion par courriel, écran « connecté
+jamais payé ») **était déjà livrée** — `email_lower NOT NULL UNIQUE`, recherche par e-mail
+avant toute création côté Google, test `TestOneEmailOneAccount`. Rien à refaire.
+
+### 39,99 $ — écarté
+`config/pricing.json` (source unique lue par le backend **et** le front généré) porte **39 $**.
+L'annuel 348 $ correspond à la mission. **Décision fondateur : 39 $ maintenu.** Note pour
+plus tard : un prix Stripe ne se modifie pas — changer le montant obligerait à créer deux
+nouveaux objets Price et à repointer `STRIPE_PRICE_*`.
+
+### La table d'accès — rien à créer
+Elle existe : `accounts.db`, `SCHEMA_VERSION 7`, tables `accounts` / `subscriptions` /
+`processed_webhooks` / `sessions` / `email_verifications` / `renewal_notices` /
+`account_consents`. `subscriptions` ne contient que des identifiants Stripe opaques, un
+statut et des dates — **aucune donnée de carte, jamais**. C'est exactement la minimisation
+demandée (Loi 25). Aucune migration n'a été nécessaire : `blocked_region` est une **valeur**
+de la colonne `status`, pas une colonne de plus.
+
+---
+
+## 6. Tests — ce qui est verrouillé, et par quoi
+
+| Exigence de la mission | Où |
+|---|---|
+| Signature de webhook invalide rejetée | `test_pay3_payment_journey.py::TestRealStripeSignature` (vraie signature Stripe) + 400 dur sur signature absente |
+| Doublon de courriel impossible | `test_pay3_payment_journey.py::TestOneEmailOneAccount` + `email_lower UNIQUE` |
+| Chaque état affiche son écran **et aucun autre** | `webapp/tests/e2e/pay3-etats.spec.ts` — 8 cas × 2 gabarits, chacun asserte la **présence** de son écran et l'**absence** des marqueurs des autres |
+| Pays hors CA/US refusé | `test_pay3_zone_and_health.py::TestOutOfZoneIsRefused` — prouvé par le **refus de données (402)**, pas par un drapeau écrit |
+| « Payé mais pas d'accès » impossible | `test_pay3_payment_journey.py` (chemin faux Stripe) **+** `stripe-live-journey.spec.ts` (chemin réel) |
+| Zone paramétrable sans ouvrir le monde | `TestZoneHelpers::test_blank_env_falls_back_to_the_default_zone` |
+| Préavis bloqué tant que non validé | `TestRenewalNoticeLegalLock` (3 cas, dont « SMTP seul ne vaut pas approbation ») |
+
+Résultats : backend **220/220**, `tsc` **0**, `build` vert, vitest **9/9**,
+Playwright **16/16**.
+
+---
+
+## 7. Ce que tu dois faire, toi
+
+1. **Secrets GitHub** (mode test) : `STRIPE_SECRET_KEY` = `sk_test_…`,
+   `STRIPE_PRICE_MONTHLY`. Puis lancer `Stripe live journey` en `workflow_dispatch` et
+   constater qu'il passe au vert — **c'est le premier vrai passage du filet**.
+2. **Règle Radar** dans le tableau de bord Stripe :
+   `Block if :card_country: not in ('CA','US')`. Le code est le filet, Radar est le mur.
+3. **Render** : rien d'obligatoire à ajouter (`BILLING_ALLOWED_COUNTRIES` non posée = zone
+   CA/US par défaut ; `RENEWAL_NOTICE_TEXT_APPROVED` reste à `0`).
+4. **Avocat** : faire valider le texte du préavis annuel, puis seulement
+   `RENEWAL_NOTICE_TEXT_APPROVED=1`.
+5. **Le paiement de test complet et l'annulation complète, en direct, par toi** — la
+   condition de fusion posée par la mission. Le test vivant prouve la mécanique ;
+   ton passage prouve le parcours.
+6. **Le passage des clés test aux clés réelles reste ton action**, jamais celle d'une mission.
+
+---
+
+## 8. Ce qui reste ouvert (dit, non fait)
+
+- **Écrans `none` et `expired`** : ils partagent toujours la même vue (choix de formule),
+  seule la phrase d'accroche change. Décision fondateur du 2026-09-13 : **c'est acceptable** —
+  dans les deux cas l'action attendue est la même (choisir une formule), contrairement à
+  `blocked_region` où proposer de payer serait faux. Noté ici pour que ce soit un choix et
+  non un oubli.
+- **`EMAIL_VERIFICATION_ENFORCED=0`** (PAY-3e, pour un environnement sans SMTP) crée en
+  pratique un état de plus. Non refermé : c'est la soupape qui permet au test vivant de
+  tourner dans un runner. À reconsidérer quand SMTP sera posé en production.
+- **Le compteur de sauvetages** est en mémoire de processus (cf. §3).
