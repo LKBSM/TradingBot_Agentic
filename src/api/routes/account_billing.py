@@ -36,8 +36,14 @@ from src.api.account_store import AccountStore
 from src.api.public_urls import app_public_url
 from src.api.session_auth import require_account
 from src.api.subscription_gate import account_has_access
+from src.billing.geo import (
+    BLOCKED_REGION_STATUS,
+    allowed_countries,
+    is_allowed_country,
+)
 from src.billing.pricing import list_paid_plans
 from src.billing.stripe_client import parse_account_event
+from src.billing.webhook_health import record_sync_rescue
 
 logger = logging.getLogger(__name__)
 
@@ -309,6 +315,19 @@ async def sync_subscription(
             logger.exception("stripe subscription sync failed for account=%s", account["id"])
             raise HTTPException(status_code=502, detail="La vérification du paiement a échoué. Réessaie dans un instant.")
         if state and state.get("status"):
+            # PAY-3 (G4) - if reconciliation finds an ACTIVE subscription that our
+            # DB did not know about, a webhook did not do its job. That is exactly
+            # the silent failure this mission exists to prevent, so it must never
+            # pass unnoticed just because the customer was rescued.
+            if state.get("status") in ("active", "trialing") and sub.get("status") not in (
+                "active",
+                "trialing",
+            ):
+                record_sync_rescue(
+                    account_id=account["id"],
+                    stripe_status=str(state.get("status")),
+                    stored_status=sub.get("status"),
+                )
             store.upsert_subscription(
                 account["id"],
                 stripe_customer_id=customer_id,
@@ -379,6 +398,46 @@ async def webhook(
         return {"received": True, "duplicate": True}
 
     if event.event_type == "checkout.session.completed":
+        # PAY-3 (G2) - ZONE NET. The product is sold in Canada + the United
+        # States only. Stripe Checkout cannot allow-list billing countries, so
+        # the Radar rule blocks the card and THIS refuses anything that still got
+        # through: cancel the subscription, give the money back, and persist a
+        # status that grants nothing. Never grant access first and sort it later.
+        if not is_allowed_country(event.billing_country):
+            logger.error(
+                "OUT-OF-ZONE subscription refused: account=%s country=%s "
+                "subscription=%s (zone=%s) - check the Stripe Radar rule, it "
+                "should have blocked this card before the charge",
+                account_id, event.billing_country, event.subscription_id,
+                ",".join(sorted(allowed_countries())),
+            )
+            refunded = False
+            if event.subscription_id:
+                try:
+                    refunded = stripe.refund_subscription_payment(event.subscription_id)
+                    stripe.cancel_subscription(event.subscription_id)
+                except Exception:
+                    logger.exception(
+                        "could not cancel out-of-zone subscription=%s - CANCEL BY HAND",
+                        event.subscription_id,
+                    )
+            store.upsert_subscription(
+                account_id,
+                stripe_customer_id=event.customer_id or None,
+                stripe_subscription_id=event.subscription_id,
+                status=BLOCKED_REGION_STATUS,
+                price_id=None,
+                current_period_end=None,
+                cancel_at_period_end=False,
+                trial_end=None,
+                event_created=event.event_created,
+            )
+            return {
+                "received": True,
+                "refused": "out_of_zone",
+                "country": event.billing_country,
+                "refunded": refunded,
+            }
         # Bind customer↔account; the subscription.* events carry the full state.
         if event.customer_id:
             store.link_stripe_customer(account_id, event.customer_id)
