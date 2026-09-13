@@ -26,11 +26,22 @@ const ACTIVE_STATUSES = new Set(['active', 'trialing']);
  * The app-facing subscription states (PAY-1), derived from the Stripe status +
  * ``cancel_at_period_end``.
  */
-type SubState = 'none' | 'active' | 'canceling' | 'grace' | 'suspended' | 'expired';
+type SubState =
+  | 'none'
+  | 'active'
+  | 'canceling'
+  | 'grace'
+  | 'suspended'
+  | 'expired'
+  | 'blockedRegion';
 
 function deriveState(sub: Subscription | null): SubState {
   const status = sub?.status ?? null;
   if (!status) return 'none';
+  // PAY-3 (G2) — bought from outside the CA/US selling zone: cancelled and
+  // refunded by the webhook. It is NOT an expiry, so it must never land on the
+  // "subscribe again" screen — that would invite a payment we refuse again.
+  if (status === 'blocked_region') return 'blockedRegion';
   if (ACTIVE_STATUSES.has(status)) {
     return sub?.cancel_at_period_end ? 'canceling' : 'active';
   }
@@ -55,6 +66,8 @@ function stateHeading(state: SubState, t: (key: string) => string): string {
       return t('status.suspended');
     case 'expired':
       return t('status.expired');
+    case 'blockedRegion':
+      return t('status.blockedRegion');
     default:
       return t('status.none');
   }
@@ -133,7 +146,12 @@ export function SubscriptionPanel() {
   // After returning from Stripe Checkout the payment already succeeded, but
   // ACCESS is granted by the WEBHOOK, not by this redirect. Poll until active.
   const awaitingWebhook =
-    checkoutStatus === 'success' && account !== null && !hasAccessState(deriveState(sub));
+    checkoutStatus === 'success' &&
+    account !== null &&
+    !hasAccessState(deriveState(sub)) &&
+    // A refused out-of-zone payment is a settled answer, not a pending one:
+    // polling it would spin forever on a spinner that can never resolve.
+    deriveState(sub) !== 'blockedRegion';
 
   React.useEffect(() => {
     if (!account || !awaitingWebhook) return;
@@ -247,6 +265,34 @@ export function SubscriptionPanel() {
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
           {t('ownerBadge')}
         </div>
+      </div>
+    );
+  }
+
+  // Refused because it was bought outside the selling zone (PAY-3 G2). Its own
+  // screen, with no plan cards and no call to pay: the money was already given
+  // back, and a second attempt from the same country would be refused again.
+  if (state === 'blockedRegion') {
+    return (
+      <div className="space-y-6" data-testid="subscription-blocked-region">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t('blockedRegionTitle')}
+          </h1>
+        </div>
+        <section className="space-y-3 rounded-2xl border border-border/60 p-6">
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex h-2 w-2 rounded-full bg-sentinel-warn"
+              aria-hidden
+            />
+            <h2 className="text-base font-medium text-foreground">
+              {stateHeading(state, t)}
+            </h2>
+          </div>
+          <p className="text-sm text-muted-foreground">{t('blockedRegionNotice')}</p>
+          <p className="text-xs text-muted-foreground">{t('blockedRegionHelp')}</p>
+        </section>
       </div>
     );
   }

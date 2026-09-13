@@ -1883,13 +1883,17 @@
       "canceled": "Subscrição cancelada",
       "none": "Nenhuma subscrição",
       "suspended": "Subscription suspended",
-      "expired": "Subscription expired"
+      "expired": "Subscription expired",
+      "blockedRegion": "Assinatura fora da zona de venda"
     },
     "nextCharge": "Next charge on {date}: {amount} {currency}",
     "accessUntilNoRenewal": "Access until {date}, with no renewal.",
     "graceNotice": "Payment failed. Update your payment method so you don't lose access.",
     "suspendedNotice": "Access suspended following a refund or dispute. Contact support if needed.",
     "expiredNotice": "Your subscription has expired. Subscribe again to regain access.",
+    "blockedRegionTitle": "Esta assinatura nao esta disponivel no teu pais",
+    "blockedRegionNotice": "O M.I.A Markets e vendido apenas no Canada e nos Estados Unidos. O pagamento feito a partir de outro pais foi cancelado e reembolsado: nenhum valor permanece cobrado.",
+    "blockedRegionHelp": "Se pagas a partir do Canada ou dos Estados Unidos e ves esta mensagem, escreve-nos: vamos verificar o endereco de faturacao registado.",
     "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
     "reactivate": "Subscribe again",
     "activateTitle": "Activate your account",
