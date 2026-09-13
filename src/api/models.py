@@ -116,6 +116,11 @@ class HealthResponse(BaseModel):
     # live provider is wired. The daily figure is the one that matters: the free
     # plan caps at 800/day and the steady state already spends ~254.
     data_provider_credits: Optional[Dict[str, Any]] = None
+    # SMTP-1 — transactional email: {configured, verification_wall, sent, failed,
+    # undeliverable, last_error, healthy}. `healthy` is false when the
+    # verification wall stands with no way to send the mail that opens it — the
+    # state in which every new customer is locked out for good.
+    email: Optional[Dict[str, Any]] = None
 
 
 # =============================================================================

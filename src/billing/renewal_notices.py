@@ -33,39 +33,18 @@ def _annual_price_id() -> Optional[str]:
 
 
 def _smtp_configured() -> bool:
-    return bool(os.environ.get("SMTP_HOST"))
+    """SMTP-1: one definition of "can we send at all", shared with the two other
+    transactional mails instead of a third private copy."""
+    from src.api.mailer import smtp_configured
+
+    return smtp_configured()
 
 
 def _send_email(to_email: str, subject: str, body: str) -> bool:
-    """Best-effort SMTP send (env-gated). Returns False when SMTP is unset."""
-    host = os.environ.get("SMTP_HOST")
-    if not host:
-        return False
-    import smtplib
-    from email.message import EmailMessage
+    """Send one notice. SMTP-1: delivery lives in ``src/api/mailer.py`` now."""
+    from src.api.mailer import send_email
 
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = os.environ.get(
-        "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
-    )
-    msg["To"] = to_email
-    msg.set_content(body)
-    try:
-        from src.api.email_branding import attach_branded_html
-
-        attach_branded_html(msg, body)
-    except Exception:  # pragma: no cover - HTML is a best-effort enhancement
-        logger.debug("branded HTML alternative skipped", exc_info=True)
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    user = os.environ.get("SMTP_USER")
-    password = os.environ.get("SMTP_PASSWORD")
-    with smtplib.SMTP(host, port, timeout=10) as server:
-        server.starttls()
-        if user and password:
-            server.login(user, password)
-        server.send_message(msg)
-    return True
+    return send_email(to_email, subject, body, purpose="renewal_notice")
 
 
 def _notice_body(period_end: float) -> tuple[str, str]:
@@ -92,13 +71,28 @@ def send_due_renewal_notices(store: Any, *, now: Optional[float] = None) -> int:
     if not price_id:
         logger.info("renewal notices: STRIPE_PRICE_ANNUAL unset — skipping")
         return 0
-    if not _smtp_configured():
-        logger.info("renewal notices: SMTP not configured — skipping")
-        return 0
 
     now = time.time() if now is None else now
     lead = ANNUAL_LEAD_DAYS * 86400.0
     due = store.renewals_due(price_id, now=now, lead_seconds=lead, kind=NOTICE_KIND)
+
+    # SMTP-1: the SMTP check now comes AFTER the due list, and its level depends
+    # on whether anyone is actually owed a notice. Nobody due → nothing is going
+    # wrong today. Someone due and no way to write to them → that is a customer
+    # who will be charged for a year without the advance warning this job exists
+    # to give, so it is an ERROR, not a shrug. Nothing is claimed as "sent" in
+    # that case: record_renewal_notice is never reached, so the notice stays due.
+    if not _smtp_configured():
+        if due:
+            logger.error(
+                "renewal notices: %d account(s) are owed a 30-day advance notice "
+                "before an annual charge and email delivery is NOT configured — "
+                "they will be charged without warning. See docs/ops/envoi-courriels.md",
+                len(due),
+            )
+        else:
+            logger.info("renewal notices: SMTP not configured, nobody due — skipping")
+        return 0
 
     sent = 0
     for row in due:

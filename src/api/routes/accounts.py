@@ -21,7 +21,6 @@ NO payments here. Gated features import ``require_active_subscription`` from
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -31,7 +30,7 @@ from src.api.account_store import AccountError, AccountStore
 from src.api.auth_throttle import AuthThrottle, client_ip
 from src.api.middleware.beta_auth import beta_lockdown_enabled
 from src.api.public_urls import app_public_url
-from src.api.email_branding import attach_branded_html
+from src.api.mailer import send_email
 from src.api.routes.legal import LAST_UPDATED as LEGAL_VERSION
 from src.api.session_auth import (
     clear_session_cookie,
@@ -557,87 +556,58 @@ def _reset_base_url() -> str:
 
 
 def _send_reset_email(to_email: str, reset_url: str) -> bool:
-    """Send the reset link over SMTP when configured; return False otherwise.
+    """Send the reset link; ``False`` when email delivery is not configured.
 
-    Env-gated (``SMTP_HOST`` …). With no SMTP configured this is a clean no-op —
-    the caller then logs an honest "delivery not configured" line. Never logs the
-    token/link. Best-effort: a send failure is surfaced to the caller as False.
+    SMTP-1: the sending itself now lives in ``src/api/mailer.py`` — one copy for
+    the three transactional mails instead of three that drifted apart. Never logs
+    the token/link.
     """
-    host = os.environ.get("SMTP_HOST")
-    if not host:
-        return False
-    import smtplib
-    from email.message import EmailMessage
-
-    msg = EmailMessage()
-    msg["Subject"] = "Réinitialisation de votre mot de passe M.I.A Markets"
-    msg["From"] = os.environ.get(
-        "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
+    return send_email(
+        to_email,
+        "Réinitialisation de votre mot de passe M.I.A Markets",
+        (
+            "Vous avez demandé la réinitialisation de votre mot de passe M.I.A Markets.\n\n"
+            f"Ouvrez ce lien pour choisir un nouveau mot de passe :\n{reset_url}\n\n"
+            "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — "
+            "votre mot de passe reste inchangé. Le lien expire après un court délai."
+        ),
+        purpose="password_reset",
     )
-    msg["To"] = to_email
-    text_body = (
-        "Vous avez demandé la réinitialisation de votre mot de passe M.I.A Markets.\n\n"
-        f"Ouvrez ce lien pour choisir un nouveau mot de passe :\n{reset_url}\n\n"
-        "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail — "
-        "votre mot de passe reste inchangé. Le lien expire après un court délai."
-    )
-    msg.set_content(text_body)
-    attach_branded_html(msg, text_body)
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    user = os.environ.get("SMTP_USER")
-    password = os.environ.get("SMTP_PASSWORD")
-    with smtplib.SMTP(host, port, timeout=10) as server:
-        server.starttls()
-        if user and password:
-            server.login(user, password)
-        server.send_message(msg)
-    return True
 
 
 def _send_verification_email(to_email: str, verify_url: str, code: str) -> bool:
-    """Send the email-verification code + link over SMTP when configured (else
-    no-op). Same env-gated, best-effort posture as the reset email.
+    """Send the verification code + link; ``False`` when delivery is unconfigured.
 
     PAY-3c: the 6-digit CODE is the primary path (type it on the page, no context
     switch); the link is kept as a fallback.
-    """
-    host = os.environ.get("SMTP_HOST")
-    if not host:
-        return False
-    import smtplib
-    from email.message import EmailMessage
 
-    msg = EmailMessage()
-    msg["Subject"] = "Votre code de confirmation — M.I.A Markets"
-    msg["From"] = os.environ.get(
-        "SMTP_FROM", os.environ.get("SMTP_USER", "no-reply@mia.markets")
+    SMTP-1: this is the mail that opens the verification wall. Without it an
+    account can never gain access, which is why its failure is now reported at
+    ``ERROR`` by the mailer rather than swallowed.
+    """
+    return send_email(
+        to_email,
+        "Votre code de confirmation — M.I.A Markets",
+        (
+            "Bienvenue sur M.I.A Markets.\n\n"
+            f"Votre code de confirmation est : {code}\n\n"
+            "Saisissez-le sur la page de confirmation pour activer votre accès.\n\n"
+            "Vous pouvez aussi confirmer directement via ce lien :\n"
+            f"{verify_url}\n\n"
+            "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail. "
+            "Le code et le lien expirent après 24 heures."
+        ),
+        purpose="verification",
     )
-    msg["To"] = to_email
-    text_body = (
-        "Bienvenue sur M.I.A Markets.\n\n"
-        f"Votre code de confirmation est : {code}\n\n"
-        "Saisissez-le sur la page de confirmation pour activer votre accès.\n\n"
-        "Vous pouvez aussi confirmer directement via ce lien :\n"
-        f"{verify_url}\n\n"
-        "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet e-mail. "
-        "Le code et le lien expirent après 24 heures."
-    )
-    msg.set_content(text_body)
-    attach_branded_html(msg, text_body)
-    port = int(os.environ.get("SMTP_PORT", "587"))
-    user = os.environ.get("SMTP_USER")
-    password = os.environ.get("SMTP_PASSWORD")
-    with smtplib.SMTP(host, port, timeout=10) as server:
-        server.starttls()
-        if user and password:
-            server.login(user, password)
-        server.send_message(msg)
-    return True
 
 
 def _dispatch_verification_email(request: Request, account_id: int, email: str) -> None:
-    """Issue + email an email-verification code + link (out-of-band). Degrades to
-    a log line when SMTP is not configured (never logs the code/token)."""
+    """Issue + email an email-verification code + link (out-of-band).
+
+    SMTP-1: when the code cannot be delivered, this logs at ``ERROR``, not
+    ``INFO``. This mail is the key to the verification wall — if it does not
+    arrive, that account never gains access. Never logs the code/token.
+    """
     store = _store(request)
     challenge = store.create_email_verification_challenge(account_id)
     if challenge is None:
@@ -651,9 +621,10 @@ def _dispatch_verification_email(request: Request, account_id: int, email: str) 
                 return
         except Exception:
             logger.exception("verification email send failed for account id=%s", account_id)
-    logger.info(
-        "verification requested for account id=%s — email delivery not configured "
-        "(token not logged)",
+    logger.error(
+        "account id=%s is now stuck behind the email-verification wall: its "
+        "confirmation code could not be delivered, so it cannot gain access "
+        "(token not logged). See docs/ops/envoi-courriels.md",
         account_id,
     )
 
@@ -677,8 +648,9 @@ def _dispatch_reset_token(request: Request, identifier: str, raw_token: str) -> 
                 return
         except Exception:
             logger.exception("password reset email send failed for identifier=%r", identifier)
-    logger.info(
-        "password reset requested for identifier=%r — email delivery not configured "
-        "(token not logged)",
+    logger.error(
+        "password reset for identifier=%r could not be delivered — that customer "
+        "has no way back into their account (token not logged). "
+        "See docs/ops/envoi-courriels.md",
         identifier,
     )

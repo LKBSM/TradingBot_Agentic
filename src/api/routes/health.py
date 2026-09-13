@@ -110,6 +110,21 @@ async def _build_health(request: Request) -> HealthResponse:
         except Exception:
             pass
 
+    # SMTP-1 — can the product still write to its customers? Reads env + counters
+    # only, so a health check never opens an SMTP connection. Degrades the
+    # service when the verification wall stands without a way to send the key:
+    # from the outside the API looks perfectly fine while no new customer can
+    # get in, which is exactly the failure this field exists to surface.
+    email = None
+    try:
+        from src.api.mailer import health_snapshot as _email_health
+
+        email = _email_health()
+        if not email.get("healthy", True):
+            status = SystemStatus.DEGRADED
+    except Exception:
+        pass
+
     return HealthResponse(
         status=status,
         uptime_seconds=round(time.time() - _BOOT_TIME, 2),
@@ -125,6 +140,7 @@ async def _build_health(request: Request) -> HealthResponse:
         cache_size=cache_size,
         operational_kill_switch=operational_kill_switch,
         data_provider_credits=data_provider_credits,
+        email=email,
     )
 
 
