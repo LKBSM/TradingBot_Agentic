@@ -323,3 +323,70 @@ def test_renewal_notices_shout_only_when_someone_is_actually_due(caplog, monkeyp
     errors = [r for r in caplog.records if r.levelno >= logging.ERROR]
     assert errors, "an owed notice that cannot be sent is an ERROR"
     assert "without warning" in errors[0].getMessage()
+
+
+# --------------------------------------------------------------------------- #
+# scripts/check_email_delivery.py — naming the link that broke
+# --------------------------------------------------------------------------- #
+
+def _checker():
+    """Import the script by path — scripts/ is not a package."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_email_delivery.py"
+    spec = importlib.util.spec_from_file_location("check_email_delivery", path)
+    module = importlib.util.module_from_spec(spec)
+    # Register BEFORE executing: the script declares a @dataclass, and with
+    # `from __future__ import annotations` dataclasses resolves the annotation
+    # by looking the module up in sys.modules — absent, it blows up.
+    sys.modules["check_email_delivery"] = module
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    return module
+
+
+def test_checker_stops_at_configuration_when_nothing_is_set(monkeypatch, capsys):
+    monkeypatch.delenv("SMTP_HOST", raising=False)
+
+    report = _checker().check("a@b.c", dry_run=True)
+
+    assert report.ok is False
+    assert report.steps[0]["step"] == "configuration"
+    # It must say how to fix it, not just that it failed.
+    assert "SMTP_HOST" in report.steps[0]["fix"]
+
+
+def test_checker_stops_at_credentials_before_dialling_out(monkeypatch):
+    """An empty password cannot succeed — say so without opening a connection."""
+    monkeypatch.setenv("SMTP_HOST", "smtp-relay.example.invalid")
+    monkeypatch.setenv("SMTP_USER", "u")
+    monkeypatch.delenv("SMTP_PASSWORD", raising=False)
+
+    report = _checker().check("a@b.c", dry_run=True)
+
+    assert report.ok is False
+    assert [s["step"] for s in report.steps][-1] == "credentials"
+
+
+def test_checker_warns_about_a_public_mailbox_sender(monkeypatch):
+    """Relaying a gmail.com From address gets rejected or spam-foldered — and
+    a confirmation code in the spam folder locks the customer out just the same."""
+    monkeypatch.setenv("SMTP_HOST", "smtp.invalid.test")
+    monkeypatch.setenv("SMTP_USER", "u")
+    monkeypatch.setenv("SMTP_PASSWORD", "p")
+    monkeypatch.setenv("SMTP_FROM", "moi@gmail.com")
+
+    report = _checker().check("a@b.c", dry_run=True)
+
+    assert any(s["step"] == "sender domain" for s in report.steps)
+
+
+def test_checker_never_prints_the_password(monkeypatch, capsys):
+    monkeypatch.setenv("SMTP_HOST", "smtp.invalid.test")
+    monkeypatch.setenv("SMTP_USER", "u")
+    monkeypatch.setenv("SMTP_PASSWORD", "tres-secret-xkeysib")
+
+    _checker().check("a@b.c", dry_run=True)
+
+    assert "tres-secret-xkeysib" not in capsys.readouterr().out

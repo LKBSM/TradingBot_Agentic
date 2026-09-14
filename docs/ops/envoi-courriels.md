@@ -74,9 +74,29 @@ SMTP_FROM      no-reply@mia.markets     ← sur le domaine authentifié à l'ét
 
 `EMAIL_VERIFICATION_ENFORCED=1` est déjà posé explicitement par le blueprint.
 
-### 1.4 Vérifier
+### 1.4 Vérifier — une commande, pas un espoir
 
-Redéployer, puis :
+Depuis l'onglet **Shell** de `mia-backend` (elle lit l'environnement réel du
+service, donc elle teste la configuration exacte de la production) :
+
+```bash
+python scripts/check_email_delivery.py --to vous@exemple.com
+```
+
+Elle parcourt la chaîne maillon par maillon et **nomme celui qui casse** :
+
+```
+[  OK  ] configuration: host=smtp-relay.brevo.com port=587 user=… from=no-reply@mia.markets
+[  OK  ] connection: smtp-relay.brevo.com:587 answered in 167 ms
+[  OK  ] STARTTLS: channel encrypted
+[ FAIL ] authentication: rejected (535 b'5.7.8 Authentication failed')
+         → THE usual cause: the v3 API key was used as SMTP_PASSWORD.
+```
+
+`--dry-run` s'arrête après l'authentification sans rien envoyer. Le mot de passe
+n'est jamais affiché. Code de sortie 0 seulement si tout passe.
+
+Puis, une fois qu'elle est verte :
 
 ```bash
 curl -s https://<backend>/health | python -m json.tool | grep -A8 '"email"'
@@ -84,9 +104,16 @@ curl -s https://<backend>/health | python -m json.tool | grep -A8 '"email"'
 
 Attendu : `"configured": true`, `"healthy": true`.
 
-Puis le vrai test, celui qui compte — **créer un compte de bout en bout avec une
-adresse que vous relevez** et confirmer qu'il reçoit le code, qu'il ne tombe pas
-dans les indésirables, et que la confirmation donne bien l'accès.
+⚠️ **Qu'un relais accepte un message ne veut pas dire qu'un humain le reçoit.**
+Deux contrôles que la commande ne peut pas faire à votre place :
+
+1. ouvrir la boîte visée — et **regarder les indésirables**, pas seulement la
+   réception ;
+2. Brevo → **Transactional → Logs** : le message doit être `delivered`, pas
+   `deferred` ni `blocked`.
+
+Enfin, le vrai test de bout en bout : **créer un compte avec une adresse que vous
+relevez** et confirmer qu'il reçoit le code et que la confirmation donne l'accès.
 
 ---
 
@@ -133,6 +160,10 @@ Un client précis vient d'être bloqué. La ligne suivante nomme le compte :
 
 Pour le débloquer à la main, en attendant : confirmer son adresse côté base
 (`mark_email_verified`), ou baisser le mur.
+
+> Dans tous les cas ci-dessous, commencez par
+> `python scripts/check_email_delivery.py --dry-run` : elle isole le maillon en
+> quelques secondes au lieu de faire deviner.
 
 ### `SMTPAuthenticationError` / `535`
 
