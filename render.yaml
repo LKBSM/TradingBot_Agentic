@@ -82,6 +82,35 @@ services:
         sync: false
       - key: STRIPE_PRICE_ANNUAL
         sync: false
+      # SMTP-1 — TRANSACTIONAL EMAIL. NOT OPTIONAL, and here is why:
+      #   EMAIL_VERIFICATION_ENFORCED defaults to ON, and access.py denies
+      #   has_access to any account that has not confirmed its address. The code
+      #   that confirms it is delivered BY EMAIL. So with no SMTP, every customer
+      #   who registers is locked out permanently — while the owner account
+      #   (seeded verified, exempt) keeps working and hides the breakage.
+      #   These vars were missing from this blueprint until SMTP-1; the backend
+      #   now REFUSES TO BOOT in that state rather than take money for an
+      #   account that can never be activated.
+      # Three mails ride on this: email verification, password reset, and the
+      # 30-day advance notice before an annual charge (Loi 25 / LPC).
+      # Set the VALUES in the dashboard. Provider + DNS steps (SPF/DKIM):
+      # docs/ops/envoi-courriels.md
+      - key: SMTP_HOST            # e.g. smtp-relay.brevo.com
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM            # MUST be on a domain you verified at the provider
+        sync: false
+      # Declared EXPLICITLY, not left to its default: this flag and SMTP_HOST are
+      # a matched pair, and they silently drifted apart once already. Setting it
+      # to 0 lowers the verification wall (accounts reach the product without
+      # confirming an address) — only do that knowingly, and put SMTP back first.
+      - key: EMAIL_VERIFICATION_ENFORCED
+        value: "1"
       # Google sign-in — optional. If set, the OAuth callback lands on
       # API_PUBLIC_URL/api/auth/google/callback (register that exact URI in the
       # Google console). Leave unset to hide the Google button.

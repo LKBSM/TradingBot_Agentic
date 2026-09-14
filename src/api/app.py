@@ -377,6 +377,16 @@ def create_app(
         from src.api.public_urls import assert_public_urls_configured
 
         assert_public_urls_configured()
+        # SMTP-1 — refuse to boot a production deploy that raises the email
+        # verification wall without any way to send the mail that opens it.
+        # EMAIL_VERIFICATION_ENFORCED defaults to ON and access.py denies
+        # has_access to unverified accounts, so with no SMTP every customer who
+        # registers is locked out for good — while the owner account, seeded
+        # verified, keeps working and hides it. The error names both ways out.
+        # No-op in dev/CI/tests where ENVIRONMENT is unset.
+        from src.api.mailer import assert_email_delivery_configured
+
+        assert_email_delivery_configured()
         # Seed the owner account from env (idempotent, no-op without OWNER_*).
         _maybe_seed_owner(app_state)
         # AUTH-19 — purge expired session rows at boot then on a slow timer so
