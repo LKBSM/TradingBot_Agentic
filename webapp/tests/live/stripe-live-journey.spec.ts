@@ -119,7 +119,15 @@ async function payWithTestCard(page: Page): Promise<void> {
     name: /ai agent acting on behalf|agent (ia|ai) agissant/i,
   });
   if (await agentBox.count()) {
-    await agentBox.first().check();
+    // `force` : Stripe rend un <input> reel masque hors viewport, pilote par un
+    // libelle stylise. Sans force, Playwright refuse de cliquer ("element is
+    // outside of the viewport") et mange tout le budget du test. Le timeout
+    // court evite qu'un echec ici masque le vrai verdict : si la case ne se
+    // coche pas, on laisse le controle de soumission ci-dessous le dire.
+    await agentBox
+      .first()
+      .check({ force: true, timeout: 10_000 })
+      .catch(() => undefined);
   }
 
   // LE VRAI BOUTON D'ENVOI. Piège vérifié sur une trace d'échec : les boutons de
