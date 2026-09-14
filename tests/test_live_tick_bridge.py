@@ -29,8 +29,10 @@ def test_requires_api_key():
 
 
 def test_rejects_unknown_instrument():
+    # DATA-4 made BTCUSD a real market; the rejection only has meaning for an id
+    # the registry does not carry.
     with pytest.raises(ValueError):
-        TwelveDataLiveTickBridge(api_key="k", instruments=["BTCUSD"])
+        TwelveDataLiveTickBridge(api_key="k", instruments=["NOTAMARKET"])
 
 
 # ─── Message handling (pure) ──────────────────────────────────────────────────

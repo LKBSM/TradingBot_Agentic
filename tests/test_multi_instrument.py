@@ -67,9 +67,17 @@ class TestInstrumentRegistry:
         reg = get_instrument_registry()
         assert "USDJPY" in reg
 
-    def test_registry_has_6_instruments(self):
+    def test_registry_covers_every_supported_market(self):
+        """L'invariant n'est pas un COMPTE mais une INCLUSION : aucun marche servi
+        ne doit se retrouver sans configuration de prevision. DATA-4 a porte le
+        registre de 2 a 80 marches, chacun recevant le defaut de sa classe."""
+        from src.intelligence import market_registry
+
         reg = get_instrument_registry()
-        assert len(reg) == 6
+        assert set(market_registry.all_ids()) <= set(reg)
+        # Les 6 prereglages cales a la main restent presents et prioritaires.
+        for tuned in ("XAUUSD", "EURUSD", "BTCUSD", "US500", "GBPUSD", "USDJPY"):
+            assert tuned in reg
 
     def test_each_instrument_has_session_hours(self):
         reg = get_instrument_registry()

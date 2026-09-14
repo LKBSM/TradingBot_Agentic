@@ -17,9 +17,9 @@ class TestDryRun:
         rc = seed_twelve_data.main(["--dry-run"])
         out = capsys.readouterr().out
         assert rc == 0
-        # Default = the enabled LB-1 perimeter (2 instruments × 5 TFs, M1 gated off).
+        # Default = the enabled LB-1 perimeter (every market × 5 TFs, M1 gated off).
         combos = lookback_config.enabled_combos()
-        assert len(combos) == 10
+        assert len(combos) == len(lookback_config.supported_instruments()) * 5
         for inst, tf in combos:
             assert f"{inst} {tf}: dry-run" in out
         assert f"DONE: {len(combos)} combinations" in out

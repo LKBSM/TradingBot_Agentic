@@ -32,6 +32,786 @@
       "glyph": "€",
       "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
       "providerSymbol": "EUR/USD"
+    },
+    {
+      "id": "GBPUSD",
+      "label": "Livre / Dollar (GBP/USD)",
+      "symbol": "GBPUSD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "£",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "GBP/USD"
+    },
+    {
+      "id": "USDJPY",
+      "label": "Dollar / Yen (USD/JPY)",
+      "symbol": "USDJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/JPY"
+    },
+    {
+      "id": "USDCHF",
+      "label": "Dollar / Franc suisse (USD/CHF)",
+      "symbol": "USDCHF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/CHF"
+    },
+    {
+      "id": "USDCAD",
+      "label": "Dollar / Dollar canadien (USD/CAD)",
+      "symbol": "USDCAD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/CAD"
+    },
+    {
+      "id": "AUDUSD",
+      "label": "Dollar australien / Dollar (AUD/USD)",
+      "symbol": "AUDUSD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "A$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "AUD/USD"
+    },
+    {
+      "id": "NZDUSD",
+      "label": "Dollar néo-zélandais / Dollar (NZD/USD)",
+      "symbol": "NZDUSD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "N$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "NZD/USD"
+    },
+    {
+      "id": "EURGBP",
+      "label": "Euro / Livre (EUR/GBP)",
+      "symbol": "EURGBP",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/GBP"
+    },
+    {
+      "id": "EURJPY",
+      "label": "Euro / Yen (EUR/JPY)",
+      "symbol": "EURJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/JPY"
+    },
+    {
+      "id": "EURCHF",
+      "label": "Euro / Franc suisse (EUR/CHF)",
+      "symbol": "EURCHF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/CHF"
+    },
+    {
+      "id": "EURAUD",
+      "label": "Euro / Dollar australien (EUR/AUD)",
+      "symbol": "EURAUD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/AUD"
+    },
+    {
+      "id": "EURCAD",
+      "label": "Euro / Dollar canadien (EUR/CAD)",
+      "symbol": "EURCAD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/CAD"
+    },
+    {
+      "id": "EURNZD",
+      "label": "Euro / Dollar néo-zélandais (EUR/NZD)",
+      "symbol": "EURNZD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/NZD"
+    },
+    {
+      "id": "GBPJPY",
+      "label": "Livre / Yen (GBP/JPY)",
+      "symbol": "GBPJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "£",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "GBP/JPY"
+    },
+    {
+      "id": "GBPCHF",
+      "label": "Livre / Franc suisse (GBP/CHF)",
+      "symbol": "GBPCHF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "£",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "GBP/CHF"
+    },
+    {
+      "id": "GBPAUD",
+      "label": "Livre / Dollar australien (GBP/AUD)",
+      "symbol": "GBPAUD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "£",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "GBP/AUD"
+    },
+    {
+      "id": "GBPCAD",
+      "label": "Livre / Dollar canadien (GBP/CAD)",
+      "symbol": "GBPCAD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "£",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "GBP/CAD"
+    },
+    {
+      "id": "GBPNZD",
+      "label": "Livre / Dollar néo-zélandais (GBP/NZD)",
+      "symbol": "GBPNZD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "£",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "GBP/NZD"
+    },
+    {
+      "id": "AUDJPY",
+      "label": "Dollar australien / Yen (AUD/JPY)",
+      "symbol": "AUDJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "A$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "AUD/JPY"
+    },
+    {
+      "id": "AUDCHF",
+      "label": "Dollar australien / Franc suisse (AUD/CHF)",
+      "symbol": "AUDCHF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "A$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "AUD/CHF"
+    },
+    {
+      "id": "AUDCAD",
+      "label": "Dollar australien / Dollar canadien (AUD/CAD)",
+      "symbol": "AUDCAD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "A$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "AUD/CAD"
+    },
+    {
+      "id": "AUDNZD",
+      "label": "Dollar australien / Dollar néo-zélandais (AUD/NZD)",
+      "symbol": "AUDNZD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "A$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "AUD/NZD"
+    },
+    {
+      "id": "CADJPY",
+      "label": "Dollar canadien / Yen (CAD/JPY)",
+      "symbol": "CADJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "C$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "CAD/JPY"
+    },
+    {
+      "id": "CADCHF",
+      "label": "Dollar canadien / Franc suisse (CAD/CHF)",
+      "symbol": "CADCHF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "C$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "CAD/CHF"
+    },
+    {
+      "id": "CHFJPY",
+      "label": "Franc suisse / Yen (CHF/JPY)",
+      "symbol": "CHFJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "₣",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "CHF/JPY"
+    },
+    {
+      "id": "NZDJPY",
+      "label": "Dollar néo-zélandais / Yen (NZD/JPY)",
+      "symbol": "NZDJPY",
+      "type": "fx",
+      "priceDecimals": 3,
+      "glyph": "N$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "NZD/JPY"
+    },
+    {
+      "id": "NZDCHF",
+      "label": "Dollar néo-zélandais / Franc suisse (NZD/CHF)",
+      "symbol": "NZDCHF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "N$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "NZD/CHF"
+    },
+    {
+      "id": "NZDCAD",
+      "label": "Dollar néo-zélandais / Dollar canadien (NZD/CAD)",
+      "symbol": "NZDCAD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "N$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "NZD/CAD"
+    },
+    {
+      "id": "XAGUSD",
+      "label": "Argent (XAG/USD)",
+      "symbol": "XAGUSD",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Ag",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XAG/USD"
+    },
+    {
+      "id": "XPTUSD",
+      "label": "Platine (XPT/USD)",
+      "symbol": "XPTUSD",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Pt",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XPT/USD"
+    },
+    {
+      "id": "XPDUSD",
+      "label": "Palladium (XPD/USD)",
+      "symbol": "XPDUSD",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Pd",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XPD/USD"
+    },
+    {
+      "id": "XAUEUR",
+      "label": "Or en euro (XAU/EUR)",
+      "symbol": "XAUEUR",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Au",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XAU/EUR"
+    },
+    {
+      "id": "XAGEUR",
+      "label": "Argent en euro (XAG/EUR)",
+      "symbol": "XAGEUR",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Ag",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XAG/EUR"
+    },
+    {
+      "id": "XAUGBP",
+      "label": "Or en livre (XAU/GBP)",
+      "symbol": "XAUGBP",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Au",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XAU/GBP"
+    },
+    {
+      "id": "XAUJPY",
+      "label": "Or en yen (XAU/JPY)",
+      "symbol": "XAUJPY",
+      "type": "metal",
+      "priceDecimals": 2,
+      "glyph": "Au",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XAU/JPY"
+    },
+    {
+      "id": "BTCUSD",
+      "label": "Bitcoin (BTC/USD)",
+      "symbol": "BTCUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "₿",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "BTC/USD"
+    },
+    {
+      "id": "ETHUSD",
+      "label": "Ethereum (ETH/USD)",
+      "symbol": "ETHUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "Ξ",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "ETH/USD"
+    },
+    {
+      "id": "XRPUSD",
+      "label": "XRP (XRP/USD)",
+      "symbol": "XRPUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "XR",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XRP/USD"
+    },
+    {
+      "id": "LTCUSD",
+      "label": "Litecoin (LTC/USD)",
+      "symbol": "LTCUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "LT",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "LTC/USD"
+    },
+    {
+      "id": "BCHUSD",
+      "label": "Bitcoin Cash (BCH/USD)",
+      "symbol": "BCHUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "BC",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "BCH/USD"
+    },
+    {
+      "id": "ADAUSD",
+      "label": "Cardano (ADA/USD)",
+      "symbol": "ADAUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "AD",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "ADA/USD"
+    },
+    {
+      "id": "SOLUSD",
+      "label": "Solana (SOL/USD)",
+      "symbol": "SOLUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "SO",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "SOL/USD"
+    },
+    {
+      "id": "DOTUSD",
+      "label": "Polkadot (DOT/USD)",
+      "symbol": "DOTUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "DO",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "DOT/USD"
+    },
+    {
+      "id": "DOGEUSD",
+      "label": "Dogecoin (DOGE/USD)",
+      "symbol": "DOGEUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "DG",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "DOGE/USD"
+    },
+    {
+      "id": "LINKUSD",
+      "label": "Chainlink (LINK/USD)",
+      "symbol": "LINKUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "LK",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "LINK/USD"
+    },
+    {
+      "id": "AVAXUSD",
+      "label": "Avalanche (AVAX/USD)",
+      "symbol": "AVAXUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "AV",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "AVAX/USD"
+    },
+    {
+      "id": "BNBUSD",
+      "label": "BNB (BNB/USD)",
+      "symbol": "BNBUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "BN",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "BNB/USD"
+    },
+    {
+      "id": "TRXUSD",
+      "label": "TRON (TRX/USD)",
+      "symbol": "TRXUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "TX",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "TRX/USD"
+    },
+    {
+      "id": "XLMUSD",
+      "label": "Stellar (XLM/USD)",
+      "symbol": "XLMUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "XL",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "XLM/USD"
+    },
+    {
+      "id": "ATOMUSD",
+      "label": "Cosmos (ATOM/USD)",
+      "symbol": "ATOMUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "AT",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "ATOM/USD"
+    },
+    {
+      "id": "UNIUSD",
+      "label": "Uniswap (UNI/USD)",
+      "symbol": "UNIUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "UN",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "UNI/USD"
+    },
+    {
+      "id": "ETCUSD",
+      "label": "Ethereum Classic (ETC/USD)",
+      "symbol": "ETCUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "EC",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "ETC/USD"
+    },
+    {
+      "id": "FILUSD",
+      "label": "Filecoin (FIL/USD)",
+      "symbol": "FILUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "FL",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "FIL/USD"
+    },
+    {
+      "id": "NEARUSD",
+      "label": "NEAR Protocol (NEAR/USD)",
+      "symbol": "NEARUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "NR",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "NEAR/USD"
+    },
+    {
+      "id": "BTCEUR",
+      "label": "Bitcoin en euro (BTC/EUR)",
+      "symbol": "BTCEUR",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "₿",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "BTC/EUR"
+    },
+    {
+      "id": "ETHEUR",
+      "label": "Ethereum en euro (ETH/EUR)",
+      "symbol": "ETHEUR",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "Ξ",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "ETH/EUR"
+    },
+    {
+      "id": "SOLEUR",
+      "label": "Solana en euro (SOL/EUR)",
+      "symbol": "SOLEUR",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "SO",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "SOL/EUR"
+    },
+    {
+      "id": "BTCGBP",
+      "label": "Bitcoin en livre (BTC/GBP)",
+      "symbol": "BTCGBP",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "₿",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "BTC/GBP"
+    },
+    {
+      "id": "POLUSD",
+      "label": "Polygon / Dollar (POL/USD)",
+      "symbol": "POLUSD",
+      "type": "crypto",
+      "priceDecimals": 2,
+      "glyph": "P",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "POL/USD"
+    },
+    {
+      "id": "USDTRY",
+      "label": "Dollar / Livre turque (USD/TRY)",
+      "symbol": "USDTRY",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/TRY"
+    },
+    {
+      "id": "USDZAR",
+      "label": "Dollar / Rand (USD/ZAR)",
+      "symbol": "USDZAR",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/ZAR"
+    },
+    {
+      "id": "USDMXN",
+      "label": "Dollar / Peso mexicain (USD/MXN)",
+      "symbol": "USDMXN",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/MXN"
+    },
+    {
+      "id": "USDSEK",
+      "label": "Dollar / Couronne suédoise (USD/SEK)",
+      "symbol": "USDSEK",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/SEK"
+    },
+    {
+      "id": "USDNOK",
+      "label": "Dollar / Couronne norvégienne (USD/NOK)",
+      "symbol": "USDNOK",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/NOK"
+    },
+    {
+      "id": "USDDKK",
+      "label": "Dollar / Couronne danoise (USD/DKK)",
+      "symbol": "USDDKK",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/DKK"
+    },
+    {
+      "id": "USDPLN",
+      "label": "Dollar / Zloty (USD/PLN)",
+      "symbol": "USDPLN",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/PLN"
+    },
+    {
+      "id": "USDHUF",
+      "label": "Dollar / Forint (USD/HUF)",
+      "symbol": "USDHUF",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/HUF"
+    },
+    {
+      "id": "USDCZK",
+      "label": "Dollar / Couronne tchèque (USD/CZK)",
+      "symbol": "USDCZK",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/CZK"
+    },
+    {
+      "id": "USDSGD",
+      "label": "Dollar / Dollar de Singapour (USD/SGD)",
+      "symbol": "USDSGD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/SGD"
+    },
+    {
+      "id": "USDHKD",
+      "label": "Dollar / Dollar de Hong Kong (USD/HKD)",
+      "symbol": "USDHKD",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/HKD"
+    },
+    {
+      "id": "USDTHB",
+      "label": "Dollar / Baht (USD/THB)",
+      "symbol": "USDTHB",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/THB"
+    },
+    {
+      "id": "USDCNH",
+      "label": "Dollar / Yuan offshore (USD/CNH)",
+      "symbol": "USDCNH",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/CNH"
+    },
+    {
+      "id": "USDINR",
+      "label": "Dollar / Roupie indienne (USD/INR)",
+      "symbol": "USDINR",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/INR"
+    },
+    {
+      "id": "USDBRL",
+      "label": "Dollar / Réal (USD/BRL)",
+      "symbol": "USDBRL",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "$",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "USD/BRL"
+    },
+    {
+      "id": "EURTRY",
+      "label": "Euro / Livre turque (EUR/TRY)",
+      "symbol": "EURTRY",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/TRY"
+    },
+    {
+      "id": "EURZAR",
+      "label": "Euro / Rand (EUR/ZAR)",
+      "symbol": "EURZAR",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/ZAR"
+    },
+    {
+      "id": "EURPLN",
+      "label": "Euro / Zloty (EUR/PLN)",
+      "symbol": "EURPLN",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/PLN"
+    },
+    {
+      "id": "EURSEK",
+      "label": "Euro / Couronne suédoise (EUR/SEK)",
+      "symbol": "EURSEK",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/SEK"
+    },
+    {
+      "id": "EURNOK",
+      "label": "Euro / Couronne norvégienne (EUR/NOK)",
+      "symbol": "EURNOK",
+      "type": "fx",
+      "priceDecimals": 5,
+      "glyph": "€",
+      "timeframes": ["M1", "M5", "M15", "H1", "H4", "D1"],
+      "providerSymbol": "EUR/NOK"
     }
   ]
 }
