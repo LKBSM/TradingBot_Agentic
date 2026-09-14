@@ -8,14 +8,11 @@
       "ctaPrimary": "S'abonner",
       "ctaSecondary": "Voir les outils",
       "micro": "Accès complet dès l'abonnement · Résiliable à tout moment",
-      "roadmap": "Accès anticipé · <b>2 marchés aujourd'hui, 50 à 80 prévus au lancement</b>"
-    },
-    "stats": {
-      "markets": "marchés suivis",
-      "combinations": "combinaisons analysées",
-      "conditions": "conditions de recherche",
-      "timeframes": "unités de temps",
-      "structures": "structures détectées"
+      "stage": {
+        "loading": "Le graphique se charge",
+        "reading": "M.I.A lit la structure",
+        "done": "lecture à jour"
+      }
     },
     "tools": {
       "eyebrow": "Cinq outils, un même produit",
@@ -34,12 +31,12 @@
         "lblOb": "OB · non testé",
         "lblChoch": "CHOCH ↑",
         "narr": "Le prix est <b>actuellement dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, et cette zone <b>n'a jamais été testée</b>. Une poche de liquidité vente <b>a été balayée</b> il y a 17 bougies. Le 1 h va dans le même sens.",
-        "b5": "<b>Six unités de temps</b> — de la minute au jour, la lecture suit"
+        "b5": "<b>Cinq unités de temps</b> — de M5 à D1, la lecture suit"
       },
       "scanner": {
         "tag": "Le scanner",
         "h3": "Tu ne peux pas surveiller tes marchés en continu. Lui, oui.",
-        "p": "Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b>où elles sont réunies en ce moment</b>, sur les 12 combinaisons de marchés et d'unités de temps. Réévalué à chaque clôture de bougie.",
+        "p": "Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b>où elles sont réunies en ce moment</b>, sur les 10 combinaisons de marchés et d'unités de temps. Réévalué à chaque clôture de bougie.",
         "b1": "<b>22 conditions factuelles</b> réparties en structure, zones, liquidité et contexte",
         "b2": "<b>Ce qui va à l'encontre</b> est affiché aussi — désaccord entre unités, zone usée",
         "b3": "<b>Aucun classement</b> : les résultats ne sont jamais triés par « qualité »",
@@ -60,8 +57,8 @@
       },
       "zones": {
         "tag": "Les zones",
-        "h3": "Une zone vierge et une zone usée ne valent pas la même chose",
-        "p": "La plupart des outils te montrent qu'un Order Block existe. MIA te raconte <b>sa vie entière</b> : quand il s'est formé, s'il a été touché, à quelle heure, et s'il a fini par être comblé. C'est la différence entre voir un rectangle et savoir ce qu'il vaut.",
+        "h3": "Une zone vierge et une zone usée ne se lisent pas pareil",
+        "p": "La plupart des outils te montrent qu'un Order Block existe. MIA te raconte <b>sa vie entière</b> : quand il s'est formé, s'il a été touché, à quelle heure, et s'il a fini par être comblé. C'est la différence entre voir un rectangle et connaître son histoire.",
         "b1": "<b>Chronologie complète</b> : formée → testée → comblée, horodatée",
         "b2": "<b>Taux de remplissage</b> pour un Fair Value Gap partiellement comblé",
         "b3": "<b>Recoupements</b> avec les zones détectées sur d'autres unités de temps",
@@ -81,7 +78,7 @@
       },
       "news": {
         "tag": "Les actualités",
-        "h3": "Sache quand le marché va bouger — et ce qui s'est passé les fois d'avant",
+        "h3": "Sache quand les publications tombent — et ce qui s'est passé les fois d'avant",
         "p": "Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent. Et pour chacune, <b>ce qui a réellement été mesuré aux parutions précédentes</b> : le calme qui précède, l'agitation qui suit, la durée de vie des zones créées ce jour-là.",
         "b1": "<b>Calendrier mensuel</b> avec heure locale et heure de l'organisme",
         "b2": "<b>Les douze derniers chiffres publiés</b> de chaque indicateur, tels que publiés",
@@ -191,7 +188,7 @@
         "emptyNoMatch": "Aucun marché ne réunit ces conditions en ce moment. <b>Ce n'est pas une erreur</b> — et rien ne te propose d'assouplir.",
         "againstLabel": "Ce qui va à l'encontre",
         "against": "sur Or · 4 h, la tendance tient mais <b>l'unité supérieure n'est pas alignée</b>, et une poche proche a déjà été balayée.",
-        "side": "Sur les <b>12 combinaisons</b> analysées, le scanner ne garde que celles où toutes tes conditions sont réunies <b>en ce moment</b>. Ajoute une condition, la liste se resserre."
+        "side": "Sur les <b>10 combinaisons</b> analysées, le scanner ne garde que celles où toutes tes conditions sont réunies <b>en ce moment</b>. Ajoute une condition, la liste se resserre."
       },
       "zones": {
         "side": {
@@ -299,7 +296,7 @@
       "subtitle": "Aucune installation, aucun script à copier, aucun réglage d'indicateur. Tu ouvres et c'est prêt.",
       "step1": {
         "h": "Choisis ton marché",
-        "p": "L'or ou l'euro, sur 6 unités de temps. Les 12 combinaisons sont déjà analysées en continu, et le résultat reste à jour à chaque clôture de bougie."
+        "p": "L'or ou l'euro, sur 5 unités de temps. Les 10 combinaisons sont déjà analysées en continu, et le résultat reste à jour à chaque clôture de bougie."
       },
       "step2": {
         "h": "Lis la structure",
@@ -336,7 +333,7 @@
       },
       "w3": {
         "h": "Tu suis plusieurs unités de temps",
-        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 12 combinaisons à chaque clôture, sans que tu cliques.",
+        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 10 combinaisons à chaque clôture, sans que tu cliques.",
         "lb": "Étendue",
         "items": {
           "0": "Tes conditions vérifiées partout à chaque clôture",
@@ -361,8 +358,8 @@
         "sub": "tout le produit, tous les marchés",
         "perMonth": "mois",
         "bill": "ou {total} $ US par an, soit {perMonth} $ US par mois",
-        "f1": "<b>Les 2 marchés</b>, 6 unités de temps",
-        "f2": "Scanner sur les 12 combinaisons",
+        "f1": "<b>Les 2 marchés</b>, 5 unités de temps",
+        "f2": "Scanner sur les 10 combinaisons",
         "f3": "Page Zones et cycle de vie complet",
         "f4": "Mesures relevées aux publications",
         "f5": "M.I.A Agent sans limite",
@@ -382,7 +379,7 @@
       "q3": "Est-ce que ça remplace TradingView ?",
       "a3": "Non, et ce n'est pas le but. TradingView reste ta plateforme de graphiques, de dessin et d'exécution. MIA fait le travail de lecture structurelle : détecter, dater, suivre le cycle de vie des zones. <b>Les deux se complètent.</b>",
       "q4": "Quels marchés sont couverts ?",
-      "a4": "Deux marchés aujourd'hui — l'or (XAU/USD) et l'euro (EUR/USD) — sur 6 unités de temps allant de la minute au jour. L'abonnement donne accès aux deux marchés et à toutes les unités de temps. D'autres marchés suivront.",
+      "a4": "Deux marchés aujourd'hui — l'or (XAU/USD) et l'euro (EUR/USD) — sur 5 unités de temps : M5, M15, H1, H4 et D1. L'abonnement donne accès aux deux marchés et à toutes les unités de temps. D'autres marchés suivront.",
       "q5": "À quelle fréquence les données sont-elles mises à jour ?",
       "a5": "À chaque clôture de bougie de l'unité de temps concernée, pas à un intervalle arbitraire. Une lecture en 15 minutes se rafraîchit toutes les 15 minutes ; une lecture journalière une fois par jour. <b>Chaque écran affiche l'âge de sa dernière lecture</b>, pour que tu saches toujours ce que tu regardes.",
       "q6": "Puis-je annuler quand je veux ?",

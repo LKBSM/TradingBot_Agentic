@@ -8,14 +8,11 @@
       "ctaPrimary": "Subscribe",
       "ctaSecondary": "See the tools",
       "micro": "Full access as soon as you subscribe · Cancel anytime",
-      "roadmap": "Early access · <b>2 markets today, 50 to 80 planned at launch</b>"
-    },
-    "stats": {
-      "markets": "markets tracked",
-      "combinations": "combinations analysed",
-      "conditions": "search conditions",
-      "timeframes": "timeframes",
-      "structures": "structures detected"
+      "stage": {
+        "loading": "The chart is loading",
+        "reading": "M.I.A is reading the structure",
+        "done": "reading up to date"
+      }
     },
     "tools": {
       "eyebrow": "Five tools, one product",
@@ -34,12 +31,12 @@
         "lblOb": "OB · untested",
         "lblChoch": "CHOCH ↑",
         "narr": "Price is <b>currently inside a bullish Order Block</b> formed 14 candles ago, between 4,026.80 and 4,028.90, and this zone <b>has never been tested</b>. A sell-side liquidity pocket <b>was swept</b> 17 candles ago. The 1h agrees.",
-        "b5": "<b>Six timeframes</b> — from the minute to the day, the reading follows"
+        "b5": "<b>Five timeframes</b> — from M5 to D1, the reading follows"
       },
       "scanner": {
         "tag": "The scanner",
         "h3": "You can't watch your markets non-stop. It can.",
-        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 12 market-and-timeframe combinations. Re-evaluated on every candle close.",
+        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 10 market-and-timeframe combinations. Re-evaluated on every candle close.",
         "b1": "<b>22 factual conditions</b> across structure, zones, liquidity and context",
         "b2": "<b>What goes against it</b> is shown too — disagreement between units, worn zone",
         "b3": "<b>No ranking</b>: results are never sorted by « quality »",
@@ -60,8 +57,8 @@
       },
       "zones": {
         "tag": "The zones",
-        "h3": "A pristine zone and a worn one are not worth the same",
-        "p": "Most tools show you that an Order Block exists. MIA tells you <b>its whole life</b>: when it formed, whether it was touched, at what time, and whether it ended up filled. That's the difference between seeing a rectangle and knowing what it's worth.",
+        "h3": "A pristine zone and a worn one do not read the same",
+        "p": "Most tools show you that an Order Block exists. MIA tells you <b>its whole life</b>: when it formed, whether it was touched, at what time, and whether it ended up filled. That's the difference between seeing a rectangle and knowing its history.",
         "b1": "<b>Full timeline</b>: formed → tested → filled, timestamped",
         "b2": "<b>Fill rate</b> for a partially filled Fair Value Gap",
         "b3": "<b>Overlaps</b> with zones detected on other timeframes",
@@ -81,7 +78,7 @@
       },
       "news": {
         "tag": "The news",
-        "h3": "Know when the market will move — and what happened the times before",
+        "h3": "Know when the releases land — and what happened the times before",
         "p": "A calendar of economic releases, tied to the markets they affect. And for each one, <b>what was actually measured at previous releases</b>: the calm before, the turbulence after, the lifespan of the zones created that day.",
         "b1": "<b>Monthly calendar</b> with local time and the issuing body's time",
         "b2": "<b>The last twelve published figures</b> of each indicator, as published",
@@ -191,7 +188,7 @@
         "emptyNoMatch": "No market meets these conditions right now. <b>This is not an error</b> — and nothing offers to loosen anything.",
         "againstLabel": "What goes against it",
         "against": "on Gold · 4h, the trend holds but <b>the higher timeframe is not aligned</b>, and a nearby pocket has already been swept.",
-        "side": "Across the <b>12 combinations</b> analysed, the scanner keeps only those where all your conditions line up <b>right now</b>. Add a condition and the list narrows."
+        "side": "Across the <b>10 combinations</b> analysed, the scanner keeps only those where all your conditions line up <b>right now</b>. Add a condition and the list narrows."
       },
       "zones": {
         "side": {
@@ -299,7 +296,7 @@
       "subtitle": "No install, no script to copy, no indicator to tune. You open it and it's ready.",
       "step1": {
         "h": "Choose your market",
-        "p": "Gold or the euro, on 6 timeframes. All 12 combinations are already analysed continuously, and the result stays up to date at every candle close."
+        "p": "Gold or the euro, on 5 timeframes. All 10 combinations are already analysed continuously, and the result stays up to date at every candle close."
       },
       "step2": {
         "h": "Read the structure",
@@ -336,7 +333,7 @@
       },
       "w3": {
         "h": "You follow several timeframes",
-        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 12 combinations on every close, without you clicking.",
+        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 10 combinations on every close, without you clicking.",
         "lb": "Breadth",
         "items": {
           "0": "Your conditions checked everywhere at every close",
@@ -361,8 +358,8 @@
         "sub": "the whole product, all markets",
         "perMonth": "month",
         "bill": "or {total} $ US per year, i.e. {perMonth} $ US per month",
-        "f1": "<b>Both markets</b>, 6 timeframes",
-        "f2": "Scanner across the 12 combinations",
+        "f1": "<b>Both markets</b>, 5 timeframes",
+        "f2": "Scanner across the 10 combinations",
         "f3": "Zones page and full lifecycle",
         "f4": "Measurements recorded at releases",
         "f5": "M.I.A Agent unlimited",
@@ -382,7 +379,7 @@
       "q3": "Does it replace TradingView?",
       "a3": "No, and that's not the point. TradingView stays your charting, drawing and execution platform. MIA does the structural reading work: detect, date, track the lifecycle of zones. <b>The two complement each other.</b>",
       "q4": "Which markets are covered?",
-      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 6 timeframes from the minute to the day. The subscription gives access to both markets and every timeframe. More markets will follow.",
+      "a4": "Two markets today — gold (XAU/USD) and the euro (EUR/USD) — across 5 timeframes: M5, M15, H1, H4 and D1. The subscription gives access to both markets and every timeframe. More markets will follow.",
       "q5": "How often is the data updated?",
       "a5": "On every candle close of the timeframe concerned, not on an arbitrary interval. A 15-minute reading refreshes every 15 minutes; a daily reading once a day. <b>Each screen shows the age of its last reading</b>, so you always know what you're looking at.",
       "q6": "Can I cancel whenever I want?",
