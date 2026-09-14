@@ -19,16 +19,17 @@
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 26px; }
 .narrow { max-width: 820px; margin: 0 auto; }
 
-/* generic section rhythm */
-.page section { padding: 72px 0; }
-.sechead { text-align: center; margin-bottom: 46px; }
+/* generic section rhythm (LP-3: more air between sections, bigger titles) */
+.page section { padding: 104px 0; }
+.sechead { text-align: center; margin-bottom: 58px; }
 .eyebrow {
   font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--lp-acc); margin-bottom: 14px;
 }
-.sechead h2 { font-size: 36px; font-weight: 700; margin-bottom: 14px; letter-spacing: -0.03em; }
-.sechead p { font-size: 16.5px; color: var(--dim); max-width: 620px; margin: 0 auto; line-height: 1.6; }
-@media (max-width: 760px) { .sechead h2 { font-size: 27px; } .page section { padding: 52px 0; } }
+.sechead h2 { font-size: 44px; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.03em; line-height: 1.1; }
+.sechead p { font-size: 17px; color: var(--dim); max-width: 640px; margin: 0 auto; line-height: 1.6; }
+@media (max-width: 1080px) { .sechead h2 { font-size: 36px; } .page section { padding: 78px 0; } }
+@media (max-width: 760px) { .sechead h2 { font-size: 30px; } .page section { padding: 60px 0; } .sechead { margin-bottom: 42px; } }
 
 /* buttons */
 .btn {
@@ -171,9 +172,21 @@
 }
 
 /* FEATURE ROW */
-.feat { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; margin-bottom: 88px; }
+.feat { display: grid; grid-template-columns: 1fr 1fr; gap: 54px; align-items: center; margin-bottom: 112px; }
 .feat:last-child { margin-bottom: 0; }
-.featRev .txt { order: 2; }
+/* The alternation used to be written `.featRev .txt`, but the markup carried the
+   LITERAL string "txt" while CSS Modules hashed the selector — the rule matched
+   nothing and the four rows all sat text-left. Bound to the module class now. */
+.featRev .featTxt { order: 2; }
+/* `isolation` keeps the z-index:-1 watermark inside this row: it drops behind
+   the copy without falling behind the page background. */
+.featTxt { position: relative; isolation: isolate; padding-top: 22px; }
+.chapNo {
+  position: absolute; left: -8px; top: -54px; z-index: -1;
+  font-family: var(--font-mono); font-size: 148px; font-weight: 700; line-height: 1;
+  letter-spacing: -0.05em; color: var(--line); opacity: 0.55;
+  pointer-events: none; user-select: none;
+}
 .tag {
   display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono);
   font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 12px;
@@ -195,8 +208,10 @@
   font-size: 10px; font-weight: 700;
 }
 @media (max-width: 900px) {
-  .feat { grid-template-columns: 1fr; gap: 26px; margin-bottom: 60px; }
-  .featRev .txt { order: 0; }
+  .feat { grid-template-columns: 1fr; gap: 26px; margin-bottom: 72px; }
+  .featRev .featTxt { order: 0; }
+  .chapNo { font-size: 84px; top: -26px; left: -4px; }
+  .featTxt { padding-top: 14px; }
 }
 
 /* VISUAL BOX (feature illustration frame) */
@@ -477,8 +492,13 @@
 .fqb b { color: var(--txt); font-weight: 600; }
 
 /* FINAL CTA */
-.final { border: 1px solid var(--line-2); border-radius: 18px; background: var(--lp-card); padding: 50px 40px; text-align: center; }
-.final h2 { font-size: 32px; margin-bottom: 14px; letter-spacing: -0.02em; }
+.final {
+  border: 1px solid var(--line-2); border-radius: 18px; background: var(--lp-card);
+  padding: 56px 40px; text-align: center;
+  min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+@media (max-width: 760px) { .final { min-height: 0; padding: 44px 24px; } }
+.final h2 { font-size: 40px; margin-bottom: 16px; letter-spacing: -0.02em; line-height: 1.1; }
 .final p { font-size: 16.5px; color: var(--dim); max-width: 520px; margin: 0 auto 26px; }
 
 /* illustration mention */
@@ -595,3 +615,28 @@
 .wcList { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .wcList li { position: relative; padding-left: 15px; font-size: 12.5px; color: var(--dim); line-height: 1.5; }
 .wcList li::before { content: ''; position: absolute; left: 3px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--lp-acc); }
+
+/* SCROLL PROGRESS ---------------------------------------------------------
+   A hairline reporting how far down the page you are. `scaleX` on a composited
+   transform: scrolling this long page costs no layout. */
+.vprog {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 45;
+  background: var(--lp-acc); transform: scaleX(0); transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* SECTION REVEAL ----------------------------------------------------------
+   Same contract as the hero: the hidden state exists ONLY while motion is
+   allowed, so reduced motion and a JS-less visitor both get a plain, complete
+   page. `data-rv="pending"` additionally carries a 2.8 s failsafe — a public
+   page must never be able to stay blank because an observer did not fire. */
+@keyframes lp3-rv-failsafe { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rv { transition: opacity 0.75s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.75s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .rv[data-rv='pending'] {
+    opacity: 0; transform: translateY(22px);
+    animation: lp3-rv-failsafe 600ms ease-out 2800ms both;
+  }
+  .rv[data-rv='in'] { opacity: 1; transform: none; }
+}

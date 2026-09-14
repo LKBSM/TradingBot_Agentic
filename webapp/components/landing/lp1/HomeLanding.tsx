@@ -6,6 +6,8 @@ import { useLocalizedHref } from '@/lib/i18n/href';
 import styles from './lp1.module.css';
 import { DemoTabs } from './DemoTabs';
 import { HeroStage } from './HeroStage';
+import { Reveal } from './Reveal';
+import { ScrollProgress } from './ScrollProgress';
 import { MiaSection } from './MiaSection';
 import { ReadingCarousel } from './ReadingCarousel';
 import { CandleSvg } from './CandleSvg';
@@ -49,6 +51,7 @@ export function HomeLanding() {
 
   return (
     <div className={styles.page}>
+      <ScrollProgress />
       {/* HERO — LP-3: full height, the argument left, the product playing right. */}
       <div className={styles.hero}>
         <div className={styles.aura} aria-hidden="true" />
@@ -70,10 +73,10 @@ export function HomeLanding() {
       </div>
 
       {/* §3 — M.I.A */}
-      <MiaSection />
+      <Reveal><MiaSection /></Reveal>
 
       {/* §4 — INTERACTIVE DEMO */}
-      <section id="demo" style={{ paddingTop: 0 }}><div className={styles.wrap}>
+      <Reveal><section id="demo" style={{ paddingTop: 0 }}><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('demoSection.eyebrow')}</div>
           <h2>{t('demoSection.title')}</h2>
@@ -84,10 +87,10 @@ export function HomeLanding() {
           <a className={`${styles.btn} ${styles.btnPri} ${styles.btnMd}`} href={lh('/inscription')}>{t('demoSection.cta')}</a>
           <div className={styles.micro} style={{ marginTop: 11 }}>{t('demoSection.illus')}</div>
         </div>
-      </div></section>
+      </div></section></Reveal>
 
       {/* §5-8 — TOOLS */}
-      <section id="outils"><div className={styles.wrap}>
+      <Reveal><section id="outils"><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('tools.eyebrow')}</div>
           <h2>{t('tools.title')}</h2>
@@ -96,7 +99,8 @@ export function HomeLanding() {
 
         {/* READING SPACE + CAROUSEL */}
         <div className={styles.feat}>
-          <div className="txt">
+          <div className={styles.featTxt}>
+            <span className={styles.chapNo} aria-hidden="true">01</span>
             <span className={`${styles.tag} ${styles.tagB}`}>{t('tools.app.tag')}</span>
             <h3>{t('tools.app.h3')}</h3>
             <p className={styles.featP}>{rich('tools.app.p')}</p>
@@ -108,7 +112,8 @@ export function HomeLanding() {
 
         {/* SCANNER */}
         <div className={`${styles.feat} ${styles.featRev}`}>
-          <div className="txt">
+          <div className={styles.featTxt}>
+            <span className={styles.chapNo} aria-hidden="true">02</span>
             <span className={`${styles.tag} ${styles.tagG}`}>{t('tools.scanner.tag')}</span>
             <h3>{t('tools.scanner.h3')}</h3>
             <p className={styles.featP}>{rich('tools.scanner.p')}</p>
@@ -130,7 +135,8 @@ export function HomeLanding() {
 
         {/* ZONES */}
         <div className={styles.feat}>
-          <div className="txt">
+          <div className={styles.featTxt}>
+            <span className={styles.chapNo} aria-hidden="true">03</span>
             <span className={`${styles.tag} ${styles.tagV}`}>{t('tools.zones.tag')}</span>
             <h3>{t('tools.zones.h3')}</h3>
             <p className={styles.featP}>{rich('tools.zones.p')}</p>
@@ -161,7 +167,8 @@ export function HomeLanding() {
 
         {/* NEWS */}
         <div className={`${styles.feat} ${styles.featRev}`}>
-          <div className="txt">
+          <div className={styles.featTxt}>
+            <span className={styles.chapNo} aria-hidden="true">04</span>
             <span className={`${styles.tag} ${styles.tagA}`}>{t('tools.news.tag')}</span>
             <h3>{t('tools.news.h3')}</h3>
             <p className={styles.featP}>{rich('tools.news.p')}</p>
@@ -180,10 +187,10 @@ export function HomeLanding() {
             <div className={styles.illus}>{t('demo.illus')}</div>
           </VisFrame>
         </div>
-      </div></section>
+      </div></section></Reveal>
 
       {/* HOW IT WORKS */}
-      <section id="comment"><div className={styles.wrap}>
+      <Reveal><section id="comment"><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('how.eyebrow')}</div>
           <h2>{t('how.title')}</h2>
@@ -198,10 +205,10 @@ export function HomeLanding() {
             </div>
           ))}
         </div>
-      </div></section>
+      </div></section></Reveal>
 
       {/* WHO */}
-      <section><div className={styles.wrap}>
+      <Reveal><section><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('who.eyebrow')}</div>
           <h2>{t('who.title')}</h2>
@@ -222,20 +229,20 @@ export function HomeLanding() {
             );
           })}
         </div>
-      </div></section>
+      </div></section></Reveal>
 
       {/* DISTINGUISH */}
-      <section id="honnetete" style={{ paddingTop: 0 }}><div className={styles.wrap}><div className={styles.narrow}>
+      <Reveal><section id="honnetete" style={{ paddingTop: 0 }}><div className={styles.wrap}><div className={styles.narrow}>
         <div className={styles.distinguish}>
           <div className={styles.eyebrow}>{t('distinguish.eyebrow')}</div>
           <h2>{t('distinguish.h2')}</h2>
           <p>{rich('distinguish.p1')}</p>
           <p>{rich('distinguish.p2')}</p>
         </div>
-      </div></div></section>
+      </div></div></section></Reveal>
 
       {/* PRICING */}
-      <section id="tarifs"><div className={styles.wrap}>
+      <Reveal><section id="tarifs"><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('pricing.eyebrow')}</div>
           <h2>{t('pricing.title')}</h2>
@@ -256,10 +263,10 @@ export function HomeLanding() {
           </div>
         </div>
         <div className={styles.plegal}>{t('pricing.legal')}</div>
-      </div></section>
+      </div></section></Reveal>
 
       {/* FAQ */}
-      <section id="faq"><div className={styles.wrap}>
+      <Reveal><section id="faq"><div className={styles.wrap}>
         <div className={styles.sechead}>
           <div className={styles.eyebrow}>{t('faq.eyebrow')}</div>
           <h2>{t('faq.title')}</h2>
@@ -278,17 +285,17 @@ export function HomeLanding() {
             );
           })}
         </div>
-      </div></section>
+      </div></section></Reveal>
 
       {/* FINAL */}
-      <section><div className={styles.wrap}><div className={styles.final}>
+      <Reveal><section><div className={styles.wrap}><div className={styles.final}>
         <h2>{t('final.h2')}</h2>
         <p>{t('final.p')}</p>
         <div className={styles.ctas}>
           <a className={`${styles.btn} ${styles.btnPri} ${styles.btnLg}`} href={lh('/inscription')}>{t('final.cta1')}</a>
           <a className={`${styles.btn} ${styles.btnLg}`} href="#outils">{t('final.cta2')}</a>
         </div>
-      </div></div></section>
+      </div></div></section></Reveal>
     </div>
   );
 }
