@@ -1906,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "Przeczytałem <terms>warunki korzystania</terms> oraz <privacy>politykę prywatności</privacy> i akceptuję je.",
+      "blocked": "Zaznacz powyższe pole, aby przejść do płatności.",
+      "error": "Nie udało się zapisać Twojej akceptacji. Spróbuj ponownie za chwilę."
+    },
+    "refund": {
+      "title": "Gwarancja {days} dni",
+      "openUntil": "Możesz poprosić o zwrot do {date}.",
+      "cta": "Poproś o zwrot",
+      "confirm": "Potwierdzasz? Płatność zostanie zwrócona w całości, a dostęp wygaśnie natychmiast.",
+      "confirmCta": "Potwierdź zwrot",
+      "cancelCta": "Anuluj",
+      "busy": "Trwa zwrot…",
+      "done": "Zwrot wykonany. Kwota wróci na Twoją metodę płatności w ciągu kilku dni.",
+      "error": "Nie udało się wykonać zwrotu. Spróbuj ponownie lub napisz na contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2351,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Wersja {version}",
+      "loading": "Ładowanie dokumentu…",
+      "error": "Ten dokument jest chwilowo niedostępny. Spróbuj ponownie później."
+    },
     "conditions": {
       "meta": {
         "title": "Warunki użytkowania",
         "description": "Ogólne Warunki Użytkowania M.I.A Markets — usługa informacyjna, postawa edukacyjna, ostrzeżenie o ryzyku."
-      },
-      "versionLabel": "Wersja {version}",
-      "loading": "Ładowanie dokumentu…",
-      "error": "Dokument Warunków jest chwilowo niedostępny. Spróbuj ponownie później."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Polityka prywatności",
         "description": "Polityka prywatności M.I.A Markets — przetwarzane dane, podstawa prawna, prawa RODO / Ustawa 25."
-      },
-      "title": "Polityka prywatności",
-      "pendingNotice": "Wstępna wersja o ustalonej strukturze. Ostateczny tekst (po przeglądzie prawnym) zostanie opublikowany wraz z modułem prawnym. Poniższa struktura wiernie opisuje obowiązujące przetwarzanie.",
-      "sections": {
-        "responsable": {
-          "title": "1. Administrator danych",
-          "body": "Loukmane Bessam (jedyny operator) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Przetwarzane dane",
-          "body": "Nazwa użytkownika, adres e-mail, hasło (zahaszowane, nigdy w postaci jawnej), zgody (wersja + znacznik czasu), dane sesji. M.I.A Markets nie zbiera żadnych danych kart płatniczych."
-        },
-        "bases": {
-          "title": "3. Podstawy prawne",
-          "body": "Wykonanie umowy (konto i usługa), uzasadniony interes (bezpieczeństwo), zgoda (akceptacja Warunków i niniejszej Polityki przy rejestracji)."
-        },
-        "droits": {
-          "title": "4. Twoje prawa (RODO / Ustawa 25)",
-          "body": "Dostęp, sprostowanie, usunięcie, przenoszenie, ograniczenie i sprzeciw. Wszelkie żądania na loukmanebessam@gmail.com — odpowiedź w ciągu 30 dni."
-        },
-        "conservation": {
-          "title": "5. Przechowywanie",
-          "body": "Dane konta są przechowywane przez czas trwania konta. Sesje wygasają automatycznie. Szczegóły przechowywania według kategorii zostaną doprecyzowane w wersji ostatecznej."
-        },
-        "contact": {
-          "title": "6. Kontakt",
-          "body": "W przypadku pytań dotyczących Twoich danych: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Dyktowanie głosowe",
-          "body": "Skaner konwersacyjny umożliwia wprowadzanie głosowe. Rozpoznawanie mowy jest wykonywane przez Twoją przeglądarkę; w niektórych przeglądarkach (np. Chrome, Edge) przechwycony dźwięk może być wysyłany na serwery dostawcy przeglądarki w celu transkrypcji — jest to przekazanie stronie trzeciej, która może znajdować się poza Quebekiem. Transkrypcja tworzy tekst, który przeglądasz i możesz poprawić przed wysłaniem. Żadne nagranie dźwiękowe nie jest przechowywane, ani na Twoim urządzeniu, ani na naszych serwerach: otrzymujemy wyłącznie tekst, który zdecydujesz się przesłać. Wprowadzanie z klawiatury pozostaje zawsze dostępne; jeśli Twoja przeglądarka nie obsługuje dyktowania, przycisk się nie pojawia."
-        }
       }
     },
     "disclaimer": {

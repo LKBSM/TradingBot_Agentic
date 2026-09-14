@@ -1906,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "Ich habe die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und akzeptiere sie.",
+      "blocked": "Kreuzen Sie das Kästchen oben an, um zur Zahlung fortzufahren.",
+      "error": "Ihre Zustimmung konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal."
+    },
+    "refund": {
+      "title": "{days}-Tage-Garantie",
+      "openUntil": "Sie können die Rückerstattung bis zum {date} beantragen.",
+      "cta": "Rückerstattung beantragen",
+      "confirm": "Bestätigen? Die Zahlung wird vollständig erstattet und der Zugang endet sofort.",
+      "confirmCta": "Rückerstattung bestätigen",
+      "cancelCta": "Abbrechen",
+      "busy": "Rückerstattung läuft…",
+      "done": "Rückerstattet. Der Betrag geht in einigen Tagen auf Ihr Zahlungsmittel zurück.",
+      "error": "Die Rückerstattung konnte nicht durchgeführt werden. Versuchen Sie es erneut oder schreiben Sie an contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2351,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Version {version}",
+      "loading": "Dokument wird geladen…",
+      "error": "Dieses Dokument ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut."
+    },
     "conditions": {
       "meta": {
         "title": "Nutzungsbedingungen",
         "description": "Allgemeine Nutzungsbedingungen von M.I.A Markets — Informationsdienst, edukative Ausrichtung, Risikohinweis."
-      },
-      "versionLabel": "Version {version}",
-      "loading": "Dokument wird geladen…",
-      "error": "Das Dokument der Nutzungsbedingungen ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Datenschutzrichtlinie",
         "description": "Datenschutzrichtlinie von M.I.A Markets — verarbeitete Daten, Rechtsgrundlage, DSGVO-/Gesetz-25-Rechte."
-      },
-      "title": "Datenschutzrichtlinie",
-      "pendingNotice": "Strukturierte Vorabversion. Der endgültige Text (juristisch geprüft) wird mit dem Rechtsterminal veröffentlicht. Die untenstehende Struktur beschreibt die geltenden Verarbeitungen getreu.",
-      "sections": {
-        "responsable": {
-          "title": "1. Verantwortlicher der Verarbeitung",
-          "body": "Loukmane Bessam (alleiniger Betreiber) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Verarbeitete Daten",
-          "body": "Benutzername, E-Mail-Adresse, Passwort (gehasht, nie im Klartext), Einwilligungen (Version + Zeitstempel), Sitzungsdaten. Es werden keine Kreditkartendaten von M.I.A Markets erhoben."
-        },
-        "bases": {
-          "title": "3. Rechtsgrundlagen",
-          "body": "Vertragserfüllung (Konto und Dienst), berechtigtes Interesse (Sicherheit), Einwilligung (Annahme der Bedingungen und dieser Richtlinie bei der Registrierung)."
-        },
-        "droits": {
-          "title": "4. Ihre Rechte (DSGVO / Gesetz 25)",
-          "body": "Auskunft, Berichtigung, Löschung, Übertragbarkeit, Einschränkung und Widerspruch. Jede Anfrage an loukmanebessam@gmail.com — Antwort innerhalb von 30 Tagen."
-        },
-        "conservation": {
-          "title": "5. Aufbewahrung",
-          "body": "Die Kontodaten werden für die Dauer des Kontos aufbewahrt. Die Sitzungen laufen automatisch ab. Die Aufbewahrungsdetails je Kategorie werden in der endgültigen Version präzisiert."
-        },
-        "contact": {
-          "title": "6. Kontakt",
-          "body": "Bei allen Fragen zu Ihren Daten: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Sprachdiktat",
-          "body": "Der dialogorientierte Scanner bietet eine Spracheingabe. Die Spracherkennung erfolgt durch Ihren Browser; bei einigen Browsern (z. B. Chrome, Edge) kann das erfasste Audio zur Transkription an die Server des Browserherstellers gesendet werden — eine Übermittlung an Dritte, die sich außerhalb von Québec befinden können. Diese Transkription erzeugt Text, den Sie vor dem Absenden prüfen und korrigieren können. Es wird keine Audioaufnahme gespeichert, weder auf Ihrem Gerät noch auf unseren Servern: Wir erhalten nur den Text, den Sie übermitteln möchten. Die Tastatureingabe bleibt jederzeit verfügbar; wenn Ihr Browser das Diktat nicht unterstützt, erscheint die Schaltfläche nicht."
-        }
       }
     },
     "disclaimer": {

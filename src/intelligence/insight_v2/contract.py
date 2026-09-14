@@ -68,7 +68,10 @@ class HistoricalStats:
 class ComplianceMeta:
     edge_claim: bool = False
     is_paper_demo: bool = True
-    jurisdiction_blocked: tuple[str, ...] = ("US", "QC", "UK", "OFAC")
+    # Aligné sur GeoBlockMiddleware.BLOCKED_COUNTRIES : le Québec a été retiré
+    # le 2026-07-05 (juridiction de rattachement) et les États-Unis le
+    # 2026-09-14 (LEG-1 — le service y est commercialisé).
+    jurisdiction_blocked: tuple[str, ...] = ("UK", "OFAC")
     disclaimer_lang: str = "fr"
 
 

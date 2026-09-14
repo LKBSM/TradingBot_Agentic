@@ -1906,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "He leído y acepto las <terms>condiciones de uso</terms> y la <privacy>política de privacidad</privacy>.",
+      "blocked": "Marca la casilla de arriba para continuar al pago.",
+      "error": "No hemos podido registrar tu aceptación. Inténtalo de nuevo en un momento."
+    },
+    "refund": {
+      "title": "Garantía de {days} días",
+      "openUntil": "Puedes pedir el reembolso hasta el {date}.",
+      "cta": "Pedir el reembolso",
+      "confirm": "¿Confirmas? El pago se reembolsa íntegramente y el acceso termina de inmediato.",
+      "confirmCta": "Confirmar el reembolso",
+      "cancelCta": "Cancelar",
+      "busy": "Reembolsando…",
+      "done": "Reembolso efectuado. El importe vuelve a tu medio de pago en unos días.",
+      "error": "No se ha podido efectuar el reembolso. Inténtalo de nuevo o escribe a contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2351,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Versión {version}",
+      "loading": "Cargando el documento…",
+      "error": "Este documento no está disponible momentáneamente. Vuelve a intentarlo más tarde."
+    },
     "conditions": {
       "meta": {
         "title": "Condiciones de uso",
         "description": "Condiciones Generales de Uso de M.I.A Markets — servicio de información, postura educativa, advertencia sobre los riesgos."
-      },
-      "versionLabel": "Versión {version}",
-      "loading": "Cargando el documento…",
-      "error": "El documento de las Condiciones no está disponible momentáneamente. Vuelve a intentarlo más tarde."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Política de privacidad",
         "description": "Política de privacidad de M.I.A Markets — datos tratados, base legal, derechos RGPD / Ley 25."
-      },
-      "title": "Política de privacidad",
-      "pendingNotice": "Versión preliminar estructurada. El texto definitivo (revisado jurídicamente) se publicará con el terminal legal. La estructura de abajo describe fielmente los tratamientos en vigor.",
-      "sections": {
-        "responsable": {
-          "title": "1. Responsable del tratamiento",
-          "body": "Loukmane Bessam (operador único) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Datos tratados",
-          "body": "Nombre de usuario, dirección de correo electrónico, contraseña (cifrada mediante hash, nunca en claro), consentimientos (versión + marca de tiempo), datos de sesión. M.I.A Markets no recopila ningún dato de tarjeta bancaria."
-        },
-        "bases": {
-          "title": "3. Bases legales",
-          "body": "Ejecución del contrato (cuenta y servicio), interés legítimo (seguridad), consentimiento (aceptación de las Condiciones y de la presente Política al registrarse)."
-        },
-        "droits": {
-          "title": "4. Tus derechos (RGPD / Ley 25)",
-          "body": "Acceso, rectificación, supresión, portabilidad, limitación y oposición. Cualquier solicitud a loukmanebessam@gmail.com — respuesta en un plazo de 30 días."
-        },
-        "conservation": {
-          "title": "5. Conservación",
-          "body": "Los datos de cuenta se conservan durante la duración de la cuenta. Las sesiones expiran automáticamente. Los detalles de conservación por categoría se precisarán en la versión definitiva."
-        },
-        "contact": {
-          "title": "6. Contacto",
-          "body": "Para cualquier pregunta relativa a tus datos: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Dictado por voz",
-          "body": "El escáner conversacional ofrece entrada por voz. El reconocimiento de voz lo realiza su navegador; en algunos navegadores (p. ej. Chrome, Edge), el audio capturado puede enviarse a los servidores del proveedor del navegador para su transcripción — una transferencia a un tercero que puede estar ubicado fuera de Quebec. Esta transcripción produce texto, que usted revisa y puede corregir antes de cualquier envío. No se conserva ninguna grabación de audio, ni en su dispositivo ni en nuestros servidores: solo recibimos el texto que usted decide enviar. La entrada por teclado permanece disponible en todo momento; si su navegador no admite el dictado, el botón no aparece."
-        }
       }
     },
     "disclaimer": {

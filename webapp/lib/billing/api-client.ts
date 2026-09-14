@@ -36,6 +36,23 @@ export interface Subscription {
   has_access: boolean;
 }
 
+/** The 14-day annual guarantee (LEG-1), as the backend resolves it. */
+export interface RefundEligibility {
+  eligible: boolean;
+  reason: string | null;
+  days_remaining: number;
+  guarantee_days: number;
+  /** Unix seconds at which the window closes; null when not eligible. */
+  deadline: number | null;
+}
+
+export interface RefundResult {
+  refunded: boolean;
+  /** Smallest currency unit (cents), as Stripe reports it. */
+  amount: number | null;
+  currency: string | null;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -106,6 +123,31 @@ export async function startCheckout(planKey: string): Promise<string> {
     body: JSON.stringify({ plan_key: planKey }),
   });
   return url;
+}
+
+/**
+ * Is the 14-day annual guarantee still open for this account? (LEG-1)
+ *
+ * Read-only probe: the panel calls it to decide whether to OFFER the refund, so
+ * nobody is shown a button that is going to refuse them. Any failure resolves to
+ * "not eligible" rather than throwing — a guarantee we cannot confirm must not
+ * break the subscription screen.
+ */
+export async function fetchRefundEligibility(): Promise<RefundEligibility> {
+  try {
+    return await request<RefundEligibility>('/refund-eligibility', { method: 'GET' });
+  } catch {
+    return { eligible: false, reason: null, days_remaining: 0, guarantee_days: 14, deadline: null };
+  }
+}
+
+/**
+ * Ask for the refund. Irreversible: the payment is returned in full and access
+ * ends immediately. A refusal arrives as a `BillingError` whose message already
+ * says what the customer can do instead — show it as-is.
+ */
+export function requestRefund(): Promise<RefundResult> {
+  return request<RefundResult>('/refund', { method: 'POST' });
 }
 
 /** Open the Stripe Customer Portal — resolves to the hosted URL to redirect to. */

@@ -1906,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "I have read and accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>.",
+      "blocked": "Tick the box above to continue to payment.",
+      "error": "We could not record your acceptance. Try again in a moment."
+    },
+    "refund": {
+      "title": "{days}-day guarantee",
+      "openUntil": "You can ask for a refund until {date}.",
+      "cta": "Ask for a refund",
+      "confirm": "Confirm? The payment is refunded in full and access ends immediately.",
+      "confirmCta": "Confirm the refund",
+      "cancelCta": "Cancel",
+      "busy": "Refunding…",
+      "done": "Refunded. The amount returns to your payment method within a few days.",
+      "error": "The refund could not be completed. Try again, or write to contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2351,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Version {version}",
+      "loading": "Loading the document…",
+      "error": "This document is momentarily unavailable. Try again later."
+    },
     "conditions": {
       "meta": {
         "title": "Terms of Use",
         "description": "M.I.A Markets Terms of Use — information service, educational stance, risk warning."
-      },
-      "versionLabel": "Version {version}",
-      "loading": "Loading the document…",
-      "error": "The Terms document is momentarily unavailable. Try again later."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Privacy Policy",
         "description": "M.I.A Markets Privacy Policy — data processed, legal basis, GDPR / Law 25 rights."
-      },
-      "title": "Privacy Policy",
-      "pendingNotice": "Structured preliminary version. The final text (legally reviewed) will be published with the legal terminal. The structure below faithfully describes the processing currently in effect.",
-      "sections": {
-        "responsable": {
-          "title": "1. Data controller",
-          "body": "Loukmane Bessam (sole operator) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Data processed",
-          "body": "Username, email address, password (hashed, never in plain text), consents (version + timestamp), session data. No bank card data is collected by M.I.A Markets."
-        },
-        "bases": {
-          "title": "3. Legal bases",
-          "body": "Performance of the contract (account and service), legitimate interest (security), consent (acceptance of the Terms and of this Policy at registration)."
-        },
-        "droits": {
-          "title": "4. Your rights (GDPR / Law 25)",
-          "body": "Access, rectification, erasure, portability, restriction and objection. Any request to loukmanebessam@gmail.com — response within 30 days."
-        },
-        "conservation": {
-          "title": "5. Retention",
-          "body": "Account data is retained for the duration of the account. Sessions expire automatically. Retention details by category will be specified in the final version."
-        },
-        "contact": {
-          "title": "6. Contact",
-          "body": "For any question about your data: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Voice dictation",
-          "body": "The conversational scanner offers voice input. Speech recognition is performed by your browser; on some browsers (e.g. Chrome, Edge), the captured audio may be sent to the browser vendor’s servers for transcription — a transfer to a third party that may be located outside Québec. This transcription produces text, which you review and can correct before any submission. No audio recording is kept, neither on your device nor on our servers: we only receive the text you choose to submit. Keyboard input remains available at all times; if your browser does not support dictation, the button does not appear."
-        }
       }
     },
     "disclaimer": {

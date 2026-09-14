@@ -1906,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "Ik heb de <terms>gebruiksvoorwaarden</terms> en het <privacy>privacybeleid</privacy> gelezen en ga ermee akkoord.",
+      "blocked": "Vink het vakje hierboven aan om door te gaan naar de betaling.",
+      "error": "We konden je akkoord niet vastleggen. Probeer het zo dadelijk opnieuw."
+    },
+    "refund": {
+      "title": "Garantie van {days} dagen",
+      "openUntil": "Je kunt tot {date} om terugbetaling vragen.",
+      "cta": "Terugbetaling vragen",
+      "confirm": "Bevestigen? De betaling wordt volledig terugbetaald en de toegang stopt direct.",
+      "confirmCta": "Terugbetaling bevestigen",
+      "cancelCta": "Annuleren",
+      "busy": "Bezig met terugbetalen…",
+      "done": "Terugbetaald. Het bedrag komt binnen enkele dagen terug op je betaalmiddel.",
+      "error": "De terugbetaling kon niet worden uitgevoerd. Probeer het opnieuw of schrijf naar contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2351,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Versie {version}",
+      "loading": "Document laden…",
+      "error": "Dit document is momenteel niet beschikbaar. Probeer het later opnieuw."
+    },
     "conditions": {
       "meta": {
         "title": "Gebruiksvoorwaarden",
         "description": "Algemene Gebruiksvoorwaarden van M.I.A Markets — informatiedienst, educatieve houding, waarschuwing over de risico's."
-      },
-      "versionLabel": "Versie {version}",
-      "loading": "Document laden…",
-      "error": "Het Voorwaardendocument is momenteel niet beschikbaar. Probeer het later opnieuw."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Privacybeleid",
         "description": "Privacybeleid van M.I.A Markets — verwerkte gegevens, rechtsgrondslag, rechten AVG / Wet 25."
-      },
-      "title": "Privacybeleid",
-      "pendingNotice": "Voorlopige gestructureerde versie. De definitieve tekst (juridisch nagelezen) wordt gepubliceerd met de juridische terminal. De onderstaande structuur beschrijft de geldende verwerkingen getrouw.",
-      "sections": {
-        "responsable": {
-          "title": "1. Verwerkingsverantwoordelijke",
-          "body": "Loukmane Bessam (enige exploitant) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Verwerkte gegevens",
-          "body": "Gebruikersnaam, e-mailadres, wachtwoord (gehasht, nooit in klare tekst), toestemmingen (versie + tijdstempel), sessiegegevens. Er worden door M.I.A Markets geen bankkaartgegevens verzameld."
-        },
-        "bases": {
-          "title": "3. Rechtsgrondslagen",
-          "body": "Uitvoering van het contract (account en dienst), gerechtvaardigd belang (beveiliging), toestemming (aanvaarding van de Voorwaarden en van dit Beleid bij registratie)."
-        },
-        "droits": {
-          "title": "4. Uw rechten (AVG / Wet 25)",
-          "body": "Toegang, rectificatie, wissing, overdraagbaarheid, beperking en bezwaar. Elk verzoek naar loukmanebessam@gmail.com — antwoord binnen 30 dagen."
-        },
-        "conservation": {
-          "title": "5. Bewaring",
-          "body": "De accountgegevens worden bewaard voor de duur van het account. Sessies verlopen automatisch. De bewaardetails per categorie worden in de definitieve versie gepreciseerd."
-        },
-        "contact": {
-          "title": "6. Contact",
-          "body": "Voor elke vraag over uw gegevens: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Spraakdictaat",
-          "body": "De conversationele scanner biedt spraakinvoer. Spraakherkenning wordt uitgevoerd door uw browser; bij sommige browsers (bijv. Chrome, Edge) kan de opgenomen audio naar de servers van de browserleverancier worden gestuurd voor transcriptie — een doorgifte aan een derde die zich buiten Québec kan bevinden. Deze transcriptie levert tekst op, die u nakijkt en kunt corrigeren vóór verzending. Er wordt geen audio-opname bewaard, niet op uw apparaat en niet op onze servers: wij ontvangen alleen de tekst die u kiest te versturen. Invoer via toetsenbord blijft altijd beschikbaar; als uw browser dictaat niet ondersteunt, verschijnt de knop niet."
-        }
       }
     },
     "disclaimer": {

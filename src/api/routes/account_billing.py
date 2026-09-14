@@ -9,6 +9,8 @@ the account's ``subscriptions`` row via Stripe webhooks.
   POST /api/billing/checkout      auth — create/reuse customer + Checkout session
   POST /api/billing/portal        auth — Stripe Customer Portal (manage/cancel)
   GET  /api/billing/subscription  auth — current subscription state + access
+  GET  /api/billing/refund-eligibility  auth — is the 14-day guarantee open?
+  POST /api/billing/refund        auth — honour the 14-day annual guarantee
   POST /api/billing/webhook       Stripe — signed, idempotent → update account
 
 SECURITY
@@ -27,6 +29,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -36,7 +39,9 @@ from src.api.account_store import AccountStore
 from src.api.public_urls import app_public_url
 from src.api.session_auth import require_account
 from src.api.subscription_gate import account_has_access
-from src.billing.pricing import list_paid_plans
+from src.billing import refund_guarantee
+from src.billing.pricing import PLAN_ANNUAL, list_paid_plans
+from src.billing.refund_guarantee import GUARANTEE_DAYS
 from src.billing.stripe_client import parse_account_event
 
 logger = logging.getLogger(__name__)
@@ -118,6 +123,24 @@ class SubscriptionOut(BaseModel):
     has_access: bool = False
 
 
+class RefundEligibilityOut(BaseModel):
+    """Whether the 14-day annual guarantee currently covers this account."""
+
+    eligible: bool = False
+    reason: Optional[str] = None
+    days_remaining: int = 0
+    guarantee_days: int = GUARANTEE_DAYS
+    #: Unix seconds at which the window closes. The UI shows a DATE rather than
+    #: a day count — no plural rule to get wrong in nine languages.
+    deadline: Optional[float] = None
+
+
+class RefundOut(BaseModel):
+    refunded: bool = True
+    amount: Optional[int] = None
+    currency: Optional[str] = None
+
+
 # =============================================================================
 # Helpers
 # =============================================================================
@@ -134,6 +157,117 @@ def _stripe(request: Request):
     if client is None or not client.is_configured:
         raise HTTPException(status_code=503, detail="Billing not configured")
     return client
+
+
+#: What we tell a customer whose refund we decline. Each says what they CAN do:
+#: a refusal must never be a dead end (and never contradicts the LPC, which
+#: prevails over our commercial guarantee — see terms §8).
+REFUND_REFUSALS: Dict[str, str] = {
+    refund_guarantee.REASON_NO_SUBSCRIPTION:
+        "Aucun abonnement actif sur ce compte.",
+    refund_guarantee.REASON_NOT_ANNUAL:
+        "La garantie de 14 jours porte sur l'abonnement annuel. Au mensuel, tu "
+        "peux résilier à tout moment depuis ton espace client : l'accès reste "
+        "ouvert jusqu'à la fin de la période déjà payée.",
+    refund_guarantee.REASON_NO_PAYMENT:
+        "Aucun paiement trouvé pour cet abonnement. Écris à contact@mia.markets.",
+    refund_guarantee.REASON_WINDOW_ELAPSED:
+        "Les 14 jours suivant le paiement sont écoulés. Tu peux résilier à tout "
+        "moment depuis ton espace client : l'accès reste ouvert jusqu'à la fin "
+        "de la période déjà payée.",
+    refund_guarantee.REASON_ALREADY_REFUNDED:
+        "Ce paiement a déjà été remboursé.",
+}
+
+
+def _plan_key_for_price(price_id: Optional[str]) -> Optional[str]:
+    """Map a Stripe price id back to its cadence key, or None if unknown."""
+    if not price_id:
+        return None
+    for plan in _configured_plans():
+        if plan["price_id"] == price_id:
+            return plan["key"]
+    return None
+
+
+def _evaluate_guarantee(
+    request: Request,
+    sub: Dict[str, Any],
+    *,
+    quiet: bool,
+) -> tuple[refund_guarantee.GuaranteeDecision, Optional[Dict[str, Any]]]:
+    """Decide the guarantee from Stripe's own payment date.
+
+    Returns the decision and, when eligible, the invoice to refund. The payment
+    date is never taken from our database: the terms count the 14 days « à
+    compter du paiement », and Stripe is the only thing that knows when that
+    was.
+
+    ``quiet`` (the read-only eligibility probe) degrades a Stripe failure to
+    "not eligible" instead of raising — a customer must never see an error where
+    they expected an answer. The POST path passes ``quiet=False`` so a failure
+    there surfaces as a 502 rather than as a silent refusal.
+    """
+    status = (sub.get("status") or "").lower()
+    if status == "suspended":
+        return (
+            refund_guarantee.GuaranteeDecision(
+                False, refund_guarantee.REASON_ALREADY_REFUNDED
+            ),
+            None,
+        )
+
+    plan_key = _plan_key_for_price(sub.get("price_id"))
+    if plan_key is None or plan_key.upper() != PLAN_ANNUAL:
+        # Decide without calling Stripe at all — a monthly customer costs us no
+        # API round-trip to refuse.
+        return (
+            refund_guarantee.evaluate(plan_key=plan_key, paid_at=None),
+            None,
+        )
+
+    subscription_id = sub.get("stripe_subscription_id")
+    if not subscription_id:
+        return (
+            refund_guarantee.GuaranteeDecision(
+                False, refund_guarantee.REASON_NO_PAYMENT
+            ),
+            None,
+        )
+
+    unknown = (
+        refund_guarantee.GuaranteeDecision(False, refund_guarantee.REASON_NO_PAYMENT),
+        None,
+    )
+    try:
+        invoice = _stripe(request).get_latest_paid_invoice(subscription_id)
+    except HTTPException:
+        # Billing not configured (503). In quiet mode that is still just an
+        # unknown answer — the subscription screen must render either way.
+        if quiet:
+            return unknown
+        raise
+    except Exception:
+        logger.exception("invoice lookup failed for subscription=%s", subscription_id)
+        if quiet:
+            return unknown
+        raise HTTPException(
+            status_code=502,
+            detail="La vérification du paiement a échoué. Réessaie dans un instant.",
+        )
+
+    if not invoice:
+        return (
+            refund_guarantee.GuaranteeDecision(
+                False, refund_guarantee.REASON_NO_PAYMENT
+            ),
+            None,
+        )
+
+    decision = refund_guarantee.evaluate(
+        plan_key=plan_key, paid_at=invoice.get("paid_at")
+    )
+    return decision, (invoice if decision.eligible else None)
 
 
 def _resolve_price_id(body: CheckoutBody) -> str:
@@ -328,6 +462,111 @@ async def sync_subscription(
         cancel_at_period_end=bool(fresh.get("cancel_at_period_end")),
         trial_end=fresh.get("trial_end"),
         has_access=account_has_access(account, store),
+    )
+
+
+@router.get("/refund-eligibility", response_model=RefundEligibilityOut)
+async def refund_eligibility(
+    request: Request,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Is this account inside the 14-day annual guarantee? (LEG-1)
+
+    Read-only: the subscription screen calls it to decide whether to OFFER the
+    refund at all, so a customer is never shown a button that is going to refuse
+    them. Never raises on a Stripe hiccup — an unknown answer degrades to "not
+    eligible", and the customer can still cancel.
+    """
+    store = _store(request)
+    sub = store.get_subscription(account["id"]) or {}
+    decision, _ = _evaluate_guarantee(request, sub, quiet=True)
+    return RefundEligibilityOut(
+        eligible=decision.eligible,
+        reason=decision.reason,
+        days_remaining=decision.days_remaining,
+        guarantee_days=GUARANTEE_DAYS,
+        deadline=(
+            time.time() + decision.seconds_remaining if decision.eligible else None
+        ),
+    )
+
+
+@router.post("/refund", response_model=RefundOut)
+async def refund(
+    request: Request,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Honour the 14-day annual guarantee, automatically (LEG-1).
+
+    The terms promise it; this endpoint is what makes the promise real instead
+    of an email to the founder. Order matters:
+
+      1. decide eligibility from Stripe's own payment date;
+      2. refund the payment IN FULL;
+      3. cancel the subscription;
+      4. write ``suspended`` locally, so access is revoked NOW rather than
+         whenever the ``charge.refunded`` webhook happens to arrive (the webhook
+         still fires and is idempotent — it writes the same status).
+
+    If the refund succeeds and the cancellation then fails, we do NOT report a
+    failure: the money is back, which is what the customer asked for. The stray
+    subscription is logged for the operator instead.
+    """
+    store = _store(request)
+    stripe = _stripe(request)
+    sub = store.get_subscription(account["id"]) or {}
+
+    decision, invoice = _evaluate_guarantee(request, sub, quiet=False)
+    if not decision.eligible:
+        raise HTTPException(
+            status_code=409,
+            detail=REFUND_REFUSALS.get(
+                decision.reason or "",
+                "La garantie ne s'applique pas à cet abonnement.",
+            ),
+        )
+
+    assert invoice is not None  # guaranteed by an eligible decision
+    try:
+        stripe.refund_payment(
+            charge_id=invoice.get("charge_id"),
+            payment_intent_id=invoice.get("payment_intent_id"),
+        )
+    except Exception:
+        logger.exception("refund failed for account=%s", account["id"])
+        raise HTTPException(
+            status_code=502,
+            detail="Le remboursement n'a pas pu être effectué. Réessaie dans un "
+            "instant, ou écris à contact@mia.markets.",
+        )
+
+    subscription_id = sub.get("stripe_subscription_id")
+    if subscription_id:
+        try:
+            stripe.cancel_subscription(subscription_id)
+        except Exception:
+            # Money is back; the subscription is the operator's problem, not the
+            # customer's. Never turn this into a failed refund.
+            logger.exception(
+                "refund succeeded but cancelling subscription %s failed (account=%s)",
+                subscription_id, account["id"],
+            )
+
+    store.upsert_subscription(
+        account["id"],
+        stripe_customer_id=sub.get("stripe_customer_id"),
+        stripe_subscription_id=subscription_id,
+        status="suspended",
+        price_id=sub.get("price_id"),
+        current_period_end=sub.get("current_period_end"),
+        cancel_at_period_end=True,
+        trial_end=sub.get("trial_end"),
+    )
+
+    return RefundOut(
+        refunded=True,
+        amount=invoice.get("amount_paid"),
+        currency=(invoice.get("currency") or "").upper() or None,
     )
 
 

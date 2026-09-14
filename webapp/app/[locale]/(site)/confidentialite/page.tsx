@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { LegalDocument } from '@/components/legal/LegalDocument';
 
 export async function generateMetadata({
   params,
@@ -18,28 +19,17 @@ export async function generateMetadata({
 }
 
 /**
- * /confidentialite — placeholder STRUCTURÉ. The full, lawyer-reviewed privacy
- * policy is mission ④ (terminal légal). This page already exposes the spine of
- * the document (controller, data, basis, rights, contact) so the consent
- * checkbox at registration links to a real, honest page — but the canonical
- * legally-binding text is explicitly pending.
+ * /confidentialite — renders the Privacy Policy document
+ * (docs/legal/politique-confidentialite.{fr,en,es}.md) TEL QUEL via the backend
+ * endpoint.
  *
- * Section keys map 1:1 to `legal.privacy.sections.*` — order is fixed and the
- * numbering lives in the translated titles (verbatim legal text).
+ * LEG-1 replaced the structured PLACEHOLDER that used to live here (a set of
+ * `legal.privacy.sections.*` i18n keys under a "preliminary version" notice)
+ * with the real document. Same architecture as /conditions — one source, served
+ * verbatim, version stamped by the backend — so the two pages can never drift
+ * apart, and the version a customer consents to is the version they read.
  */
-const SECTION_KEYS = [
-  'responsable',
-  'donnees',
-  'bases',
-  'droits',
-  'conservation',
-  'contact',
-  // SC-2 — voice dictation (Web Speech API) / Loi 25 third-party transfer notice.
-  'dictee',
-] as const;
-
 export default function ConfidentialitePage() {
-  const t = useTranslations('legal');
   const tPage = useTranslations('pages');
   return (
     <div className="container-prose py-12 sm:py-16">
@@ -50,32 +40,7 @@ export default function ConfidentialitePage() {
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
         {tPage('confidentialite.backHome')}
       </Link>
-
-      <header className="space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          {t('privacy.title')}
-        </h1>
-        <div
-          className="flex items-start gap-2 rounded-md border border-dashed border-border/70 bg-card/50 p-3 text-sm text-muted-foreground"
-          data-legal-pending="privacy-placeholder"
-        >
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>{t('privacy.pendingNotice')}</span>
-        </div>
-      </header>
-
-      <div className="mt-8 space-y-6">
-        {SECTION_KEYS.map((key) => (
-          <section key={key} className="space-y-1.5">
-            <h2 className="text-lg font-semibold text-foreground">
-              {t(`privacy.sections.${key}.title`)}
-            </h2>
-            <p className="leading-relaxed text-muted-foreground">
-              {t(`privacy.sections.${key}.body`)}
-            </p>
-          </section>
-        ))}
-      </div>
+      <LegalDocument doc="privacy" />
     </div>
   );
 }

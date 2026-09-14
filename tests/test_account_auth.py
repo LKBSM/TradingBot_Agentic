@@ -285,15 +285,17 @@ class TestLegalDocuments:
     # La version vient de src/api/routes/legal.py (source unique, lockstep
     # avec l'en-tête du markdown canonique) — pas de littéral figé ici.
     def test_conditions_rendered_with_version(self, client):
-        r = client.get("/api/v1/legal/conditions")
+        # LEG-1 : la langue est explicite (le document existe en fr/en/es ;
+        # sans indication, l'anglais est servi).
+        r = client.get("/api/v1/legal/conditions?lang=fr")
         assert r.status_code == 200
         assert r.headers["X-Document-Version"] == CONDITIONS_VERSION
-        assert "Conditions Générales d'Utilisation" in r.text
+        assert "Conditions d'utilisation" in r.text
 
     def test_conditions_doc_header_in_lockstep_with_code(self, client):
         # L'en-tête du markdown canonique doit porter la même date que
-        # CONDITIONS_VERSION (horodatage de consentement Loi 25 / RGPD).
-        r = client.get("/api/v1/legal/conditions")
+        # CONDITIONS_VERSION (horodatage de consentement Loi 25).
+        r = client.get("/api/v1/legal/conditions?lang=fr")
         assert f"_Version : {CONDITIONS_VERSION}" in r.text
 
     def test_conditions_meta(self, client):

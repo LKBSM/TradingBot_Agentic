@@ -1906,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "Li e aceito os <terms>termos de utilização</terms> e a <privacy>política de privacidade</privacy>.",
+      "blocked": "Marca a caixa acima para continuar para o pagamento.",
+      "error": "Não foi possível registar a tua aceitação. Tenta novamente dentro de momentos."
+    },
+    "refund": {
+      "title": "Garantia de {days} dias",
+      "openUntil": "Podes pedir o reembolso até {date}.",
+      "cta": "Pedir o reembolso",
+      "confirm": "Confirmas? O pagamento é reembolsado na totalidade e o acesso termina de imediato.",
+      "confirmCta": "Confirmar o reembolso",
+      "cancelCta": "Cancelar",
+      "busy": "A reembolsar…",
+      "done": "Reembolso efetuado. O valor regressa ao teu meio de pagamento dentro de alguns dias.",
+      "error": "Não foi possível efetuar o reembolso. Tenta novamente ou escreve para contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2351,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Versão {version}",
+      "loading": "A carregar o documento…",
+      "error": "Este documento está momentaneamente indisponível. Tente novamente mais tarde."
+    },
     "conditions": {
       "meta": {
         "title": "Termos de Utilização",
         "description": "Termos e Condições de Utilização da M.I.A Markets — serviço de informação, postura educativa, aviso sobre os riscos."
-      },
-      "versionLabel": "Versão {version}",
-      "loading": "A carregar o documento…",
-      "error": "O documento dos Termos está momentaneamente indisponível. Tente novamente mais tarde."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Política de Privacidade",
         "description": "Política de Privacidade da M.I.A Markets — dados tratados, base legal, direitos RGPD / Lei 25."
-      },
-      "title": "Política de Privacidade",
-      "pendingNotice": "Versão preliminar estruturada. O texto definitivo (revisto juridicamente) será publicado com o terminal legal. A estrutura abaixo descreve fielmente os tratamentos em vigor.",
-      "sections": {
-        "responsable": {
-          "title": "1. Responsável pelo tratamento",
-          "body": "Loukmane Bessam (operador único) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Dados tratados",
-          "body": "Nome de utilizador, endereço de e-mail, palavra-passe (com hash, nunca em claro), consentimentos (versão + data e hora), dados de sessão. Nenhum dado de cartão bancário é recolhido pela M.I.A Markets."
-        },
-        "bases": {
-          "title": "3. Bases legais",
-          "body": "Execução do contrato (conta e serviço), interesse legítimo (segurança), consentimento (aceitação dos Termos e da presente Política no registo)."
-        },
-        "droits": {
-          "title": "4. Os seus direitos (RGPD / Lei 25)",
-          "body": "Acesso, retificação, apagamento, portabilidade, limitação e oposição. Qualquer pedido para loukmanebessam@gmail.com — resposta no prazo de 30 dias."
-        },
-        "conservation": {
-          "title": "5. Conservação",
-          "body": "Os dados de conta são conservados durante o período do conta. As sessões expiram automaticamente. Os detalhes de conservação por categoria serão precisados na versão definitiva."
-        },
-        "contact": {
-          "title": "6. Contacto",
-          "body": "Para qualquer questão relativa aos seus dados: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Ditado por voz",
-          "body": "O scanner conversacional oferece entrada por voz. O reconhecimento de voz é feito pelo seu navegador; em alguns navegadores (por ex. Chrome, Edge), o áudio captado pode ser enviado aos servidores do fornecedor do navegador para transcrição — uma transferência a um terceiro que pode estar localizado fora do Québec. Essa transcrição produz texto, que você revê e pode corrigir antes de qualquer envio. Nenhuma gravação de áudio é conservada, nem no seu dispositivo nem nos nossos servidores: recebemos apenas o texto que você decide enviar. A entrada por teclado permanece disponível a qualquer momento; se o seu navegador não suportar o ditado, o botão não aparece."
-        }
       }
     },
     "disclaimer": {
