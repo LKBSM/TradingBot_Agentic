@@ -109,6 +109,46 @@ async function payWithTestCard(page: Page): Promise<void> {
   if (await postal.count()) await postal.fill('H2X 1Y4');
 
   await page.locator('.SubmitButton, button[type="submit"]').first().click();
+
+  // VÉRIFIER QUE LE PAIEMENT A ABOUTI, avant d'attendre quoi que ce soit.
+  // Sans ce contrôle, un clic qui échoue est INDISCERNABLE d'un webhook mort :
+  // les deux donnent « pas d'accès après 90 s », et on cherche la panne au
+  // mauvais endroit pendant ce temps. Checkout quitte son domaine dès que le
+  // paiement passe (redirection vers success_url) — c'est le signal le plus
+  // fiable, et il ne dépend pas de notre front, qui ne tourne pas forcément.
+  const left = await page
+    .waitForURL((u) => !u.host.endsWith('stripe.com'), { timeout: 60_000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!left) {
+    const shown = await page
+      .locator('[role="alert"], .FieldError, .Notice, .ConfirmPayment-Error')
+      .allInnerTexts()
+      .catch(() => [] as string[]);
+    const visible = shown.map((t) => t.trim()).filter(Boolean).join(' | ');
+    throw new Error(
+      [
+        '',
+        '=========================================================================',
+        "LE PAIEMENT N'EST PAS PASSÉ — on est resté sur la page Checkout après 60 s.",
+        '',
+        "Ce n'est PAS un webhook mort : Stripe n'a rien eu à annoncer. Cherche du",
+        'côté du formulaire, pas du côté de la livraison des événements.',
+        '',
+        'À vérifier :',
+        '  1. le prix STRIPE_PRICE_MONTHLY est-il dans le MÊME mode que la clé ?',
+        '  2. une règle Radar bloque-t-elle la carte (dont la règle de zone CA/US) ?',
+        '  3. Checkout demande-t-il un champ que le test ne remplit pas ?',
+        '',
+        visible
+          ? 'Message affiché par Checkout : ' + visible
+          : "Checkout n'affiche aucun message d'erreur.",
+        "URL au moment de l'abandon : " + page.url(),
+        '=========================================================================',
+      ].join('\n'),
+    );
+  }
 }
 
 /**
