@@ -188,6 +188,87 @@
       ]
     },
     {
+      "scenario": "S5",
+      "label": "Code corrige (etalement reel)",
+      "note": "decalages lus dans scheduler.spread_offset_minutes — verifie le code, pas un modele",
+      "markets": 84,
+      "sessions": "continuous",
+      "polled_units": [
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 10668,
+      "peak_per_minute": 24,
+      "mean_per_minute_over_24h": 7.41,
+      "mean_per_active_minute": 9.88,
+      "active_minutes": 1080,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S6",
+      "label": "Code corrige + M5 en direct",
+      "note": "idem S5 avec LB1_WARM_M5=1 : les 5 unites de la mission",
+      "markets": 84,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 34860,
+      "peak_per_minute": 52,
+      "mean_per_minute_over_24h": 24.21,
+      "mean_per_active_minute": 25.67,
+      "active_minutes": 1358,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
       "scenario": "S1",
       "label": "Code actuel tel quel",
       "note": "aucun etalement, aucune derivation ; M5 a la demande plafonne a 1/900 s",
@@ -368,6 +449,87 @@
       ]
     },
     {
+      "scenario": "S5",
+      "label": "Code corrige (etalement reel)",
+      "note": "decalages lus dans scheduler.spread_offset_minutes — verifie le code, pas un modele",
+      "markets": 100,
+      "sessions": "continuous",
+      "polled_units": [
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 12700,
+      "peak_per_minute": 29,
+      "mean_per_minute_over_24h": 8.82,
+      "mean_per_active_minute": 11.45,
+      "active_minutes": 1109,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S6",
+      "label": "Code corrige + M5 en direct",
+      "note": "idem S5 avec LB1_WARM_M5=1 : les 5 unites de la mission",
+      "markets": 100,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 41500,
+      "peak_per_minute": 55,
+      "mean_per_minute_over_24h": 28.82,
+      "mean_per_active_minute": 30.45,
+      "active_minutes": 1363,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
       "scenario": "S1",
       "label": "Code actuel tel quel",
       "note": "aucun etalement, aucune derivation ; M5 a la demande plafonne a 1/900 s",
@@ -546,6 +708,87 @@
           "completed_within_30_days": true
         }
       ]
+    },
+    {
+      "scenario": "S5",
+      "label": "Code corrige (etalement reel)",
+      "note": "decalages lus dans scheduler.spread_offset_minutes — verifie le code, pas un modele",
+      "markets": 150,
+      "sessions": "continuous",
+      "polled_units": [
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 19050,
+      "peak_per_minute": 38,
+      "mean_per_minute_over_24h": 13.23,
+      "mean_per_active_minute": 16.61,
+      "active_minutes": 1147,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S6",
+      "label": "Code corrige + M5 en direct",
+      "note": "idem S5 avec LB1_WARM_M5=1 : les 5 unites de la mission",
+      "markets": 150,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 62250,
+      "peak_per_minute": 81,
+      "mean_per_minute_over_24h": 43.23,
+      "mean_per_active_minute": 45.5,
+      "active_minutes": 1368,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": false,
+          "minutes_over": 528,
+          "worst_overshoot": 26,
+          "credits_lost_per_day": 5127
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
     }
   ]
 }

@@ -67,6 +67,8 @@ class Scenario:
     backfill_requests_per_market: int = 0
     #: debit constant (req/min) reserve a l'amorcage
     backfill_rate_per_minute: int = 0
+    #: utilise les decalages REELS du scheduler plutot qu'un etalement ideal
+    real_offsets: bool = False
     note: str = ""
 
 
@@ -107,6 +109,23 @@ def build_scenarios(m5_on_demand: bool = True) -> List[Scenario]:
             backfill_rate_per_minute=30,
             note="amorcage 1 an de M5 (22 requetes/marche) en parallele du suivi en direct",
         ),
+        Scenario(
+            key="S5",
+            label="Code corrige (etalement reel)",
+            # perimetre warm du produit : les unites reellement suivies en direct
+            polled_units=("M15", "H1", "H4", "D1"),
+            spread=True,
+            real_offsets=True,
+            note="decalages lus dans scheduler.spread_offset_minutes — verifie le code, pas un modele",
+        ),
+        Scenario(
+            key="S6",
+            label="Code corrige + M5 en direct",
+            polled_units=("M5", "M15", "H1", "H4", "D1"),
+            spread=True,
+            real_offsets=True,
+            note="idem S5 avec LB1_WARM_M5=1 : les 5 unites de la mission",
+        ),
     ]
 
 
@@ -141,16 +160,31 @@ def simulate(
     profiles = _market_profiles(markets, sessions)
     open_by_profile = {p: _open_minutes(p) for p in set(profiles)}
 
+    real_offset = None
+    if scenario.real_offsets:
+        # Lit les decalages que le scheduler appliquera VRAIMENT : le simulateur
+        # valide alors le code livre, pas une idealisation de ce code.
+        import os
+        import sys
+
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+        from src.intelligence.scheduler import spread_offset_minutes as real_offset
+
     for idx, profile in enumerate(profiles):
         is_open = open_by_profile[profile]
+        market_id = f"MKT{idx:03d}" if markets > 2 else ("XAUUSD", "EURUSD")[idx]
         # decalage deterministe par marche : sans etalement il est nul (tout le
         # monde tire au meme instant), avec etalement il repartit les marches
         for unit in scenario.polled_units:
             period = UNIT_PERIOD[unit]
+            if real_offset is not None:
+                offset = real_offset(market_id, unit, period)
             for close_min in range(0, MINUTES_PER_DAY, period):
                 if not is_open[close_min % MINUTES_PER_DAY]:
                     continue
-                if scenario.spread:
+                if real_offset is not None:
+                    slot = (close_min + offset) % MINUTES_PER_DAY
+                elif scenario.spread:
                     window = max(1, int(period * scenario.spread_fraction))
                     slot = (close_min + (idx % window)) % MINUTES_PER_DAY
                 else:

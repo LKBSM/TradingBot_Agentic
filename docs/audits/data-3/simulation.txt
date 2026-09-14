@@ -4,14 +4,20 @@
   84 S2  Etalement seul                 34860    24.21      27  PASSE  PASSE  PASSE
   84 S3  Etalement + derivation         24276    16.86      18  PASSE  PASSE  PASSE
   84 S4  S3 + amorcage historique       26136    18.15      48  PASSE  PASSE  PASSE
+  84 S5  Code corrige (etalement reel)     10668     7.41      24  PASSE  PASSE  PASSE
+  84 S6  Code corrige + M5 en direct     34860    24.21      52  PASSE  PASSE  PASSE
  100 S1  Code actuel tel quel           22300    15.49     500  NE PASSE PAS (+445 au pire, 96 min/j)  NE PASSE PAS (+356 au pire, 96 min/j)  NE PASSE PAS (+123 au pire, 6 min/j)
  100 S2  Etalement seul                 41500    28.82      31  PASSE  PASSE  PASSE
  100 S3  Etalement + derivation         28900    20.07      21  PASSE  PASSE  PASSE
  100 S4  S3 + amorcage historique       31120    21.61      51  PASSE  PASSE  PASSE
+ 100 S5  Code corrige (etalement reel)     12700     8.82      29  PASSE  PASSE  PASSE
+ 100 S6  Code corrige + M5 en direct     41500    28.82      55  PASSE  PASSE  PASSE
  150 S1  Code actuel tel quel           33450    23.23     750  NE PASSE PAS (+695 au pire, 96 min/j)  NE PASSE PAS (+606 au pire, 96 min/j)  NE PASSE PAS (+373 au pire, 24 min/j)
  150 S2  Etalement seul                 62250    43.23      45  PASSE  PASSE  PASSE
  150 S3  Etalement + derivation         43350     30.1      31  PASSE  PASSE  PASSE
  150 S4  S3 + amorcage historique       46650     32.4      61  NE PASSE PAS (+6 au pire, 110 min/j)  PASSE  PASSE
+ 150 S5  Code corrige (etalement reel)     19050    13.23      38  PASSE  PASSE  PASSE
+ 150 S6  Code corrige + M5 en direct     62250    43.23      81  NE PASSE PAS (+26 au pire, 528 min/j)  PASSE  PASSE
 
   Amorcage 84 marches (1848 requetes) sur la seule marge de S3 :
     plafond  55 -> 0.8 h (termine)
@@ -33,6 +39,8 @@ Rapport JSON : docs/audits/data-3/simulation.json
  100 S2  Etalement seul                 35440    24.61      30  PASSE  PASSE  PASSE
  100 S3  Etalement + derivation         24680    17.14      20  PASSE  PASSE  PASSE
  100 S4  S3 + amorcage historique       26900    18.68      47  PASSE  PASSE  PASSE
+ 100 S5  Code corrige (etalement reel)     10840     7.53      26  PASSE  PASSE  PASSE
+ 100 S6  Code corrige + M5 en direct     35440    24.61      55  PASSE  PASSE  PASSE
 
   Amorcage 100 marches (2200 requetes) sur la seule marge de S3 :
     plafond  55 -> 1.0 h (termine)
@@ -44,6 +52,8 @@ Rapport JSON : docs/audits/data-3/simulation.json
  100 S2  Etalement seul                 51875    36.02      39  PASSE  PASSE  PASSE
  100 S3  Etalement + derivation         36125    25.09      26  PASSE  PASSE  PASSE
  100 S4  S3 + amorcage historique       38900    27.01      64  NE PASSE PAS (+9 au pire, 74 min/j)  PASSE  PASSE
+ 100 S5  Code corrige (etalement reel)     15875    11.02      36  PASSE  PASSE  PASSE
+ 100 S6  Code corrige + M5 en direct     51875    36.02      69  NE PASSE PAS (+14 au pire, 153 min/j)  PASSE  PASSE
 
   Amorcage 100 marches (2200 requetes) sur la seule marge de S3 :
     plafond  55 -> 1.3 h (termine)

@@ -228,7 +228,9 @@ class TestTick:
             },
         )
         assembler = _MockAssembler(raise_for={("EURUSD", "H1")})
-        sched = MarketReadingScheduler(assembler, store, clock=_clock)
+        # Ce test porte sur l'ORDRE et l'isolation des erreurs, pas sur
+        # l'etalement DATA-3 : on le desactive pour isoler ce qu'il verifie.
+        sched = MarketReadingScheduler(assembler, store, clock=_clock, spread=False)
 
         regen = sched.tick()
         # 2 succeed, 1 fails — tick still returns successes, no exception bubbles.
@@ -266,8 +268,14 @@ class TestTick:
             clock=_clock,
         )
         sched.tick()
-        assert len(store.active_calls) == 1
+        # DATA-3 : deux fenetres sont interrogees — celle qui dit ce qui reste
+        # CONNU (auto_stop_hours) et la plus courte qui dit ce qui merite encore
+        # de COUTER des credits.
         assert store.active_calls[0] == CLOCK - timedelta(hours=24)
+        assert len(store.active_calls) == 2
+        assert store.active_calls[1] == CLOCK - timedelta(
+            hours=MarketReadingScheduler.DEFAULT_ON_DEMAND_ACTIVE_HOURS
+        )
 
     def test_custom_auto_stop_hours_propagates_to_cutoff(self):
         store = _MockReadingsStore(active=[])
@@ -350,6 +358,8 @@ class TestAlwaysWarm:
             store,
             always_warm=[("XAUUSD", "M15"), ("XAUUSD", "H4")],
             clock=_clock,
+            # cf. ci-dessus : ce test porte sur l'ordre, pas sur l'etalement
+            spread=False,
         )
         assert sched.tick() == 3
         # Active combos keep their order; the warm-only extra (H4) is appended.

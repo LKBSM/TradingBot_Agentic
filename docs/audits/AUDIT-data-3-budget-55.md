@@ -1,6 +1,8 @@
 # AUDIT DATA-3 — 55 crédits/minute suffisent-ils pour 100 marchés ?
 
-> **Diagnostic + simulation. Aucun code de production modifié.**
+> **Diagnostic + simulation (§1-8) — puis correctifs (§9).**
+> Les §1 à 8 ont été produits SANS toucher au code de production ; §9 documente
+> les correctifs qui en découlent, mesurés avec le même harnais.
 > Date : 2026-09-13 · Fournisseur : Twelve Data (REST `time_series`) · Plan envisagé : **Grow, 55 crédits/min**
 > Base : `origin/main` @ `9de5138`, worktree dédié `wt-data-3`, branche `docs/data-3-budget-55`.
 > *(Le HEAD local du dépôt principal était 122 commits en retard — tout ce rapport est produit contre `origin/main` à jour, conformément à la leçon process de DATA-1.)*
@@ -41,7 +43,7 @@ La liste complète des correctifs à faire **avant tout ajout de marché** est e
 | Projection à 84 / 100 / 150 marchés | **Simulateur** rejouant 1 440 minutes de clôtures — `tools/data_budget/simulate_credits.py` |
 
 Rien dans ce rapport ne repose sur une lecture « à l'œil » du code : chaque affirmation
-chiffrée renvoie soit à `docs/audits/data-3/mesures.json`, soit à la base de production,
+chiffrée renvoie soit à `docs/audits/data-3/mesures-avant.json`, soit à la base de production,
 soit à `docs/audits/data-3/test-429-reel.json`.
 
 > **Note d'honnêteté** : aucun backend ne tournait pendant la mission (dernier écriture
@@ -375,14 +377,80 @@ probe_429.py          Dépasse le plafond UNE fois sur la clé réelle et enregi
                         python tools/data_budget/probe_429.py --confirm --out rapport.json
 ```
 
-Sorties archivées : `docs/audits/data-3/mesures.json`, `simulation.txt`, `simulation.json`,
-`test-429-reel.json`.
+Sorties archivées : `docs/audits/data-3/mesures-avant.json` (état diagnostiqué),
+`mesures-apres.json` (même harnais après les correctifs), `simulation.txt`,
+`simulation.json`, `test-429-reel.json`.
+
+---
+
+## 9. Correctifs appliqués (branche `fix/data-2-conso-requetes`)
+
+Les cinq points bloquants de §7 sont corrigés, plus quatre des cinq non bloquants.
+Mesuré avec le MÊME harnais avant et après (`mesures-avant.json` / `mesures-apres.json`) :
+
+| Mesure | Avant | Après |
+|---|---|---|
+| Plafond crédits/min pilotable par variable d'environnement | ❌ non | ✅ oui |
+| Requêtes HTTP facturées pour une récupération refusée (429) | **4** | **1** |
+| 3 onglets, démarrage à froid | **3** appels | **1** appel |
+| 3 onglets, régime permanent | 0 | 0 *(inchangé)* |
+| Sonde jour férié : combinaisons échues dans le même tick | toutes | étalées |
+| Symboles résolubles par le fournisseur | 2, en dur | tout le registre MKT-1 |
+| Pointe simulée à 100 marchés (périmètre warm) | **500/min** | **29/min** |
+| Total simulé à 100 marchés | 22 300/jour | **12 700/jour** |
+
+### Ce qui a changé, et pourquoi
+
+| # | Correctif | Effet mesuré |
+|---|---|---|
+| **B1** | `TWELVE_DATA_PER_MINUTE` / `TWELVE_DATA_PER_DAY` pilotent le limiteur (défauts inchangés = palier gratuit) | payer Grow débloque enfin 55/min ; sans cela le code se serait auto-limité à 8 |
+| **B2** | Le tableau des symboles dérive du registre de marchés (`providerSymbol` optionnel, sinon `XAUUSD → XAU/USD`) ; même correctif sur le pont WebSocket | ajouter un marché redevient **une entrée JSON**, plus un `ValueError` |
+| **B3** | Étalement déterministe par (marché, unité) dans la fenêtre qui suit la clôture | **pointe 500 → 29/min** à 100 marchés |
+| **B4** | `SENTINEL_SCHEDULER_WORKERS` (défaut 1 = comportement d'origine) parallélise le tick | lève le mur des 38–71 combinaisons par tick de 60 s |
+| **B5** | Un 429 est terminal (`TwelveDataRateLimited`), le compteur serveur `Api-Credits-Left` fait foi, mise en attente quand il tombe à zéro | **4 crédits → 1** par échec ; plus aucune requête émise en sachant qu'elle sera refusée |
+| **B6** | Verrou single-flight par (marché, unité) + mémo du dernier build | **3 → 1** crédit sur un démarrage à froid concurrent ; ferme aussi le cas « flux en retard », où les suiveurs reconstruisaient chacun de leur côté |
+| **B7** | La sonde jour férié est semée avec un décalage stable par combinaison | plus de rafale de 100–200 crédits toutes les 30 min, marché fermé |
+| **B9** | Les deux `Dockerfile` servent `src.api.asgi:app` au lieu de `src.intelligence.main` | supprime le scanner hérité : **−288 crédits/jour/marché** (28 800/jour à 100 marchés) |
+| **B10** | Crédits comptés par déclencheur (`scheduler`, `interactive`, `backfill`, `holiday_probe`, `reference_series`, `legacy_scanner`), exposés par `/health` | une dérive devient attribuable avant le 429 ; le scanner hérité, s'il est lancé à la main via `python -m src.intelligence.main`, apparaît nommément au lieu de se fondre dans le total |
+| *(bonus)* | Une combinaison ouverte une fois cesse de coûter des crédits au bout de 2 h (`SENTINEL_ON_DEMAND_ACTIVE_HOURS`) au lieu de 24 h ; elle reste disponible à la demande | −88 % sur le plancher M5 à la demande (96 → ~8 requêtes/marché/jour) |
+
+**B8 (amorçage piloté par la marge) est traité par B5** : le limiteur respectant désormais
+le compteur du serveur, l'amorçage — étiqueté `backfill` — ne peut plus déborder le
+budget par minute ; il s'étire au lieu de dépasser. Aucun ordonnanceur dédié n'a été ajouté.
+
+**Non fait, volontairement** : la dérivation M15/H1/H4 depuis M5. La mesure montre qu'elle
+serait **contre-productive dans le périmètre actuel** — le produit ne suit pas M5 en direct,
+donc dériver depuis M5 imposerait de le poller (289 requêtes/marché/jour) là où les quatre
+unités suivies en coûtent **127**. Elle ne devient intéressante qu'à partir de ~130 marchés
+avec M5 en direct, et exige au préalable la validation bit-pour-bit de §6.
+
+### Vérification
+
+Le simulateur lit désormais les décalages **réels** du scheduler (scénarios S5 et S6), donc il
+valide le code livré et pas une idéalisation :
+
+| Sc. | Configuration à 100 marchés | Total/jour | Pointe/min | vs 55 |
+|---|---|---|---|---|
+| **S5** | code corrigé, périmètre warm actuel (M15→D1) | **12 700** | **29** | ✅ 47 % de marge |
+| **S6** | code corrigé + M5 en direct (`LB1_WARM_M5=1`) | 41 500 | **55** | ⚠️ exactement au plafond |
+
+Autrement dit : **55 crédits/min suffisent pour 100 marchés dans le périmètre du produit**,
+avec de la marge. Ajouter M5 en direct pour 100 marchés consomme exactement le plafond —
+c'est le seul cas qui justifierait la dérivation ou un palier supérieur.
+
+29 nouveaux tests verrouillent chacun de ces comportements
+(`tests/test_data3_request_budget.py`). Deux tests existants ont été mis à jour parce qu'ils
+décrivaient l'ancien contrat : le retry sur 429 (qui coûtait 4 crédits) et la fenêtre
+d'activité unique. Deux tests de scheduler qui portent sur l'ORDRE demandent maintenant
+explicitement `spread=False`, pour continuer à vérifier ce qu'ils vérifiaient.
 
 ---
 
 ## Annexe — invariants respectés
 
-- **Aucun code de production modifié** : seuls `tools/data_budget/` et `docs/audits/` sont ajoutés.
+- **Le diagnostic (§1-8) n'a modifié aucun code de production** : il n'a ajouté que
+  `tools/data_budget/` et `docs/audits/`. Les correctifs de §9 sont une étape distincte,
+  chacun justifié par une mesure de ce rapport et verrouillé par un test.
 - **Aucun secret dans le dépôt** : la clé est lue depuis `.env` (gitignoré) ou l'environnement ; le rapport de test a été vérifié comme ne la contenant pas avant d'être archivé.
 - **Un seul dépassement réel**, non répété, ~10 crédits sur 800.
 - **Aucune donnée inventée** : chaque chiffre vient de la base de production, du harnais instrumenté, ou de l'appel réel — les extrapolations sont signalées comme telles.

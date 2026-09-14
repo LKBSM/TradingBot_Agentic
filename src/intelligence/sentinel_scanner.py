@@ -48,6 +48,8 @@ from src.intelligence.state_persistence import (
 )
 from src.risk.kill_switch import KillSwitch
 
+from src.intelligence.data_providers.twelve_data_provider import credit_purpose
+
 logger = logging.getLogger(__name__)
 
 
@@ -349,9 +351,17 @@ class SentinelScanner:
         """Execute one scan cycle."""
         # 1. Fetch OHLCV data
         try:
-            df = self._data_provider.get_ohlcv(
-                self._symbol, self._timeframe, self._lookback
-            )
+            # DATA-3: this legacy scanner polls every 60 s per symbol on top of the
+            # scheduler — ~288 extra credits/day/market once the provider's TTL
+            # cache is accounted for, for data the V2 product never reads. The
+            # deployed image no longer starts it (both Dockerfiles serve
+            # src.api.asgi), but `python -m src.intelligence.main` still does, so
+            # label the spend: /health then shows it instead of hiding it inside
+            # one opaque total.
+            with credit_purpose("legacy_scanner"):
+                df = self._data_provider.get_ohlcv(
+                    self._symbol, self._timeframe, self._lookback
+                )
         except Exception as e:
             logger.error("Data provider error: %s", e)
             self._errors += 1
