@@ -108,7 +108,23 @@ async function payWithTestCard(page: Page): Promise<void> {
   const postal = page.locator('#billingPostalCode');
   if (await postal.count()) await postal.fill('H2X 1Y4');
 
-  await page.locator('.SubmitButton, button[type="submit"]').first().click();
+  // LE VRAI BOUTON D'ENVOI. Piège vérifié sur une trace d'échec : les boutons de
+  // portefeuille (« Apple Pay », « Payer avec Link ») sont AVANT dans le DOM, et
+  // un sélecteur CSS à virgules se résout dans l'ordre du DOM, pas dans l'ordre
+  // écrit. `.SubmitButton, button[type="submit"]` suivi de `.first()` cliquait
+  // donc un portefeuille : le formulaire n'était jamais soumis, Checkout
+  // n'affichait aucune erreur, et le test accusait le webhook à tort.
+  // On vise le bouton par son libellé réel (Checkout est en français ici).
+  const byLabel = page.getByRole('button', {
+    name: /s['’]abonner|subscribe|payer maintenant|pay now/i,
+  });
+  const submit = (await byLabel.count()) ? byLabel.last() : page.locator('.SubmitButton').last();
+  await expect(
+    submit,
+    "aucun bouton d'envoi trouvé sur la page Checkout — le libellé du bouton a " +
+      'peut-être changé, ou la page a été rendue dans une autre langue',
+  ).toBeVisible({ timeout: 15_000 });
+  await submit.click();
 
   // VÉRIFIER QUE LE PAIEMENT A ABOUTI, avant d'attendre quoi que ce soit.
   // Sans ce contrôle, un clic qui échoue est INDISCERNABLE d'un webhook mort :
