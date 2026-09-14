@@ -82,6 +82,17 @@ services:
         sync: false
       - key: STRIPE_PRICE_ANNUAL
         sync: false
+      # PAY-3 (G2) — selling zone. Unset = Canada + United States (the default).
+      # Only set this to widen/narrow the zone deliberately; a blank value falls
+      # back to CA,US rather than opening the world. The webhook net here is the
+      # BACKSTOP — the Stripe Radar rule (dashboard) is what blocks the card:
+      #   Block if :card_country: not in ('CA','US')
+      - key: BILLING_ALLOWED_COUNTRIES
+        sync: false
+      # PAY-3 (G5) — renewal-notice legal lock. Leave at 0 until a lawyer has
+      # approved the notice text (LPC). SMTP being configured is NOT approval.
+      - key: RENEWAL_NOTICE_TEXT_APPROVED
+        value: "0"
       # Google sign-in — optional. If set, the OAuth callback lands on
       # API_PUBLIC_URL/api/auth/google/callback (register that exact URI in the
       # Google console). Leave unset to hide the Google button.

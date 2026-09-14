@@ -29,6 +29,8 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
+from src.billing.geo import billing_country_from_session
+
 logger = logging.getLogger(__name__)
 
 
@@ -140,6 +142,10 @@ class AccountSubscriptionEvent:
     # OF ORDER, so the store applies an event only when this is >= the newest
     # already applied — a stale event never overwrites newer state.
     event_created: Optional[float] = None
+    # PAY-3 (G2) - billing country collected by Checkout, present only on
+    # ``checkout.session.completed``. None when Stripe sent no address; the
+    # webhook refuses a subscription bought outside the CA/US zone.
+    billing_country: Optional[str] = None
 
 
 def _coerce_ts(value: Any) -> Optional[float]:
@@ -212,6 +218,9 @@ def parse_account_event(payload: dict) -> Optional[AccountSubscriptionEvent]:
             cancel_at_period_end=None,
             trial_end=None,
             event_created=event_created,
+            # PAY-3 (G2) - the zone check reads this; Checkout is created with
+            # ``billing_address_collection="required"`` so it is normally set.
+            billing_country=billing_country_from_session(obj),
         )
 
     if event_type.startswith("customer.subscription."):
@@ -385,6 +394,11 @@ class StripeClient:
             # PRIX-1: no discount surface. The price shown is the price paid — no
             # promotion-code box on the hosted Checkout, no struck-through price.
             "allow_promotion_codes": False,
+            # PAY-3 (G2): the subscription is sold in Canada + the United States
+            # only. Stripe Checkout has no billing-country allow-list, so we make
+            # the address MANDATORY - that is what lets the webhook read a country
+            # and refuse an out-of-zone subscription (see src/billing/geo.py).
+            "billing_address_collection": "required",
         }
         if customer:
             params["customer"] = customer
@@ -414,6 +428,42 @@ class StripeClient:
     def cancel_subscription(self, subscription_id: str) -> dict:
         stripe = self._require()
         return self._to_dict(stripe.Subscription.delete(subscription_id))
+
+    def refund_subscription_payment(self, subscription_id: str) -> bool:
+        """Refund the money already taken for a subscription. Returns True when a
+        refund was actually created.
+
+        Used by the out-of-zone net (PAY-3 G2): cancelling a subscription does
+        NOT give the money back, and keeping a payment for a service we refuse to
+        deliver is not defensible - least of all under the Quebec consumer act.
+        Best-effort and defensive: any Stripe shape change logs and returns False
+        rather than raising, because the refusal itself (cancel + non-access
+        status) must still go through.
+        """
+        stripe = self._require()
+        try:
+            sub = stripe.Subscription.retrieve(subscription_id)
+            invoice_id = getattr(sub, "latest_invoice", None)
+            if not invoice_id:
+                return False
+            if not isinstance(invoice_id, str):
+                invoice_id = getattr(invoice_id, "id", None)
+                if not invoice_id:
+                    return False
+            invoice = stripe.Invoice.retrieve(invoice_id)
+            intent_id = getattr(invoice, "payment_intent", None)
+            if intent_id is not None and not isinstance(intent_id, str):
+                intent_id = getattr(intent_id, "id", None)
+            if not intent_id:
+                return False
+            stripe.Refund.create(payment_intent=intent_id)
+            return True
+        except Exception:
+            logger.exception(
+                "out-of-zone refund failed for subscription=%s - REFUND BY HAND",
+                subscription_id,
+            )
+            return False
 
     # ------------------------------------------------------------------
     # Direct reconciliation (PAY-3e — webhook-independent fallback)

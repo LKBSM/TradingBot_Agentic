@@ -1880,13 +1880,17 @@
       "canceled": "اشتراك مُلغى",
       "none": "لا يوجد اشتراك",
       "suspended": "Subscription suspended",
-      "expired": "Subscription expired"
+      "expired": "Subscription expired",
+      "blockedRegion": "اشتراك خارج نطاق البيع"
     },
     "nextCharge": "Next charge on {date}: {amount} {currency}",
     "accessUntilNoRenewal": "Access until {date}, with no renewal.",
     "graceNotice": "Payment failed. Update your payment method so you don't lose access.",
     "suspendedNotice": "Access suspended following a refund or dispute. Contact support if needed.",
     "expiredNotice": "Your subscription has expired. Subscribe again to regain access.",
+    "blockedRegionTitle": "هذا الاشتراك غير متاح في بلدك",
+    "blockedRegionNotice": "يُباع M.I.A Markets في كندا والولايات المتحدة فقط. تم إلغاء الدفعة القادمة من بلد آخر وردّها: لم يبقَ أي مبلغ مقتطعًا.",
+    "blockedRegionHelp": "إذا كنت تدفع من كندا أو الولايات المتحدة وظهرت لك هذه الرسالة، راسلنا وسنتحقق من عنوان الفوترة المسجل.",
     "manageHint": "Change plan, update your card, download invoices or cancel — all in the Stripe portal.",
     "reactivate": "Subscribe again",
     "activateTitle": "Activate your account",
