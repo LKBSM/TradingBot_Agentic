@@ -37,8 +37,11 @@ def _make_app(**mw_kwargs) -> FastAPI:
 
 
 class TestDenyLists:
-    def test_us_in_blocked_countries(self):
-        assert "US" in BLOCKED_COUNTRIES
+    def test_us_NOT_in_blocked_countries(self):
+        # LEG-1 (2026-09-14) — le service est commercialisé au Canada ET aux
+        # États-Unis (conditions §4). Un retour de "US" dans cette liste
+        # re-contredirait le texte publié.
+        assert "US" not in BLOCKED_COUNTRIES
 
     def test_uk_in_blocked_countries(self):
         assert "GB" in BLOCKED_COUNTRIES
@@ -73,15 +76,23 @@ class TestUnknownCountry:
 
 
 class TestBlockedCountry:
-    def test_us_via_cf_header_returns_451(self):
+    def test_uk_via_cf_header_returns_451(self):
         app = _make_app(disabled=False)
         client = TestClient(app)
-        r = client.get("/api/v1/private", headers={"CF-IPCountry": "US"})
+        r = client.get("/api/v1/private", headers={"CF-IPCountry": "GB"})
         assert r.status_code == 451
         body = r.json()
         assert body["error"] == "geo_blocked"
-        assert body["country"] == "US"
+        assert body["country"] == "GB"
         assert "/api/v1/terms" in body["reference"]
+
+    def test_us_is_served_like_any_open_market(self):
+        # LEG-1 — a US visitor is a customer, not a blocked jurisdiction.
+        app = _make_app(disabled=False)
+        client = TestClient(app)
+        assert client.get(
+            "/api/v1/private", headers={"CF-IPCountry": "US"}
+        ).status_code == 200
 
     def test_uk_via_cloudfront_header_blocked(self):
         app = _make_app(disabled=False)
@@ -103,9 +114,9 @@ class TestBlockedCountry:
     def test_lowercase_header_normalised(self):
         app = _make_app(disabled=False)
         client = TestClient(app)
-        r = client.get("/api/v1/private", headers={"X-Country-Code": "us"})
+        r = client.get("/api/v1/private", headers={"X-Country-Code": "gb"})
         assert r.status_code == 451
-        assert r.json()["country"] == "US"
+        assert r.json()["country"] == "GB"
 
     def test_allowed_country_passes(self):
         app = _make_app(disabled=False)
@@ -202,7 +213,7 @@ class TestDisabledFlag:
 
 class TestCustomResolver:
     def test_resolver_can_force_block(self):
-        app = _make_app(country_resolver=lambda req: "US", disabled=False)
+        app = _make_app(country_resolver=lambda req: "GB", disabled=False)
         client = TestClient(app)
         r = client.get("/api/v1/private")
         assert r.status_code == 451
@@ -210,7 +221,7 @@ class TestCustomResolver:
     def test_resolver_can_force_pass(self):
         app = _make_app(country_resolver=lambda req: "FR", disabled=False)
         client = TestClient(app)
-        r = client.get("/api/v1/private", headers={"CF-IPCountry": "US"})
+        r = client.get("/api/v1/private", headers={"CF-IPCountry": "GB"})
         # Resolver wins over the header
         assert r.status_code == 200
 

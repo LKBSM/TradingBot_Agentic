@@ -38,6 +38,10 @@ vi.mock('@/lib/billing/api-client', () => ({
     ],
   }),
   fetchSubscription: async () => null,
+  fetchRefundEligibility: async () => ({
+    eligible: false, reason: null, days_remaining: 0, guarantee_days: 14, deadline: null,
+  }),
+  requestRefund: async () => ({ refunded: true, amount: null, currency: null }),
   startCheckout: (...args: unknown[]) => startCheckout(...args),
   openPortal: async () => '',
   syncSubscription: async () => null,

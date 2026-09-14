@@ -1,6 +1,6 @@
 # M.I.A Markets — Política de privacidad
 
-_Versión 2026-09-13 · Última actualización: 13 de septiembre de 2026_
+_Versión 2026-09-14 · Última actualización: 14 de septiembre de 2026_
 
 > Versión en español. Es una traducción fiel del texto francés, que es el que
 > prevalece: en caso de divergencia, se aplica la versión francesa.

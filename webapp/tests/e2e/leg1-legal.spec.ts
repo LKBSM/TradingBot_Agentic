@@ -20,11 +20,11 @@ const VIEWPORTS = [
   { name: 'mobile 390×844', width: 390, height: 844 },
 ] as const;
 
-const VERSION = '2026-09-13';
+const VERSION = '2026-09-14';
 
 const TERMS_MD = `# M.I.A Markets — Conditions d'utilisation
 
-_Version : ${VERSION} · Dernière mise à jour : 13 septembre 2026_
+_Version : ${VERSION} · Dernière mise à jour : 14 septembre 2026_
 
 ## 1. Ce qu'est ce service
 
@@ -37,7 +37,7 @@ Tu peux résilier à tout moment, aussi simplement que tu t'es abonné.
 
 const PRIVACY_MD = `# M.I.A Markets — Politique de confidentialité
 
-_Version : ${VERSION} · Dernière mise à jour : 13 septembre 2026_
+_Version : ${VERSION} · Dernière mise à jour : 14 septembre 2026_
 
 ## 1. Qui est responsable de tes renseignements
 
@@ -97,8 +97,39 @@ async function mockSubscribed(page: Page) {
     }),
   );
   await page.route('**/api/billing/subscription', (r) => r.fulfill({ json: null }));
+  await page.route('**/api/billing/refund-eligibility', (r) =>
+    r.fulfill({
+      json: { eligible: false, reason: null, days_remaining: 0, guarantee_days: 14, deadline: null },
+    }),
+  );
   await page.route('**/api/billing/checkout', (r) =>
     r.fulfill({ json: { url: 'https://checkout.stripe.test/s/leg1' } }),
+  );
+}
+
+/** An account on the ANNUAL plan, 3 days in — inside the 14-day guarantee. */
+async function mockInsideGuarantee(page: Page) {
+  const day = 24 * 60 * 60;
+  const now = Math.floor(Date.now() / 1000);
+  await page.route('**/api/billing/subscription', (r) =>
+    r.fulfill({
+      json: {
+        status: 'active', price_id: 'price_a',
+        current_period_end: now + 362 * day,
+        cancel_at_period_end: false, trial_end: null, has_access: true,
+      },
+    }),
+  );
+  await page.route('**/api/billing/refund-eligibility', (r) =>
+    r.fulfill({
+      json: {
+        eligible: true, reason: null, days_remaining: 11,
+        guarantee_days: 14, deadline: now + 11 * day,
+      },
+    }),
+  );
+  await page.route('**/api/billing/refund', (r) =>
+    r.fulfill({ json: { refunded: true, amount: 34800, currency: 'USD' } }),
   );
 }
 
@@ -192,6 +223,34 @@ for (const vp of VIEWPORTS) {
       await box.check();
       for (let i = 0; i < 2; i += 1) await expect(ctas.nth(i)).toBeEnabled();
       await expect(page.getByTestId('consent-blocked')).toHaveCount(0);
+    });
+
+    test('/abonnement offers the 14-day guarantee, and confirms before refunding', async ({
+      page,
+    }) => {
+      await mockLegal(page);
+      await mockSubscribed(page);
+      await mockInsideGuarantee(page); // registered last → wins over the above
+      await page.goto('/abonnement');
+      await dismissCookieBanner(page);
+
+      const block = page.getByTestId('refund-guarantee');
+      await expect(block).toBeVisible();
+      // A date, never a day count (no plural rule to get wrong in 9 languages).
+      await expect(block).toContainText(/\d{4}/);
+
+      // Irreversible → asking is not doing.
+      let refundCalls = 0;
+      page.on('request', (r) => {
+        if (r.url().includes('/api/billing/refund') && r.method() === 'POST') refundCalls += 1;
+      });
+      await page.getByTestId('refund-request').click();
+      await expect(page.getByTestId('refund-confirm')).toBeVisible();
+      expect(refundCalls).toBe(0);
+
+      await page.getByTestId('refund-confirm').click();
+      await expect(page.getByTestId('refund-guarantee')).toHaveCount(0);
+      expect(refundCalls).toBe(1);
     });
   });
 }

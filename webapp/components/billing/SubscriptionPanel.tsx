@@ -9,11 +9,14 @@ import { acceptConsents } from '@/lib/auth/api-client';
 import {
   BillingError,
   fetchPricing,
+  fetchRefundEligibility,
   fetchSubscription,
   openPortal,
+  requestRefund,
   startCheckout,
   syncSubscription,
   type Plan,
+  type RefundEligibility,
   type Subscription,
 } from '@/lib/billing/api-client';
 import { useAuth } from '@/lib/auth/store';
@@ -107,6 +110,11 @@ export function SubscriptionPanel() {
   // screen: never pre-ticked, never restored from storage, so the box is always
   // an act by the customer on the document version shown to them right now.
   const [consented, setConsented] = React.useState(false);
+  // LEG-1 — the 14-day annual guarantee. `null` = not asked yet; the block only
+  // appears once the backend has said the window is genuinely open.
+  const [refundState, setRefundState] = React.useState<RefundEligibility | null>(null);
+  const [refundConfirming, setRefundConfirming] = React.useState(false);
+  const [refundDone, setRefundDone] = React.useState(false);
 
   const checkoutStatus = searchParams.get('status');
 
@@ -118,13 +126,19 @@ export function SubscriptionPanel() {
     let cancelled = false;
     async function load() {
       try {
-        const [pricing, subscription] = await Promise.all([
+        // The guarantee probe must NEVER be able to break this screen: if it
+        // did, nobody could subscribe. The client already swallows its own
+        // failures; `.catch` here is the second lock, because the cost of
+        // getting it wrong is a paywall nobody can pass.
+        const [pricing, subscription, refund] = await Promise.all([
           fetchPricing(),
           fetchSubscription(),
+          fetchRefundEligibility().catch(() => null),
         ]);
         if (cancelled) return;
         setPlans(pricing.plans);
         setSub(subscription);
+        setRefundState(refund);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof BillingError ? err.message : t('errorLoad'));
@@ -221,6 +235,27 @@ export function SubscriptionPanel() {
     }
   }
 
+  // LEG-1 — the 14-day annual guarantee, honoured in one click. Irreversible,
+  // so it is confirmed first; the backend re-checks eligibility regardless.
+  async function onRefund() {
+    setError(null);
+    setBusy('refund');
+    try {
+      await requestRefund();
+      setRefundDone(true);
+      setRefundConfirming(false);
+      setRefundState(null);
+      // Access has just been revoked server-side — mirror it here rather than
+      // leaving a stale "active" card on screen.
+      setSub(await fetchSubscription());
+    } catch (err) {
+      // A refusal already carries a message saying what the customer CAN do.
+      setError(err instanceof BillingError ? err.message : t('refund.error'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function onManage() {
     setError(null);
     setBusy('manage');
@@ -309,6 +344,55 @@ export function SubscriptionPanel() {
             <p className="text-xs text-muted-foreground">{t('manageHint')}</p>
           </div>
         </section>
+
+        {/* LEG-1 — the 14-day annual guarantee. Shown only while the window is
+            genuinely open, so the offer is never made and then refused. */}
+        {refundState?.eligible && (
+          <section
+            className="space-y-3 rounded-2xl border border-border/60 p-6"
+            data-testid="refund-guarantee"
+          >
+            <h2 className="text-base font-medium text-foreground">
+              {t('refund.title', { days: refundState.guarantee_days })}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {t('refund.openUntil', {
+                date: formatDate(refundState.deadline, locale) ?? '',
+              })}
+            </p>
+            {refundConfirming ? (
+              <div className="space-y-2">
+                <p className="text-sm text-foreground">{t('refund.confirm')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={onRefund}
+                    disabled={busy !== null}
+                    data-testid="refund-confirm"
+                  >
+                    {busy === 'refund' ? t('refund.busy') : t('refund.confirmCta')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setRefundConfirming(false)}
+                    disabled={busy !== null}
+                  >
+                    {t('refund.cancelCta')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setRefundConfirming(true)}
+                disabled={busy !== null}
+                data-testid="refund-request"
+              >
+                {t('refund.cta')}
+              </Button>
+            )}
+          </section>
+        )}
       </div>
     );
   }
@@ -336,6 +420,9 @@ export function SubscriptionPanel() {
         </p>
       </header>
 
+      {/* LEG-1 — after a refund the subscription is suspended, so this view is
+          what the customer lands on. Say what just happened. */}
+      {refundDone && <FormSuccess message={t('refund.done')} />}
       {checkoutStatus === 'success' && <FormSuccess message={t('checkoutSuccess')} />}
       {checkoutStatus === 'cancel' && <FormError message={t('checkoutCancel')} />}
       <FormError message={error} />

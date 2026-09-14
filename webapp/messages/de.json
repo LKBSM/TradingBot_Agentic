@@ -1914,6 +1914,17 @@
       "label": "Ich habe die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und akzeptiere sie.",
       "blocked": "Kreuzen Sie das Kästchen oben an, um zur Zahlung fortzufahren.",
       "error": "Ihre Zustimmung konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal."
+    },
+    "refund": {
+      "title": "{days}-Tage-Garantie",
+      "openUntil": "Sie können die Rückerstattung bis zum {date} beantragen.",
+      "cta": "Rückerstattung beantragen",
+      "confirm": "Bestätigen? Die Zahlung wird vollständig erstattet und der Zugang endet sofort.",
+      "confirmCta": "Rückerstattung bestätigen",
+      "cancelCta": "Abbrechen",
+      "busy": "Rückerstattung läuft…",
+      "done": "Rückerstattet. Der Betrag geht in einigen Tagen auf Ihr Zahlungsmittel zurück.",
+      "error": "Die Rückerstattung konnte nicht durchgeführt werden. Versuchen Sie es erneut oder schreiben Sie an contact@mia.markets."
     }
   },
   "access": {

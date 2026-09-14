@@ -89,24 +89,36 @@ describe('renderLegalMarkdown — wrapped source', () => {
 });
 
 describe('renderLegalMarkdown — the real published documents', () => {
-  it('renders the French privacy policy with no stray markdown syntax', async () => {
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const file = path.resolve(
-      __dirname, '..', '..', '..', '..', 'docs', 'legal', 'politique-confidentialite.fr.md',
-    );
-    const body = dom(readFileSync(file, 'utf-8')).textContent ?? '';
-    expect(body).not.toContain('**');
-    expect(body.length).toBeGreaterThan(1000);
-  });
+  // All SIX, not just the French ones: the English clause 4 wraps mid-bold
+  // (« **United\nStates** »), which is exactly the case that used to leak
+  // asterisks onto the page.
+  const STEMS = ['conditions-utilisation', 'politique-confidentialite'] as const;
+  const LOCALES = ['fr', 'en', 'es'] as const;
 
-  it('renders the French terms with no stray markdown syntax', async () => {
+  for (const stem of STEMS) {
+    for (const locale of LOCALES) {
+      it(`${stem}.${locale} renders with no stray markdown syntax`, async () => {
+        const { readFileSync } = await import('node:fs');
+        const path = await import('node:path');
+        const file = path.resolve(
+          __dirname, '..', '..', '..', '..', 'docs', 'legal', `${stem}.${locale}.md`,
+        );
+        const body = dom(readFileSync(file, 'utf-8')).textContent ?? '';
+        expect(body).not.toContain('**');
+        expect(body).not.toContain('\n- ');
+        expect(body.length).toBeGreaterThan(1000);
+      });
+    }
+  }
+
+  it('the terms show the territory as one phrase, bold intact', async () => {
     const { readFileSync } = await import('node:fs');
     const path = await import('node:path');
     const file = path.resolve(
-      __dirname, '..', '..', '..', '..', 'docs', 'legal', 'conditions-utilisation.fr.md',
+      __dirname, '..', '..', '..', '..', 'docs', 'legal', 'conditions-utilisation.en.md',
     );
-    const body = dom(readFileSync(file, 'utf-8')).textContent ?? '';
-    expect(body).not.toContain('**');
+    const html = dom(readFileSync(file, 'utf-8'));
+    const bold = Array.from(html.querySelectorAll('strong')).map((n) => n.textContent);
+    expect(bold).toContain('United States');
   });
 });

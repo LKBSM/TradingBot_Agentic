@@ -9,8 +9,9 @@
 > peut l'être au Québec. Elles ne remplacent pas l'avis d'un avocat.
 
 **Mission** : LEG-1 · **Branche** : `feat/leg-1-cadre-legal` · **Base** :
-`origin/main` @ `9de5138` (10 septembre 2026) · **Date** : 13 septembre 2026
-**Version des documents livrés** : `2026-09-13`
+`origin/main` @ `9de5138` (10 septembre 2026) · **Dates** : 13 septembre 2026
+(cadre légal), 14 septembre 2026 (ouverture États-Unis + remboursement automatique)
+**Version des documents livrés** : `2026-09-14`
 
 ---
 
@@ -55,12 +56,13 @@ le **consentement au bon endroit du tunnel** — pas sur la plomberie.
 ## 3. Décisions prises
 
 Cinq points de la commande ne pouvaient pas être exécutés à la lettre sans
-écrire quelque chose de faux. Ils ont été remontés au diagnostic et tranchés
-avant l'implémentation.
+écrire quelque chose de faux. Ils ont été remontés au diagnostic ; le point 1 a
+été tranché par le fondateur le 2026-09-14, les quatre autres avant
+l'implémentation.
 
 | # | Demande initiale | Décision | Motif |
 |---|---|---|---|
-| 1 | Territoire = **Canada et États-Unis** | **Canada seul** | Le code bloquait les États-Unis (`BLOCKED_COUNTRIES`, HTTP 451, motif *SEC Investment Advisers Act §202(a)(11)*). Ouvrir les US est une décision de risque réglementaire, pas une formulation → **mission dédiée**. |
+| 1 | Territoire = **Canada et États-Unis** | **Canada et États-Unis** ✅ | Signalé au diagnostic parce que le code bloquait les US (`BLOCKED_COUNTRIES`, HTTP 451, motif *SEC Investment Advisers Act §202(a)(11)*). **Décision fondateur du 2026-09-14 : on commercialise aux deux.** Le texte, le `GeoBlockMiddleware` et `insight_v2/contract.py` ont été alignés ensemble (cf. §4.5). |
 | 2 | Prix **39,99 $/mois** | **39 $/mois** | C'est le montant réellement facturé (`config/pricing.json`, source unique du front et de Stripe). Écrire 39,99 $ aurait mis un prix faux dans un document contractuel. |
 | 3 | Auth = **Clerk** | **Authentification maison** | Clerk a été explicitement écarté (`docs/audits/AUDIT-pay-1.md` : « *US-only sans choix de région* »). Le nommer aurait été une fausse déclaration de sous-traitant. |
 | 4 | Hébergement à préciser | **États-Unis** | `render.yaml` : « *the host runs in a US region* ». ⚠️ **À reconfirmer avant chaque déploiement** (cf. §7). |
@@ -106,7 +108,7 @@ Langues publiées : **fr, en, es**. Une locale de l'interface sans texte légal
 | 1 | Nature du service | « pas un conseil **personnalisé** » → **aucun conseil, aucun signal, aucune recommandation, aucune indication d'intervention**. Le qualificatif laissait entendre qu'il existait un conseil non personnalisé. + « la décision t'appartient entièrement ». |
 | 2 | Risque | Statistique **« 74 % à 89 % des comptes particuliers perdent de l'argent » supprimée** (chiffre ESMA, non sourcé, inapplicable ici). Remplacée par le risque de perte, l'effet de levier, et « les mesures passées ne s'appliquent pas aux situations à venir ». |
 | 3 | Âge | 18+ **ou l'âge de majorité local s'il est supérieur** (plusieurs provinces et États sont à 19 ou 21). |
-| 4 | Territoire | Exclusion US/UK/OFAC → **offert au Canada**. Une seule phrase à changer pour ajouter les États-Unis. |
+| 4 | Territoire | Exclusion US/UK/OFAC → **offert au Canada et aux États-Unis**. Le texte, le geo-block et le contrat `insight_v2` ont été alignés ensemble (cf. §4.5). |
 | 5 | Compte | **Nouveau** : un compte par personne, un courriel par compte, pas de partage, suspension motivée en cas d'abus. |
 | 6 | Données de marché | **Nouveau et obligatoire** : usage personnel seulement, interdiction de redistribuer / revendre / republier / extraire automatiquement. L'ancien texte ne couvrait que « les Analyses », pas les données — or c'est la licence de données qui l'impose. |
 | 7 | Prix et facturation | **Nouveau** : 39 $/mois ou 348 $/an, USD explicite, Stripe, aucune carte conservée, renouvellement automatique, préavis 30 jours à l'annuel, préavis en cas de changement de prix. |
@@ -159,7 +161,73 @@ inventée ou gardée en cache. Seuls `(doc, version, accepted_at)` sont écrits 
 rien d'autre. L'écriture est **idempotente** par version et **append-only** :
 accepter une nouvelle version ajoute une ligne sans effacer l'historique.
 
-### 4.5 Trois correctifs de fond trouvés en chemin
+### 4.5 Ouverture aux États-Unis (décision fondateur, 2026-09-14)
+
+Le diagnostic avait mis ce point de côté parce que **le texte et le code se
+contredisaient** : les quatre textes annonçaient l'exclusion des États-Unis et
+`BLOCKED_COUNTRIES` la faisait respecter par un HTTP 451 — alors qu'en
+production `GEO_BLOCK_DISABLED=1` (l'hôte est lui-même en région US) rendait ce
+blocage inopérant. Autrement dit, on **annonçait une exclusion qu'on
+n'appliquait pas**.
+
+La décision lève la contradiction dans le bon sens. Trois endroits bougent
+**ensemble**, parce que les laisser diverger est exactement ce qui a créé le
+problème :
+
+1. **clause 4** des conditions, dans les trois langues : « Canada **et
+   États-Unis** » ;
+2. **`BLOCKED_COUNTRIES`** : `"US"` retiré (le Royaume-Uni et les pays OFAC
+   restent) ;
+3. **`insight_v2/contract.py`** : `jurisdiction_blocked` passe de
+   `("US","QC","UK","OFAC")` à `("UK","OFAC")`.
+
+Un test refuse désormais que le texte annonce un territoire que le code bloque —
+la divergence ne peut plus réapparaître silencieusement.
+
+La posture qui rend cette ouverture défendable est celle que le produit tient
+déjà et que la clause 1 énonce : **publication impersonnelle**. Aucun conseil,
+aucune recommandation, aucun signal, aucune prise en compte de la situation
+d'un utilisateur. Cette posture est la substance de la décision — elle reste à
+valider par un juriste, comme le reste de ces textes.
+
+### 4.6 La garantie de 14 jours, honorée automatiquement
+
+La clause 8 promet une garantie de 14 jours à l'annuel. Elle est désormais
+**exécutée par le produit**, plus par un courriel au fondateur.
+
+**La règle est pure et isolée** (`src/billing/refund_guarantee.py`) : cadence,
+date de paiement, maintenant → couvert ou non. Testable sans Stripe, sans base
+et sans horloge. Deux choix y sont explicites :
+
+- **la fenêtre part du PAIEMENT**, pas de l'inscription ni du début de période —
+  c'est la lecture littérale de la clause, et un renouvellement rouvre donc 14
+  jours ;
+- **un paiement daté dans le futur** (décalage d'horloge) est traité comme
+  « à l'instant » : une dérive d'horloge ne doit jamais coûter sa garantie à
+  quelqu'un.
+
+**Deux endpoints** : `GET /api/billing/refund-eligibility` (lecture seule, sert
+à décider si on **propose** le remboursement — personne ne voit un bouton qui
+va le refuser) et `POST /api/billing/refund`.
+
+L'ordre du remboursement compte : on rembourse **intégralement**, on annule
+l'abonnement, puis on écrit `suspended` **localement** — l'accès est révoqué
+tout de suite au lieu d'attendre le webhook `charge.refunded` (qui arrive quand
+même, et écrit la même chose : il est idempotent). Si le remboursement réussit
+mais que l'annulation échoue, **on ne signale pas d'échec** : l'argent est
+revenu, c'est ce que le client demandait ; l'abonnement orphelin est journalisé
+pour l'exploitant.
+
+**Un refus n'est jamais un cul-de-sac.** Chaque motif porte un message qui dit
+ce que le client *peut* faire : au mensuel, résilier et garder l'accès jusqu'à
+la fin de la période payée ; hors fenêtre, idem. Et la clause 8 rappelle que la
+*Loi sur la protection du consommateur* prime sur cette garantie commerciale.
+
+Côté interface, le bloc n'apparaît que si la fenêtre est ouverte, affiche une
+**date limite** plutôt qu'un nombre de jours (aucune règle de pluriel à rater en
+neuf langues), et **demande confirmation** avant d'agir.
+
+### 4.7 Trois correctifs de fond trouvés en chemin
 
 **1. Le geo-block 451-ait la page des conditions.**
 `/api/v1/legal/conditions` **n'était pas dans la liste d'exemption du geo-block** :
@@ -198,15 +266,17 @@ trois pages touchées (`conditions`, `confidentialite`, `abonnement` × 4 thème
 |---|---|
 | `tests/test_legal_endpoints.py` (réécrit) | **86 passés** |
 | `tests/test_leg1_consent.py` (nouveau) | **13 passés** |
-| `tests/test_account_auth.py`, `test_pay3_payment_journey.py`, `test_billing.py`, `test_account_billing.py`, `test_disclaimers.py`, `test_geo_block.py` | **223 passés** (avec les 2 ci-dessus) |
-| Sélection backend élargie (`-k "legal or consent or demo_agent or account or claims or disclaimer"`) | **206 passés** |
+| `tests/test_leg1_refund.py` (nouveau — garantie 14 jours) | **21 passés** |
+| Bloc légal + paiement (`test_account_auth`, `test_pay3_payment_journey`, `test_billing`, `test_account_billing`, `test_geo_block`, `test_subscription_gate_paid_only` + les 3 ci-dessus) | **241 passés** |
+| Sélection `-k "insight or contract or compliance or disclaimer or claims"` (consommateurs du contrat `insight_v2`) | **171 passés** |
 | `webapp/tests/leg1-legal-copy.test.ts` (nouveau) | **47 passés** |
 | `webapp/components/billing/__tests__/leg1-consent-gate.test.tsx` (nouveau) | **18 passés** |
+| `webapp/components/billing/__tests__/leg1-refund-ui.test.tsx` (nouveau) | **9 passés** |
 | `webapp/lib/legal/__tests__/render-markdown.test.tsx` (nouveau) | **9 passés** |
 | Garde-fous existants (claims-cleanup, no-free-tier, locale-parity, txt1-copy, cln1-copy, ui2-copy-honesty, pricing-prix-1) | **111 passés** |
-| **Suite vitest complète** | **130 fichiers, 1245 tests, 0 échec** |
+| **Suite vitest complète** | **131 fichiers, 1259 tests, 0 échec** |
 | `tsc --noEmit` | **0 erreur** |
-| Playwright `leg1-legal.spec.ts` (1280×800 + 390×844) | **16 passés** |
+| Playwright `leg1-legal.spec.ts` (1280×800 + 390×844, consentement **et** remboursement) | **20 passés** |
 | Playwright couverture DS-1 des 3 pages touchées | **24 passés** |
 
 ### Ce que les tests verrouillent
@@ -227,7 +297,15 @@ trois pages touchées (`conditions`, `confidentialite`, `abonnement` × 4 thème
 - la politique ne peut pas affirmer qu'une EFVP **a été** réalisée ;
 - le prix écrit dans les conditions est comparé à `pricing.generated.ts` — si le
   tarif change sans que les conditions suivent, le test casse ;
-- un document légal reste joignable depuis un pays géo-bloqué.
+- un document légal reste joignable depuis un pays géo-bloqué ;
+- **le texte et le geo-block s'accordent sur le territoire** : un retour de
+  `"US"` dans `BLOCKED_COUNTRIES` casse le test, puisque les conditions
+  annoncent les États-Unis ;
+- **la garantie de 14 jours** : annuel seulement, comptée depuis le paiement,
+  jour 14 dedans / jour 15 dehors, un décalage d'horloge ne la fait pas perdre,
+  l'argent ne part qu'une fois, l'accès est révoqué sans attendre le webhook, un
+  refus dit toujours ce qu'on peut faire à la place, et l'annulation qui échoue
+  après un remboursement réussi ne se signale pas comme un échec.
 
 ### Playwright
 
@@ -241,9 +319,12 @@ l'écran de consentement se comporte comme décrit au §4.4.
 ## 6. Fichiers touchés
 
 **Ajoutés** — 6 documents `docs/legal/*.{fr,en,es}.md`, `docs/legal/README.md`
-(procédure de modification), `webapp/components/legal/LegalDocument.tsx`,
-`tests/test_leg1_consent.py`, `webapp/tests/leg1-legal-copy.test.ts`,
+(procédure de modification), `src/billing/refund_guarantee.py` (la règle des 14
+jours, pure), `webapp/components/legal/LegalDocument.tsx`,
+`tests/test_leg1_consent.py`, `tests/test_leg1_refund.py`,
+`webapp/tests/leg1-legal-copy.test.ts`,
 `webapp/components/billing/__tests__/leg1-consent-gate.test.tsx`,
+`webapp/components/billing/__tests__/leg1-refund-ui.test.tsx`,
 `webapp/lib/legal/__tests__/render-markdown.test.tsx`,
 `webapp/tests/e2e/leg1-legal.spec.ts`, ce rapport.
 
@@ -251,8 +332,11 @@ l'écran de consentement se comporte comme décrit au §4.4.
 `webapp/components/legal/ConditionsDocument.tsx`.
 
 **Modifiés** — `src/api/routes/legal.py` (réécrit), `src/api/routes/accounts.py`,
-`src/api/account_store.py`, `src/api/middleware/geo_block.py`,
-`src/intelligence/chatbot/demo_agent.py`,
+`src/api/routes/account_billing.py`, `src/api/account_store.py`,
+`src/api/middleware/geo_block.py`, `src/billing/stripe_client.py`,
+`src/intelligence/insight_v2/contract.py`,
+`src/intelligence/chatbot/demo_agent.py`, `webapp/lib/billing/api-client.ts`,
+`tests/test_geo_block.py`,
 `webapp/app/[locale]/(site)/{conditions,confidentialite}/page.tsx`,
 `webapp/components/billing/SubscriptionPanel.tsx`,
 `webapp/lib/auth/api-client.ts`, `webapp/lib/legal/render-markdown.tsx`,
@@ -265,21 +349,24 @@ l'écran de consentement se comporte comme décrit au §4.4.
 ## 7. Ce qui reste ouvert
 
 1. **Relecture juridique.** C'est la seule action qui lève l'avertissement en
-   tête de ce rapport.
+   tête de ce rapport. Elle porte aussi, désormais, sur la **posture de
+   publication impersonnelle** qui fonde l'ouverture aux États-Unis (§4.5).
 2. **Confirmer le pays d'hébergement avant chaque déploiement.** La politique dit
    « États-Unis » sur la foi de `render.yaml`. Un changement d'hébergeur change
-   le texte et l'EFVP.
+   le texte et l'EFVP. Ce n'est pas un risque, seulement une phrase à garder vraie.
 3. **EFVP à réaliser.** Le texte dit « en cours » — c'est vrai aujourd'hui et ça
    ne le restera pas indéfiniment. Une fois faite, remplacer par « réalisée le
    {date} » ; le test qui interdit l'affirmation devra être ajusté avec elle.
-4. **Décision sur les États-Unis.** Tant qu'elle n'est pas prise, le texte, le
-   `GeoBlockMiddleware` et `insight_v2/contract.py` disent la même chose : Canada.
-   ⚠️ En production, `GEO_BLOCK_DISABLED=1` (l'hôte est en région US) : le blocage
-   **n'est pas appliqué**. Le texte est donc plus restrictif que le comportement
-   réel — c'est le bon sens de l'écart, mais il faut le fermer.
-5. **Garantie 14 jours : à honorer opérationnellement.** Aucune automatisation
-   n'a été ajoutée ; le remboursement se fait à la main dans Stripe. Un
-   remboursement total suspend l'accès (`charge.refunded`, déjà câblé).
+4. **Réactiver le geo-block en production.** `GEO_BLOCK_DISABLED=1` dans
+   `render.yaml` désactive le blocage **en entier** — le Royaume-Uni et les pays
+   OFAC compris — parce que l'hôte se 451-ait lui-même en région US. Maintenant
+   que les États-Unis sont ouverts, cette raison a disparu : le blocage peut être
+   réactivé pour couvrir les juridictions qui restent exclues.
+5. **Remboursement : Stripe doit pouvoir rembourser.** L'automatisation appelle
+   `Refund.create` avec la clé secrète : la clé doit en avoir le droit, et un
+   paiement déjà remboursé à la main dans le tableau de bord fera échouer
+   l'appel (message explicite côté client). Le webhook `charge.refunded` reste
+   câblé et écrit le même état — il est idempotent.
 6. **Consentement à l'inscription conservé.** Il y a désormais deux points de
    recueil (inscription et avant paiement). C'est volontaire : ils enregistrent
    la même version et la table est append-only.

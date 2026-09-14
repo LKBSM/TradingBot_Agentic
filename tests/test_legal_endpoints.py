@@ -156,6 +156,20 @@ class TestTermsContent:
         assert "18" in _terms(client, lang)
 
     @pytest.mark.parametrize("lang", legal.LEGAL_LANGS)
+    def test_states_the_territory_canada_and_united_states(self, client, lang):
+        # LEG-1 (2026-09-14) — décision fondateur : Canada ET États-Unis.
+        body = _terms(client, lang)
+        assert any(w in body for w in ("Canada", "Canadá"))
+        assert any(w in body for w in ("États-Unis", "United\nStates", "United States", "Estados Unidos"))
+
+    def test_the_texts_and_the_geo_block_agree_on_the_territory(self):
+        # Le texte ne doit jamais annoncer un territoire que le code refuse.
+        from src.api.middleware.geo_block import BLOCKED_COUNTRIES
+
+        assert "US" not in BLOCKED_COUNTRIES
+        assert "CA" not in BLOCKED_COUNTRIES
+
+    @pytest.mark.parametrize("lang", legal.LEGAL_LANGS)
     def test_bars_redistribution_of_market_data(self, client, lang):
         # Mandatory: this clause is what our data licence requires us to pass on.
         body = _terms(client, lang).lower()

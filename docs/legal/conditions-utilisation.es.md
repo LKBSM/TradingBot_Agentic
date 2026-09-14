@@ -1,6 +1,6 @@
 # M.I.A Markets — Condiciones de uso
 
-_Versión 2026-09-13 · Última actualización: 13 de septiembre de 2026_
+_Versión 2026-09-14 · Última actualización: 14 de septiembre de 2026_
 
 > Versión en español. Es una traducción fiel del texto francés, que es el que
 > prevalece: en caso de divergencia, se aplica la versión francesa.
@@ -44,9 +44,9 @@ para celebrar las presentes condiciones.
 
 ## 4. Territorio
 
-En el lanzamiento, el servicio se ofrece a residentes de **Canadá**, sea cual sea
-el idioma que elijas en la interfaz. El idioma de la interfaz no amplía el
-territorio cubierto.
+En el lanzamiento, el servicio se ofrece a residentes de **Canadá** y de
+**Estados Unidos**, sea cual sea el idioma que elijas en la interfaz. El idioma
+de la interfaz no amplía el territorio cubierto.
 
 ## 5. Tu cuenta
 

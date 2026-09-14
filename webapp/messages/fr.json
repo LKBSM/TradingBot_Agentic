@@ -1914,6 +1914,17 @@
       "label": "J'ai lu et j'accepte les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>.",
       "blocked": "Coche la case ci-dessus pour continuer vers le paiement.",
       "error": "Ton acceptation n'a pas pu être enregistrée. Réessaie dans un instant."
+    },
+    "refund": {
+      "title": "Garantie de {days} jours",
+      "openUntil": "Tu peux demander le remboursement jusqu'au {date}.",
+      "cta": "Demander le remboursement",
+      "confirm": "Confirmer ? Le paiement t'est remboursé intégralement et l'accès prend fin immédiatement.",
+      "confirmCta": "Confirmer le remboursement",
+      "cancelCta": "Annuler",
+      "busy": "Remboursement en cours…",
+      "done": "Remboursement effectué. Le montant revient sur ton moyen de paiement sous quelques jours.",
+      "error": "Le remboursement n'a pas pu être effectué. Réessaie, ou écris à contact@mia.markets."
     }
   },
   "access": {

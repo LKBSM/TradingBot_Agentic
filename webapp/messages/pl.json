@@ -1914,6 +1914,17 @@
       "label": "Przeczytałem <terms>warunki korzystania</terms> oraz <privacy>politykę prywatności</privacy> i akceptuję je.",
       "blocked": "Zaznacz powyższe pole, aby przejść do płatności.",
       "error": "Nie udało się zapisać Twojej akceptacji. Spróbuj ponownie za chwilę."
+    },
+    "refund": {
+      "title": "Gwarancja {days} dni",
+      "openUntil": "Możesz poprosić o zwrot do {date}.",
+      "cta": "Poproś o zwrot",
+      "confirm": "Potwierdzasz? Płatność zostanie zwrócona w całości, a dostęp wygaśnie natychmiast.",
+      "confirmCta": "Potwierdź zwrot",
+      "cancelCta": "Anuluj",
+      "busy": "Trwa zwrot…",
+      "done": "Zwrot wykonany. Kwota wróci na Twoją metodę płatności w ciągu kilku dni.",
+      "error": "Nie udało się wykonać zwrotu. Spróbuj ponownie lub napisz na contact@mia.markets."
     }
   },
   "access": {

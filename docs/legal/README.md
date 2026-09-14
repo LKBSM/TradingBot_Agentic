@@ -5,7 +5,7 @@ reformulés par le code : `src/api/routes/legal.py` les sert **tels quels** et s
 contente de choisir la langue et d'estampiller la version.
 
 > ⚠️ **Non validés par un juriste.** Rédigés en interne (mission LEG-1,
-> 2026-09-13). Révision professionnelle à faire avant montée en volume — voir
+> 2026-09-13 ; clause territoire et garantie de remboursement, 2026-09-14). Révision professionnelle à faire avant montée en volume — voir
 > `docs/audits/AUDIT-leg-1.md`.
 
 ## Les fichiers

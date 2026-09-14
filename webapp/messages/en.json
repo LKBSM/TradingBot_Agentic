@@ -1914,6 +1914,17 @@
       "label": "I have read and accept the <terms>terms of use</terms> and the <privacy>privacy policy</privacy>.",
       "blocked": "Tick the box above to continue to payment.",
       "error": "We could not record your acceptance. Try again in a moment."
+    },
+    "refund": {
+      "title": "{days}-day guarantee",
+      "openUntil": "You can ask for a refund until {date}.",
+      "cta": "Ask for a refund",
+      "confirm": "Confirm? The payment is refunded in full and access ends immediately.",
+      "confirmCta": "Confirm the refund",
+      "cancelCta": "Cancel",
+      "busy": "Refunding…",
+      "done": "Refunded. The amount returns to your payment method within a few days.",
+      "error": "The refund could not be completed. Try again, or write to contact@mia.markets."
     }
   },
   "access": {

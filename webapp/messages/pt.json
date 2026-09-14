@@ -1914,6 +1914,17 @@
       "label": "Li e aceito os <terms>termos de utilização</terms> e a <privacy>política de privacidade</privacy>.",
       "blocked": "Marca a caixa acima para continuar para o pagamento.",
       "error": "Não foi possível registar a tua aceitação. Tenta novamente dentro de momentos."
+    },
+    "refund": {
+      "title": "Garantia de {days} dias",
+      "openUntil": "Podes pedir o reembolso até {date}.",
+      "cta": "Pedir o reembolso",
+      "confirm": "Confirmas? O pagamento é reembolsado na totalidade e o acesso termina de imediato.",
+      "confirmCta": "Confirmar o reembolso",
+      "cancelCta": "Cancelar",
+      "busy": "A reembolsar…",
+      "done": "Reembolso efetuado. O valor regressa ao teu meio de pagamento dentro de alguns dias.",
+      "error": "Não foi possível efetuar o reembolso. Tenta novamente ou escreve para contact@mia.markets."
     }
   },
   "access": {

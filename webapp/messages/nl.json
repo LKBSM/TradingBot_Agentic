@@ -1914,6 +1914,17 @@
       "label": "Ik heb de <terms>gebruiksvoorwaarden</terms> en het <privacy>privacybeleid</privacy> gelezen en ga ermee akkoord.",
       "blocked": "Vink het vakje hierboven aan om door te gaan naar de betaling.",
       "error": "We konden je akkoord niet vastleggen. Probeer het zo dadelijk opnieuw."
+    },
+    "refund": {
+      "title": "Garantie van {days} dagen",
+      "openUntil": "Je kunt tot {date} om terugbetaling vragen.",
+      "cta": "Terugbetaling vragen",
+      "confirm": "Bevestigen? De betaling wordt volledig terugbetaald en de toegang stopt direct.",
+      "confirmCta": "Terugbetaling bevestigen",
+      "cancelCta": "Annuleren",
+      "busy": "Bezig met terugbetalen…",
+      "done": "Terugbetaald. Het bedrag komt binnen enkele dagen terug op je betaalmiddel.",
+      "error": "De terugbetaling kon niet worden uitgevoerd. Probeer het opnieuw of schrijf naar contact@mia.markets."
     }
   },
   "access": {

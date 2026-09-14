@@ -38,6 +38,9 @@ router = APIRouter(tags=["legal"])
 
 # ─── Version ──────────────────────────────────────────────────────────────
 #
+# 2026-09-14 (LEG-1): territory opened to the United States (clause 4) — the
+# text, GeoBlockMiddleware and insight_v2's contract were aligned together.
+#
 # 2026-09-13 (LEG-1): complete rewrite of both documents ahead of taking the
 # first payment. Territory narrowed to Canada, prices and billing stated,
 # cancellation/refund stated, market-data redistribution barred, the blanket
@@ -47,7 +50,7 @@ router = APIRouter(tags=["legal"])
 # Bumping this string is what makes every account re-consent: it is the stamp
 # written into ``account_consents`` and rendered as ``X-Document-Version``. It
 # MUST stay in lockstep with the date in each markdown header.
-LAST_UPDATED = "2026-09-13"
+LAST_UPDATED = "2026-09-14"
 
 #: Back-compat alias — the canonical document version (same stamp).
 CONDITIONS_VERSION = LAST_UPDATED

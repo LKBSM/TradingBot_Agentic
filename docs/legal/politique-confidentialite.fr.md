@@ -1,6 +1,6 @@
 # M.I.A Markets — Politique de confidentialité
 
-_Version : 2026-09-13 · Dernière mise à jour : 13 septembre 2026_
+_Version : 2026-09-14 · Dernière mise à jour : 14 septembre 2026_
 
 > Version française, qui fait foi. Les versions anglaise et espagnole en sont des
 > traductions fidèles ; en cas de divergence, c'est le texte français qui
