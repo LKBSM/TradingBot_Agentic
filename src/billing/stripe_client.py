@@ -471,6 +471,70 @@ class StripeClient:
         }
 
     # ------------------------------------------------------------------
+    # Refund (LEG-1 — the 14-day annual guarantee, honoured automatically)
+    # ------------------------------------------------------------------
+
+    def get_latest_paid_invoice(self, subscription_id: str) -> Optional[dict]:
+        """Return the most recent PAID invoice for a subscription, or None.
+
+        This is what dates the guarantee: the terms say « une garantie de 14
+        jours **à compter du paiement** », so the clock starts at the moment
+        Stripe marked the invoice paid — not at sign-up, not at period start.
+
+        Reads via attributes and tolerates a missing field, like the rest of
+        this client: a shape change must not 500 a customer asking for money
+        back. ``charge_id`` may be None on newer API versions that only expose a
+        payment intent; the caller refunds whichever it gets.
+        """
+        stripe = self._require()
+        result = stripe.Invoice.list(subscription=subscription_id, status="paid", limit=1)
+        invoices = list(getattr(result, "data", []) or [])
+        if not invoices:
+            return None
+        inv = invoices[0]
+
+        paid_at = None
+        transitions = getattr(inv, "status_transitions", None)
+        if transitions is not None:
+            paid_at = _coerce_ts(getattr(transitions, "paid_at", None))
+        if paid_at is None:
+            paid_at = _coerce_ts(getattr(inv, "created", None))
+
+        return {
+            "invoice_id": getattr(inv, "id", None),
+            "charge_id": getattr(inv, "charge", None),
+            "payment_intent_id": getattr(inv, "payment_intent", None),
+            "paid_at": paid_at,
+            "amount_paid": getattr(inv, "amount_paid", None),
+            "currency": getattr(inv, "currency", None),
+        }
+
+    def refund_payment(
+        self,
+        *,
+        charge_id: Optional[str] = None,
+        payment_intent_id: Optional[str] = None,
+        reason: str = "requested_by_customer",
+    ) -> dict:
+        """Refund a payment IN FULL, by charge or by payment intent.
+
+        Exactly one identifier is needed; the charge is preferred when both are
+        present. No partial amount is ever passed — the guarantee is all or
+        nothing, and a partial refund would leave the subscription in the
+        half-state the webhook deliberately ignores.
+        """
+        stripe = self._require()
+        if charge_id:
+            return self._to_dict(
+                stripe.Refund.create(charge=charge_id, reason=reason)
+            )
+        if payment_intent_id:
+            return self._to_dict(
+                stripe.Refund.create(payment_intent=payment_intent_id, reason=reason)
+            )
+        raise ValueError("refund_payment needs a charge_id or a payment_intent_id")
+
+    # ------------------------------------------------------------------
     # Webhook verification
     # ------------------------------------------------------------------
 

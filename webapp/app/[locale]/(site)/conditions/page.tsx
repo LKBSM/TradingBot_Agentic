@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { ConditionsDocument } from '@/components/legal/ConditionsDocument';
+import { LegalDocument } from '@/components/legal/LegalDocument';
 
 export async function generateMetadata({
   params,
@@ -19,9 +19,11 @@ export async function generateMetadata({
 }
 
 /**
- * /conditions — renders the canonical CGU document
- * (docs/legal/conditions-utilisation.md) TEL QUEL via the backend endpoint. The
- * text is never rewritten here; only the markdown is formatted for the web.
+ * /conditions — renders the Terms of Use document
+ * (docs/legal/conditions-utilisation.{fr,en,es}.md) TEL QUEL via the backend
+ * endpoint. The text is never rewritten here; only the markdown is formatted
+ * for the web. Readable without an account (LEG-1): the consent screen links
+ * here, so it must open for anyone.
  */
 export default function ConditionsPage() {
   const t = useTranslations('pages');
@@ -34,7 +36,7 @@ export default function ConditionsPage() {
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
         {t('conditions.backHome')}
       </Link>
-      <ConditionsDocument />
+      <LegalDocument doc="terms" />
     </div>
   );
 }

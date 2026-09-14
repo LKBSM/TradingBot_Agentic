@@ -3,7 +3,7 @@ import * as React from 'react';
 /**
  * Heading-aware, dependency-free Markdown renderer for legal documents.
  *
- * The CGU markdown (`docs/legal/conditions-utilisation.md`) is rendered TEL QUEL
+ * The legal markdown (`docs/legal/*.{fr,en,es}.md`) is rendered TEL QUEL
  * — this turns its `#`/`##`/`###` headings, `>` blockquotes, `-` bullet lists,
  * `**bold**`/`*italic*` and paragraphs into React nodes WITHOUT ever using
  * `dangerouslySetInnerHTML`, so React escapes all text (no XSS surface even
@@ -17,6 +17,8 @@ const INLINE_RE = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*|_[^_\n]+_)/g;
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 const BULLET_RE = /^\s*[-*•]\s+(.*)$/;
 const BLOCKQUOTE_RE = /^\s*>\s?(.*)$/;
+/** An indented line under a bullet: its continuation, not a new block. */
+const CONTINUATION_RE = /^\s+(\S.*)$/;
 const HR_RE = /^\s*(?:-{3,}|_{3,}|\*{3,})\s*$/;
 
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
@@ -66,14 +68,13 @@ export function renderLegalMarkdown(input: string): React.ReactNode {
   const flushPara = () => {
     if (para.length === 0) return;
     const id = `p-${blockId++}`;
+    // Markdown JOINS the lines of a paragraph — a source line break is not a
+    // rendered one. Rendering each line separately (with <br/>) also broke any
+    // `**bold**` or `*italic*` span that straddled a wrap: the inline parser
+    // works per string, so it saw an unterminated `**` and printed it raw.
     blocks.push(
       <p key={id} className="mt-3 leading-relaxed text-muted-foreground">
-        {para.map((line, i) => (
-          <React.Fragment key={`${id}-l-${i}`}>
-            {i > 0 && <br />}
-            {renderInline(line, `${id}-l-${i}`)}
-          </React.Fragment>
-        ))}
+        {renderInline(para.join(' '), id)}
       </p>,
     );
     para = [];
@@ -100,12 +101,7 @@ export function renderLegalMarkdown(input: string): React.ReactNode {
         key={id}
         className="mt-4 border-l-2 border-border pl-4 text-sm italic text-muted-foreground"
       >
-        {quote.map((line, i) => (
-          <React.Fragment key={`${id}-l-${i}`}>
-            {i > 0 && <br />}
-            {renderInline(line, `${id}-l-${i}`)}
-          </React.Fragment>
-        ))}
+        {renderInline(quote.join(' '), id)}
       </blockquote>,
     );
     quote = [];
@@ -153,6 +149,13 @@ export function renderLegalMarkdown(input: string): React.ReactNode {
       flushPara();
       flushQuote();
       bullets.push(bullet[1]!);
+      continue;
+    }
+    // A wrapped bullet: the continuation belongs to the item above, not to a
+    // new paragraph after the list.
+    const continuation = line.match(CONTINUATION_RE);
+    if (bullets.length > 0 && continuation) {
+      bullets[bullets.length - 1] += ` ${continuation[1]!}`;
       continue;
     }
     flushBullets();

@@ -8,14 +8,11 @@
       "ctaPrimary": "Abonneren",
       "ctaSecondary": "Bekijk de tools",
       "micro": "Volledige toegang zodra je je abonneert · Altijd opzegbaar",
-      "roadmap": "Vroege toegang · <b>2 markten vandaag, 50 tot 80 gepland bij de lancering</b>"
-    },
-    "stats": {
-      "markets": "gevolgde markten",
-      "combinations": "geanalyseerde combinaties",
-      "conditions": "zoekvoorwaarden",
-      "timeframes": "tijdseenheden",
-      "structures": "gedetecteerde structuren"
+      "stage": {
+        "loading": "De grafiek laadt",
+        "reading": "M.I.A leest de structuur",
+        "done": "lezing actueel"
+      }
     },
     "tools": {
       "eyebrow": "Vijf tools, één product",
@@ -34,12 +31,12 @@
         "lblOb": "OB · niet getest",
         "lblChoch": "CHOCH ↑",
         "narr": "De koers bevindt zich <b>momenteel in een stijgend Order Block</b> gevormd 14 candles geleden, tussen 4 026,80 en 4 028,90, en deze zone is <b>nog nooit getest</b>. Een verkoop-liquiditeitszone <b>is geveegd</b> 17 candles geleden. Het 1-uursframe wijst dezelfde kant op.",
-        "b5": "<b>Zes tijdseenheden</b> — van de minuut tot de dag, de lezing volgt mee"
+        "b5": "<b>Vijf tijdseenheden</b> — van M5 tot D1, de lezing volgt mee"
       },
       "scanner": {
         "tag": "De scanner",
         "h3": "Jij kunt je markten niet non-stop in de gaten houden. Hij wel.",
-        "p": "Vink de voorwaarden aan die je interesseren — trend, niet-geteste zone, recent genomen liquiditeit — en de scanner vertelt je <b>waar ze op dit moment samenvallen</b>, over de 12 combinaties van markten en tijdframes. Opnieuw beoordeeld bij elke slotkoers van een candle.",
+        "p": "Vink de voorwaarden aan die je interesseren — trend, niet-geteste zone, recent genomen liquiditeit — en de scanner vertelt je <b>waar ze op dit moment samenvallen</b>, over de 10 combinaties van markten en tijdframes. Opnieuw beoordeeld bij elke slotkoers van een candle.",
         "b1": "<b>22 feitelijke voorwaarden</b> verdeeld over structuur, zones, liquiditeit en context",
         "b2": "<b>Wat ertegenin gaat</b> wordt ook getoond — onenigheid tussen tijdframes, versleten zone",
         "b3": "<b>Geen enkele rangschikking</b>: de resultaten worden nooit gesorteerd op « kwaliteit »",
@@ -60,8 +57,8 @@
       },
       "zones": {
         "tag": "De zones",
-        "h3": "Een onaangeroerde zone en een versleten zone zijn niet hetzelfde waard",
-        "p": "De meeste tools laten je zien dat een Order Block bestaat. MIA vertelt je <b>zijn hele levensverhaal</b>: wanneer hij is gevormd, of hij is aangeraakt, op welk tijdstip, en of hij uiteindelijk is opgevuld. Dat is het verschil tussen een rechthoek zien en weten wat hij waard is.",
+        "h3": "Een onaangeroerde zone en een versleten zone lees je niet op dezelfde manier",
+        "p": "De meeste tools laten je zien dat een Order Block bestaat. MIA vertelt je <b>zijn hele levensverhaal</b>: wanneer hij is gevormd, of hij is aangeraakt, op welk tijdstip, en of hij uiteindelijk is opgevuld. Dat is het verschil tussen een rechthoek zien en zijn geschiedenis kennen.",
         "b1": "<b>Volledige chronologie</b>: gevormd → getest → opgevuld, met tijdstempel",
         "b2": "<b>Vulgraad</b> voor een gedeeltelijk opgevulde Fair Value Gap",
         "b3": "<b>Overlappingen</b> met de zones die op andere tijdframes zijn gedetecteerd",
@@ -81,7 +78,7 @@
       },
       "news": {
         "tag": "Het nieuws",
-        "h3": "Weet wanneer de markt gaat bewegen — en wat er de vorige keren is gebeurd",
+        "h3": "Weet wanneer de publicaties verschijnen — en wat er de vorige keren is gebeurd",
         "p": "Een kalender van economische publicaties, gekoppeld aan de markten die ze betreffen. En voor elke publicatie <b>wat er werkelijk is gemeten bij eerdere verschijningen</b>: de rust die eraan voorafgaat, de onrust die erop volgt, de levensduur van de zones die op die dag zijn ontstaan.",
         "b1": "<b>Maandkalender</b> met lokale tijd en tijd van het instituut",
         "b2": "<b>De laatste twaalf gepubliceerde cijfers</b> van elke indicator, zoals gepubliceerd",
@@ -191,7 +188,7 @@
         "emptyNoMatch": "Geen enkele markt verenigt deze voorwaarden op dit moment. <b>Dit is geen fout</b> — en niets stelt je voor om ze te versoepelen.",
         "againstLabel": "Wat ertegenin gaat",
         "against": "op Goud · 4 u houdt de trend stand maar <b>het hogere tijdframe is niet uitgelijnd</b>, en een nabije zone is al geveegd.",
-        "side": "Op de <b>12 combinaties</b> die worden geanalyseerd, houdt de scanner alleen die over waar al je voorwaarden <b>op dit moment</b> samenvallen. Voeg een voorwaarde toe en de lijst wordt korter."
+        "side": "Op de <b>10 combinaties</b> die worden geanalyseerd, houdt de scanner alleen die over waar al je voorwaarden <b>op dit moment</b> samenvallen. Voeg een voorwaarde toe en de lijst wordt korter."
       },
       "zones": {
         "side": {
@@ -299,7 +296,7 @@
       "subtitle": "Geen installatie, geen script om te kopiëren, geen indicator om in te stellen. Je opent en het is klaar.",
       "step1": {
         "h": "Kies je markt",
-        "p": "Goud of de euro, op 6 tijdseenheden. De 12 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
+        "p": "Goud of de euro, op 5 tijdseenheden. De 10 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
       },
       "step2": {
         "h": "Lees de structuur",
@@ -336,7 +333,7 @@
       },
       "w3": {
         "h": "Je volgt meerdere tijdframes",
-        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 12 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
+        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 10 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
         "lb": "Breedte",
         "items": {
           "0": "Je voorwaarden overal gecontroleerd bij elke slotkoers",
@@ -361,8 +358,8 @@
         "sub": "het hele product, alle markten",
         "perMonth": "maand",
         "bill": "of {total} $ US per jaar, oftewel {perMonth} $ US per maand",
-        "f1": "<b>Beide markten</b>, 6 tijdframes",
-        "f2": "Scanner op de 12 combinaties",
+        "f1": "<b>Beide markten</b>, 5 tijdframes",
+        "f2": "Scanner op de 10 combinaties",
         "f3": "Zones-pagina en volledige levenscyclus",
         "f4": "Gemeten waarden bij publicaties",
         "f5": "M.I.A Agent zonder limiet",
@@ -382,7 +379,7 @@
       "q3": "Vervangt het TradingView?",
       "a3": "Nee, en dat is niet het doel. TradingView blijft je platform voor grafieken, tekenen en uitvoeren. MIA doet het werk van de structurele lezing: detecteren, dateren, de levenscyclus van de zones volgen. <b>De twee vullen elkaar aan.</b>",
       "q4": "Welke markten zijn gedekt?",
-      "a4": "Twee markten vandaag — goud (XAU/USD) en de euro (EUR/USD) — op 6 tijdframes van de minuut tot de dag. Het abonnement geeft toegang tot beide markten en alle tijdframes. Andere markten volgen.",
+      "a4": "Twee markten vandaag — goud (XAU/USD) en de euro (EUR/USD) — op 5 tijdframes: M5, M15, H1, H4 en D1. Het abonnement geeft toegang tot beide markten en alle tijdframes. Andere markten volgen.",
       "q5": "Hoe vaak worden de gegevens bijgewerkt?",
       "a5": "Bij elke slotkoers van een candle van het betreffende tijdframe, niet op een willekeurig interval. Een lezing in 15 minuten wordt elke 15 minuten ververst; een dagelijkse lezing eenmaal per dag. <b>Elk scherm toont de ouderdom van zijn laatste lezing</b>, zodat je altijd weet waar je naar kijkt.",
       "q6": "Kan ik opzeggen wanneer ik wil?",
@@ -1909,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "Ik heb de <terms>gebruiksvoorwaarden</terms> en het <privacy>privacybeleid</privacy> gelezen en ga ermee akkoord.",
+      "blocked": "Vink het vakje hierboven aan om door te gaan naar de betaling.",
+      "error": "We konden je akkoord niet vastleggen. Probeer het zo dadelijk opnieuw."
+    },
+    "refund": {
+      "title": "Garantie van {days} dagen",
+      "openUntil": "Je kunt tot {date} om terugbetaling vragen.",
+      "cta": "Terugbetaling vragen",
+      "confirm": "Bevestigen? De betaling wordt volledig terugbetaald en de toegang stopt direct.",
+      "confirmCta": "Terugbetaling bevestigen",
+      "cancelCta": "Annuleren",
+      "busy": "Bezig met terugbetalen…",
+      "done": "Terugbetaald. Het bedrag komt binnen enkele dagen terug op je betaalmiddel.",
+      "error": "De terugbetaling kon niet worden uitgevoerd. Probeer het opnieuw of schrijf naar contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2354,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Versie {version}",
+      "loading": "Document laden…",
+      "error": "Dit document is momenteel niet beschikbaar. Probeer het later opnieuw."
+    },
     "conditions": {
       "meta": {
         "title": "Gebruiksvoorwaarden",
         "description": "Algemene Gebruiksvoorwaarden van M.I.A Markets — informatiedienst, educatieve houding, waarschuwing over de risico's."
-      },
-      "versionLabel": "Versie {version}",
-      "loading": "Document laden…",
-      "error": "Het Voorwaardendocument is momenteel niet beschikbaar. Probeer het later opnieuw."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Privacybeleid",
         "description": "Privacybeleid van M.I.A Markets — verwerkte gegevens, rechtsgrondslag, rechten AVG / Wet 25."
-      },
-      "title": "Privacybeleid",
-      "pendingNotice": "Voorlopige gestructureerde versie. De definitieve tekst (juridisch nagelezen) wordt gepubliceerd met de juridische terminal. De onderstaande structuur beschrijft de geldende verwerkingen getrouw.",
-      "sections": {
-        "responsable": {
-          "title": "1. Verwerkingsverantwoordelijke",
-          "body": "Loukmane Bessam (enige exploitant) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Verwerkte gegevens",
-          "body": "Gebruikersnaam, e-mailadres, wachtwoord (gehasht, nooit in klare tekst), toestemmingen (versie + tijdstempel), sessiegegevens. Er worden door M.I.A Markets geen bankkaartgegevens verzameld."
-        },
-        "bases": {
-          "title": "3. Rechtsgrondslagen",
-          "body": "Uitvoering van het contract (account en dienst), gerechtvaardigd belang (beveiliging), toestemming (aanvaarding van de Voorwaarden en van dit Beleid bij registratie)."
-        },
-        "droits": {
-          "title": "4. Uw rechten (AVG / Wet 25)",
-          "body": "Toegang, rectificatie, wissing, overdraagbaarheid, beperking en bezwaar. Elk verzoek naar loukmanebessam@gmail.com — antwoord binnen 30 dagen."
-        },
-        "conservation": {
-          "title": "5. Bewaring",
-          "body": "De accountgegevens worden bewaard voor de duur van het account. Sessies verlopen automatisch. De bewaardetails per categorie worden in de definitieve versie gepreciseerd."
-        },
-        "contact": {
-          "title": "6. Contact",
-          "body": "Voor elke vraag over uw gegevens: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Spraakdictaat",
-          "body": "De conversationele scanner biedt spraakinvoer. Spraakherkenning wordt uitgevoerd door uw browser; bij sommige browsers (bijv. Chrome, Edge) kan de opgenomen audio naar de servers van de browserleverancier worden gestuurd voor transcriptie — een doorgifte aan een derde die zich buiten Québec kan bevinden. Deze transcriptie levert tekst op, die u nakijkt en kunt corrigeren vóór verzending. Er wordt geen audio-opname bewaard, niet op uw apparaat en niet op onze servers: wij ontvangen alleen de tekst die u kiest te versturen. Invoer via toetsenbord blijft altijd beschikbaar; als uw browser dictaat niet ondersteunt, verschijnt de knop niet."
-        }
       }
     },
     "disclaimer": {

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import type { Page } from '@playwright/test';
 import {
   SAMPLE_READING_XAU_H4,
@@ -9,6 +11,11 @@ import {
   SAMPLE_CALENDAR_MEASURES,
   SAMPLE_PALETTE_RESPONSE,
 } from '../../lib/ds-samples';
+
+/** The published legal documents, read from the repo (webapp/tests/e2e → root). */
+const LEGAL_DIR = path.resolve(__dirname, '..', '..', '..', 'docs', 'legal');
+/** Kept in step with `LAST_UPDATED` in src/api/routes/legal.py. */
+const LEGAL_VERSION = '2026-09-14';
 
 /**
  * DS-1 — serves EVERY /api/* endpoint the product pages hit, from the frozen
@@ -124,6 +131,40 @@ export async function mockAllApis(page: Page): Promise<void> {
   await page.route('**/api/conditions-scan**', (r) => r.fulfill(json(SAMPLE_SCAN_RESPONSE)));
   await page.route('**/api/conditions-scan/palette**', (r) => r.fulfill(json(SAMPLE_PALETTE_RESPONSE)));
   await page.route('**/api/scanner/translate**', (r) => r.fulfill(json(SAMPLE_SCAN_CONFIG)));
+
+  // 3bis — legal documents (LEG-1). Both /conditions and /confidentialite now
+  // fetch their text from the backend, so without these the design coverage
+  // would capture two error states instead of two pages. Served from the real
+  // files on disk: the captures show the document that actually ships.
+  for (const [pattern, file] of [
+    ['**/api/v1/legal/conditions**', 'conditions-utilisation.fr.md'],
+    ['**/api/v1/legal/privacy**', 'politique-confidentialite.fr.md'],
+  ] as const) {
+    await page.route(pattern, (r) =>
+      r.fulfill({
+        status: 200,
+        headers: {
+          'content-type': 'text/markdown; charset=utf-8',
+          'x-document-version': LEGAL_VERSION,
+        },
+        body: readFileSync(path.join(LEGAL_DIR, file), 'utf-8'),
+      }),
+    );
+  }
+
+  // 3ter — billing. Without these, /abonnement threw and the coverage captured
+  // an error page instead of the subscription screen (it did so before LEG-1
+  // too). `subscription: null` is the state that matters for design review: the
+  // plan choice plus the consent gate that precedes Stripe.
+  await page.route('**/api/billing/pricing', (r) =>
+    r.fulfill(json({
+      plans: [
+        { key: 'MONTHLY', price_id: 'price_monthly', amount_usd: 39, currency: 'USD' },
+        { key: 'ANNUAL', price_id: 'price_annual', amount_usd: 348, currency: 'USD' },
+      ],
+    })),
+  );
+  await page.route('**/api/billing/subscription', (r) => r.fulfill(json(null)));
 
   // 4 — streams we never want to hang on (live tick / chat).
   await page.route('**/api/live-price**', (r) => r.abort());

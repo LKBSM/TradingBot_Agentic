@@ -8,14 +8,11 @@
       "ctaPrimary": "Abonnieren",
       "ctaSecondary": "Werkzeuge ansehen",
       "micro": "Voller Zugang ab dem Abo · Jederzeit kündbar",
-      "roadmap": "Frühzugang · <b>2 Märkte heute, 50 bis 80 zum Start geplant</b>"
-    },
-    "stats": {
-      "markets": "verfolgte Märkte",
-      "combinations": "analysierte Kombinationen",
-      "conditions": "Suchbedingungen",
-      "timeframes": "Zeiteinheiten",
-      "structures": "erkannte Strukturen"
+      "stage": {
+        "loading": "Das Chart lädt",
+        "reading": "M.I.A liest die Struktur",
+        "done": "Lesung aktuell"
+      }
     },
     "tools": {
       "eyebrow": "Fünf Werkzeuge, ein Produkt",
@@ -34,12 +31,12 @@
         "lblOb": "OB · ungetestet",
         "lblChoch": "CHOCH ↑",
         "narr": "Der Kurs befindet sich <b>aktuell in einem bullischen Order Block</b>, der vor 14 Kerzen entstanden ist, zwischen 4 026,80 und 4 028,90, und diese Zone <b>wurde noch nie getestet</b>. Eine Verkaufs-Liquiditätszone <b>wurde vor 17 Kerzen abgeräumt</b>. Die 1-h-Einheit weist in dieselbe Richtung.",
-        "b5": "<b>Sechs Zeiteinheiten</b> — von der Minute bis zum Tag folgt die Lesung"
+        "b5": "<b>Fünf Zeiteinheiten</b> — von M5 bis D1 folgt die Lesung"
       },
       "scanner": {
         "tag": "Der Scanner",
         "h3": "Du kannst deine Märkte nicht rund um die Uhr beobachten. Er schon.",
-        "p": "Hake die Bedingungen an, die dich interessieren — Trend, ungetestete Zone, kürzlich abgeräumte Liquidität — und der Scanner sagt dir, <b>wo sie gerade zusammentreffen</b>, über alle 12 Kombinationen aus Märkten und Zeiteinheiten. Neu bewertet bei jedem Kerzenschluss.",
+        "p": "Hake die Bedingungen an, die dich interessieren — Trend, ungetestete Zone, kürzlich abgeräumte Liquidität — und der Scanner sagt dir, <b>wo sie gerade zusammentreffen</b>, über alle 10 Kombinationen aus Märkten und Zeiteinheiten. Neu bewertet bei jedem Kerzenschluss.",
         "b1": "<b>22 faktische Bedingungen</b> gegliedert in Struktur, Zonen, Liquidität und Kontext",
         "b2": "<b>Was dagegenspricht</b> wird ebenfalls angezeigt — Uneinigkeit zwischen Einheiten, abgenutzte Zone",
         "b3": "<b>Keine Rangfolge</b>: Die Ergebnisse werden nie nach „Qualität“ sortiert",
@@ -60,8 +57,8 @@
       },
       "zones": {
         "tag": "Die Zonen",
-        "h3": "Eine unberührte und eine abgenutzte Zone sind nicht dasselbe wert",
-        "p": "Die meisten Werkzeuge zeigen dir nur, dass ein Order Block existiert. MIA erzählt dir <b>seine ganze Geschichte</b>: wann er entstand, ob er berührt wurde, zu welcher Uhrzeit und ob er am Ende gefüllt wurde. Das ist der Unterschied zwischen einem Rechteck sehen und wissen, was es wert ist.",
+        "h3": "Eine unberührte und eine abgenutzte Zone liest man nicht gleich",
+        "p": "Die meisten Werkzeuge zeigen dir nur, dass ein Order Block existiert. MIA erzählt dir <b>seine ganze Geschichte</b>: wann er entstand, ob er berührt wurde, zu welcher Uhrzeit und ob er am Ende gefüllt wurde. Das ist der Unterschied zwischen einem Rechteck sehen und seine Geschichte kennen.",
         "b1": "<b>Vollständige Chronologie</b>: entstanden → getestet → gefüllt, mit Zeitstempel",
         "b2": "<b>Füllgrad</b> für einen teilweise gefüllten Fair Value Gap",
         "b3": "<b>Überschneidungen</b> mit Zonen, die auf anderen Zeiteinheiten erkannt wurden",
@@ -81,7 +78,7 @@
       },
       "news": {
         "tag": "Die Nachrichten",
-        "h3": "Wisse, wann sich der Markt bewegen wird — und was bei den vorherigen Malen geschah",
+        "h3": "Wisse, wann die Veröffentlichungen anstehen — und was bei den vorherigen Malen geschah",
         "p": "Ein Kalender der Wirtschaftsveröffentlichungen, verknüpft mit den Märkten, die sie betreffen. Und für jede davon <b>das, was bei den vorherigen Veröffentlichungen tatsächlich gemessen wurde</b>: die Ruhe davor, die Unruhe danach, die Lebensdauer der an diesem Tag entstandenen Zonen.",
         "b1": "<b>Monatskalender</b> mit Ortszeit und Uhrzeit der Behörde",
         "b2": "<b>Die letzten zwölf veröffentlichten Zahlen</b> jedes Indikators, so wie veröffentlicht",
@@ -191,7 +188,7 @@
         "emptyNoMatch": "Derzeit erfüllt kein Markt diese Bedingungen. <b>Das ist kein Fehler</b> — und dir wird nichts vorgeschlagen, um es aufzuweichen.",
         "againstLabel": "Was dagegenspricht",
         "against": "auf Gold · 4 h hält der Trend, aber <b>die höhere Einheit ist nicht ausgerichtet</b>, und eine nahe Zone wurde bereits abgeräumt.",
-        "side": "Von den <b>12 analysierten Kombinationen</b> behält der Scanner nur jene, in denen alle deine Bedingungen <b>gerade jetzt</b> zusammentreffen. Füge eine Bedingung hinzu, und die Liste wird enger."
+        "side": "Von den <b>10 analysierten Kombinationen</b> behält der Scanner nur jene, in denen alle deine Bedingungen <b>gerade jetzt</b> zusammentreffen. Füge eine Bedingung hinzu, und die Liste wird enger."
       },
       "zones": {
         "side": {
@@ -299,7 +296,7 @@
       "subtitle": "Keine Installation, kein Skript zum Kopieren, keine Indikator-Einstellung. Du öffnest und es ist bereit.",
       "step1": {
         "h": "Wähl deinen Markt",
-        "p": "Gold oder Euro, auf 6 Zeiteinheiten. Die 12 Kombinationen werden bereits laufend analysiert, und das Ergebnis bleibt bei jedem Kerzenschluss aktuell."
+        "p": "Gold oder Euro, auf 5 Zeiteinheiten. Die 10 Kombinationen werden bereits laufend analysiert, und das Ergebnis bleibt bei jedem Kerzenschluss aktuell."
       },
       "step2": {
         "h": "Lies die Struktur",
@@ -336,7 +333,7 @@
       },
       "w3": {
         "h": "Du verfolgst mehrere Zeiteinheiten",
-        "p": "Du weißt, wonach du suchst, aber du kannst nicht alles im Blick behalten. Der Scanner überwacht deine 12 Kombinationen bei jedem Schluss, ohne dass du klickst.",
+        "p": "Du weißt, wonach du suchst, aber du kannst nicht alles im Blick behalten. Der Scanner überwacht deine 10 Kombinationen bei jedem Schluss, ohne dass du klickst.",
         "lb": "Umfang",
         "items": {
           "0": "Deine Bedingungen überall bei jedem Schluss geprüft",
@@ -361,8 +358,8 @@
         "sub": "das ganze Produkt, alle Märkte",
         "perMonth": "Monat",
         "bill": "oder {total} $ US pro Jahr, also {perMonth} $ US pro Monat",
-        "f1": "<b>Beide Märkte</b>, 6 Zeiteinheiten",
-        "f2": "Scanner über alle 12 Kombinationen",
+        "f1": "<b>Beide Märkte</b>, 5 Zeiteinheiten",
+        "f2": "Scanner über alle 10 Kombinationen",
         "f3": "Zonen-Seite und vollständiger Lebenszyklus",
         "f4": "Bei Veröffentlichungen erfasste Messungen",
         "f5": "M.I.A Agent ohne Begrenzung",
@@ -382,7 +379,7 @@
       "q3": "Ersetzt es TradingView?",
       "a3": "Nein, und das ist auch nicht das Ziel. TradingView bleibt deine Plattform für Charts, Zeichnungen und Ausführung. MIA übernimmt die strukturelle Lesearbeit: erkennen, datieren, den Lebenszyklus der Zonen verfolgen. <b>Beide ergänzen sich.</b>",
       "q4": "Welche Märkte werden abgedeckt?",
-      "a4": "Zwei Märkte heute — Gold (XAU/USD) und Euro (EUR/USD) — auf 6 Zeiteinheiten von der Minute bis zum Tag. Das Abo gibt Zugang zu beiden Märkten und allen Zeiteinheiten. Weitere Märkte folgen.",
+      "a4": "Zwei Märkte heute — Gold (XAU/USD) und Euro (EUR/USD) — auf 5 Zeiteinheiten: M5, M15, H1, H4 und D1. Das Abo gibt Zugang zu beiden Märkten und allen Zeiteinheiten. Weitere Märkte folgen.",
       "q5": "Wie häufig werden die Daten aktualisiert?",
       "a5": "Bei jedem Kerzenschluss der betreffenden Zeiteinheit, nicht in einem willkürlichen Intervall. Eine 15-Minuten-Lesung aktualisiert sich alle 15 Minuten; eine Tages-Lesung einmal pro Tag. <b>Jeder Bildschirm zeigt das Alter seiner letzten Lesung an</b>, damit du immer weißt, was du ansiehst.",
       "q6": "Kann ich jederzeit kündigen?",
@@ -1909,7 +1906,23 @@
     "alreadyPaid": "Already paid?",
     "activateAccess": "Activate my access",
     "activating": "Checking…",
-    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again."
+    "noPaymentFound": "No active payment found for this account. If you just paid, wait a moment and try again.",
+    "consent": {
+      "label": "Ich habe die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und akzeptiere sie.",
+      "blocked": "Kreuzen Sie das Kästchen oben an, um zur Zahlung fortzufahren.",
+      "error": "Ihre Zustimmung konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal."
+    },
+    "refund": {
+      "title": "{days}-Tage-Garantie",
+      "openUntil": "Sie können die Rückerstattung bis zum {date} beantragen.",
+      "cta": "Rückerstattung beantragen",
+      "confirm": "Bestätigen? Die Zahlung wird vollständig erstattet und der Zugang endet sofort.",
+      "confirmCta": "Rückerstattung bestätigen",
+      "cancelCta": "Abbrechen",
+      "busy": "Rückerstattung läuft…",
+      "done": "Rückerstattet. Der Betrag geht in einigen Tagen auf Ihr Zahlungsmittel zurück.",
+      "error": "Die Rückerstattung konnte nicht durchgeführt werden. Versuchen Sie es erneut oder schreiben Sie an contact@mia.markets."
+    }
   },
   "access": {
     "paywall": {
@@ -2354,51 +2367,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Version {version}",
+      "loading": "Dokument wird geladen…",
+      "error": "Dieses Dokument ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut."
+    },
     "conditions": {
       "meta": {
         "title": "Nutzungsbedingungen",
         "description": "Allgemeine Nutzungsbedingungen von M.I.A Markets — Informationsdienst, edukative Ausrichtung, Risikohinweis."
-      },
-      "versionLabel": "Version {version}",
-      "loading": "Dokument wird geladen…",
-      "error": "Das Dokument der Nutzungsbedingungen ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Datenschutzrichtlinie",
         "description": "Datenschutzrichtlinie von M.I.A Markets — verarbeitete Daten, Rechtsgrundlage, DSGVO-/Gesetz-25-Rechte."
-      },
-      "title": "Datenschutzrichtlinie",
-      "pendingNotice": "Strukturierte Vorabversion. Der endgültige Text (juristisch geprüft) wird mit dem Rechtsterminal veröffentlicht. Die untenstehende Struktur beschreibt die geltenden Verarbeitungen getreu.",
-      "sections": {
-        "responsable": {
-          "title": "1. Verantwortlicher der Verarbeitung",
-          "body": "Loukmane Bessam (alleiniger Betreiber) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Verarbeitete Daten",
-          "body": "Benutzername, E-Mail-Adresse, Passwort (gehasht, nie im Klartext), Einwilligungen (Version + Zeitstempel), Sitzungsdaten. Es werden keine Kreditkartendaten von M.I.A Markets erhoben."
-        },
-        "bases": {
-          "title": "3. Rechtsgrundlagen",
-          "body": "Vertragserfüllung (Konto und Dienst), berechtigtes Interesse (Sicherheit), Einwilligung (Annahme der Bedingungen und dieser Richtlinie bei der Registrierung)."
-        },
-        "droits": {
-          "title": "4. Ihre Rechte (DSGVO / Gesetz 25)",
-          "body": "Auskunft, Berichtigung, Löschung, Übertragbarkeit, Einschränkung und Widerspruch. Jede Anfrage an loukmanebessam@gmail.com — Antwort innerhalb von 30 Tagen."
-        },
-        "conservation": {
-          "title": "5. Aufbewahrung",
-          "body": "Die Kontodaten werden für die Dauer des Kontos aufbewahrt. Die Sitzungen laufen automatisch ab. Die Aufbewahrungsdetails je Kategorie werden in der endgültigen Version präzisiert."
-        },
-        "contact": {
-          "title": "6. Kontakt",
-          "body": "Bei allen Fragen zu Ihren Daten: loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Sprachdiktat",
-          "body": "Der dialogorientierte Scanner bietet eine Spracheingabe. Die Spracherkennung erfolgt durch Ihren Browser; bei einigen Browsern (z. B. Chrome, Edge) kann das erfasste Audio zur Transkription an die Server des Browserherstellers gesendet werden — eine Übermittlung an Dritte, die sich außerhalb von Québec befinden können. Diese Transkription erzeugt Text, den Sie vor dem Absenden prüfen und korrigieren können. Es wird keine Audioaufnahme gespeichert, weder auf Ihrem Gerät noch auf unseren Servern: Wir erhalten nur den Text, den Sie übermitteln möchten. Die Tastatureingabe bleibt jederzeit verfügbar; wenn Ihr Browser das Diktat nicht unterstützt, erscheint die Schaltfläche nicht."
-        }
       }
     },
     "disclaimer": {

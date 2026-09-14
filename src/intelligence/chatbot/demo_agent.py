@@ -44,7 +44,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 ILLUSTRATION_PATH = REPO_ROOT / "config" / "demo_illustration.json"
 PRICING_PATH = REPO_ROOT / "config" / "pricing.json"
-TERMS_PATH = REPO_ROOT / "docs" / "legal" / "conditions-utilisation.md"
+# LEG-1 split the terms into one file per published language; the French file
+# stays the canonical one, and it is the one quoted here.
+TERMS_PATH = REPO_ROOT / "docs" / "legal" / "conditions-utilisation.fr.md"
 MESSAGES_DIR = REPO_ROOT / "webapp" / "messages"
 GLOSSARY_PATH = REPO_ROOT / "webapp" / "lib" / "glossary.ts"
 
@@ -244,8 +246,8 @@ def load_product_knowledge(locale: str = DEFAULT_LOCALE) -> str:
     parts += [
         "",
         "## Conditions d'utilisation — version française canonique",
-        "(source : docs/legal/conditions-utilisation.md, le document rendu tel quel",
-        "par la page /conditions ; il n'existe pas d'autre version faisant foi)",
+        "(source : docs/legal/conditions-utilisation.fr.md, le document rendu tel",
+        "quel par la page /conditions ; la version française est celle qui fait foi)",
         "",
         _redact_contacts(_read_text(TERMS_PATH).strip()),
     ]

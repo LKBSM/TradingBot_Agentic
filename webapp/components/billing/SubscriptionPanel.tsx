@@ -1,26 +1,34 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import * as React from 'react';
 import { Check, CreditCard, ShieldCheck } from 'lucide-react';
+import { acceptConsents } from '@/lib/auth/api-client';
 import {
   BillingError,
   fetchPricing,
+  fetchRefundEligibility,
   fetchSubscription,
   openPortal,
+  requestRefund,
   startCheckout,
   syncSubscription,
   type Plan,
+  type RefundEligibility,
   type Subscription,
 } from '@/lib/billing/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { PRICING } from '@/lib/pricing.generated';
 import { Button } from '@/components/ui/button';
-import { FormError, FormSuccess } from '@/components/auth/fields';
+import { CheckField, FormError, FormSuccess } from '@/components/auth/fields';
 
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+
+/** Ties the disabled plan CTAs to the sentence saying WHY they are disabled. */
+const CONSENT_REASON_ID = 'consent-required-reason';
 
 /**
  * The app-facing subscription states (PAY-1), derived from the Stripe status +
@@ -98,6 +106,15 @@ export function SubscriptionPanel() {
   const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [activateMsg, setActivateMsg] = React.useState<string | null>(null);
+  // LEG-1 — consent before payment. Starts FALSE on every render of this
+  // screen: never pre-ticked, never restored from storage, so the box is always
+  // an act by the customer on the document version shown to them right now.
+  const [consented, setConsented] = React.useState(false);
+  // LEG-1 — the 14-day annual guarantee. `null` = not asked yet; the block only
+  // appears once the backend has said the window is genuinely open.
+  const [refundState, setRefundState] = React.useState<RefundEligibility | null>(null);
+  const [refundConfirming, setRefundConfirming] = React.useState(false);
+  const [refundDone, setRefundDone] = React.useState(false);
 
   const checkoutStatus = searchParams.get('status');
 
@@ -109,13 +126,19 @@ export function SubscriptionPanel() {
     let cancelled = false;
     async function load() {
       try {
-        const [pricing, subscription] = await Promise.all([
+        // The guarantee probe must NEVER be able to break this screen: if it
+        // did, nobody could subscribe. The client already swallows its own
+        // failures; `.catch` here is the second lock, because the cost of
+        // getting it wrong is a paywall nobody can pass.
+        const [pricing, subscription, refund] = await Promise.all([
           fetchPricing(),
           fetchSubscription(),
+          fetchRefundEligibility().catch(() => null),
         ]);
         if (cancelled) return;
         setPlans(pricing.plans);
         setSub(subscription);
+        setRefundState(refund);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof BillingError ? err.message : t('errorLoad'));
@@ -186,13 +209,49 @@ export function SubscriptionPanel() {
   }
 
   async function onSubscribe(planKey: string) {
+    // Defence in depth: the CTAs are already disabled without consent, but a
+    // programmatic call must not reach Checkout either.
+    if (!consented) return;
     setError(null);
     setBusy(planKey);
+
+    // Record the accepted version + timestamp BEFORE leaving for Stripe. If
+    // this fails we do not start the checkout: we would otherwise take money
+    // with no trace of what the customer accepted.
+    try {
+      await acceptConsents();
+    } catch {
+      setError(t('consent.error'));
+      setBusy(null);
+      return;
+    }
+
     try {
       const url = await startCheckout(planKey);
       window.location.href = url;
     } catch (err) {
       setError(err instanceof BillingError ? err.message : t('errorCheckout'));
+      setBusy(null);
+    }
+  }
+
+  // LEG-1 — the 14-day annual guarantee, honoured in one click. Irreversible,
+  // so it is confirmed first; the backend re-checks eligibility regardless.
+  async function onRefund() {
+    setError(null);
+    setBusy('refund');
+    try {
+      await requestRefund();
+      setRefundDone(true);
+      setRefundConfirming(false);
+      setRefundState(null);
+      // Access has just been revoked server-side — mirror it here rather than
+      // leaving a stale "active" card on screen.
+      setSub(await fetchSubscription());
+    } catch (err) {
+      // A refusal already carries a message saying what the customer CAN do.
+      setError(err instanceof BillingError ? err.message : t('refund.error'));
+    } finally {
       setBusy(null);
     }
   }
@@ -285,6 +344,55 @@ export function SubscriptionPanel() {
             <p className="text-xs text-muted-foreground">{t('manageHint')}</p>
           </div>
         </section>
+
+        {/* LEG-1 — the 14-day annual guarantee. Shown only while the window is
+            genuinely open, so the offer is never made and then refused. */}
+        {refundState?.eligible && (
+          <section
+            className="space-y-3 rounded-2xl border border-border/60 p-6"
+            data-testid="refund-guarantee"
+          >
+            <h2 className="text-base font-medium text-foreground">
+              {t('refund.title', { days: refundState.guarantee_days })}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {t('refund.openUntil', {
+                date: formatDate(refundState.deadline, locale) ?? '',
+              })}
+            </p>
+            {refundConfirming ? (
+              <div className="space-y-2">
+                <p className="text-sm text-foreground">{t('refund.confirm')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={onRefund}
+                    disabled={busy !== null}
+                    data-testid="refund-confirm"
+                  >
+                    {busy === 'refund' ? t('refund.busy') : t('refund.confirmCta')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setRefundConfirming(false)}
+                    disabled={busy !== null}
+                  >
+                    {t('refund.cancelCta')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setRefundConfirming(true)}
+                disabled={busy !== null}
+                data-testid="refund-request"
+              >
+                {t('refund.cta')}
+              </Button>
+            )}
+          </section>
+        )}
       </div>
     );
   }
@@ -312,6 +420,9 @@ export function SubscriptionPanel() {
         </p>
       </header>
 
+      {/* LEG-1 — after a refund the subscription is suspended, so this view is
+          what the customer lands on. Say what just happened. */}
+      {refundDone && <FormSuccess message={t('refund.done')} />}
       {checkoutStatus === 'success' && <FormSuccess message={t('checkoutSuccess')} />}
       {checkoutStatus === 'cancel' && <FormError message={t('checkoutCancel')} />}
       <FormError message={error} />
@@ -329,7 +440,8 @@ export function SubscriptionPanel() {
               perMonth={t('perMonth')}
               cta={ctaLabel}
               busy={busy === 'MONTHLY'}
-              disabled={busy !== null}
+              disabled={busy !== null || !consented}
+              describedBy={consented ? undefined : CONSENT_REASON_ID}
               onClick={() => onSubscribe('MONTHLY')}
             />
           )}
@@ -346,12 +458,57 @@ export function SubscriptionPanel() {
               highlighted
               cta={ctaLabel}
               busy={busy === 'ANNUAL'}
-              disabled={busy !== null}
+              disabled={busy !== null || !consented}
+              describedBy={consented ? undefined : CONSENT_REASON_ID}
               onClick={() => onSubscribe('ANNUAL')}
             />
           )}
         </div>
       )}
+
+      {/* LEG-1 — consent gate. The two plan CTAs above stay inactive until this
+          box is ticked; the reason is written out rather than left to a greyed
+          button, and both documents open in a new tab so ticking is not lost. */}
+      <div className="space-y-2 rounded-lg border border-border/60 bg-muted/10 p-4">
+        <CheckField
+          id="accept-legal"
+          name="accept_legal"
+          checked={consented}
+          onChange={(e) => setConsented(e.currentTarget.checked)}
+          data-testid="consent-checkbox"
+          label={t.rich('consent.label', {
+            terms: (chunks) => (
+              <Link
+                href={lh('/conditions')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link
+                href={lh('/confidentialite')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        />
+        {!consented && (
+          <p
+            id={CONSENT_REASON_ID}
+            data-testid="consent-blocked"
+            className="pl-7 text-xs text-muted-foreground"
+          >
+            {t('consent.blocked')}
+          </p>
+        )}
+      </div>
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
@@ -389,6 +546,7 @@ function PlanCard({
   cta,
   busy,
   disabled,
+  describedBy,
   onClick,
 }: {
   name: string;
@@ -402,6 +560,8 @@ function PlanCard({
   cta: string;
   busy: boolean;
   disabled: boolean;
+  /** Id of the sentence explaining why the CTA is disabled (LEG-1 consent). */
+  describedBy?: string;
   onClick: () => void;
 }) {
   return (
@@ -436,7 +596,12 @@ function PlanCard({
           </p>
         )}
       </div>
-      <Button className="mt-auto w-full" onClick={onClick} disabled={disabled}>
+      <Button
+        className="mt-auto w-full"
+        onClick={onClick}
+        disabled={disabled}
+        aria-describedby={describedBy}
+      >
         {busy ? '…' : cta}
       </Button>
     </div>

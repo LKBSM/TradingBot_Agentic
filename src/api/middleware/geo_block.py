@@ -3,16 +3,23 @@
 Required by P29 compliance audit. MIA Markets does not hold a securities
 or commodities licence in:
 
-  * United States (SEC Investment Advisers Act §202(a)(11))
   * United Kingdom (FCA — restricted financial promotion regime)
 
 It is also barred from doing business with persons in OFAC SDN-comprehensive
 sanction territories: Cuba, Iran, North Korea, Russia, Syria, Belarus.
 
-Le Québec (CA-QC) n'est PAS bloqué : c'est la juridiction de rattachement de
-l'entreprise (stratégie légale Loi 25 + LPC québécoises). Le blocage CA-QC
-présent jusqu'au 2026-07-05 venait d'un boilerplate généré et contredisait la
-réalité — décision fondateur de le retirer (cf. CGU §4 alignées même date).
+Deux retraits, tous deux décisions fondateur, tous deux alignés sur la clause 4
+des conditions à la même date :
+
+  * **Québec (CA-QC), 2026-07-05** — juridiction de rattachement de
+    l'entreprise (Loi 25 + LPC). Le bloquer venait d'un boilerplate généré et
+    contredisait la réalité.
+  * **États-Unis (US), 2026-09-14 (LEG-1)** — le service y est commercialisé.
+    Il se tient à la publication impersonnelle : aucun conseil, aucune
+    recommandation, aucun signal, aucune prise en compte de la situation d'un
+    utilisateur. Le blocage était de toute façon inactif en production
+    (``GEO_BLOCK_DISABLED=1``, l'hôte étant lui-même en région US), de sorte que
+    le texte affirmait une exclusion que le produit n'appliquait pas.
 
 The middleware resolves the client's country via (in order of priority):
 
@@ -26,12 +33,14 @@ The middleware resolves the client's country via (in order of priority):
 When no resolver yields a country, the request is **allowed** by default —
 geo-blocking is a hard barrier on the *known* deny-list, not a closed-by-default
 filter. This avoids accidentally bricking the API for misconfigured deployments
-while still satisfying the compliance requirement that *known* US/UK/OFAC
+while still satisfying the compliance requirement that *known* UK/OFAC
 clients receive HTTP 451.
 
 Allowlisted paths (always served regardless of origin):
     /health, /api/v1/health, /api/docs, /openapi.json,
-    /api/v1/terms, /api/v1/privacy
+    /api/v1/terms, /api/v1/privacy,
+    /api/v1/legal/conditions, /api/v1/legal/privacy,
+    /api/v1/legal/conditions/meta, /api/v1/legal/version
 
 Configuration
 -------------
@@ -67,8 +76,14 @@ logger = logging.getLogger(__name__)
 
 #: Country-level block. ISO-3166-1 alpha-2 codes, uppercase.
 BLOCKED_COUNTRIES: Set[str] = {
+    # 2026-09-14 (LEG-1) : les États-Unis ont été RETIRÉS de cette liste —
+    # décision fondateur, le service est commercialisé au Canada ET aux
+    # États-Unis. Les conditions (clause 4) annoncent désormais ce territoire,
+    # et le service se tient à la publication impersonnelle : aucun conseil,
+    # aucune recommandation, aucun signal, aucune prise en compte de la
+    # situation d'un utilisateur. Le blocage était par ailleurs déjà inactif en
+    # production (GEO_BLOCK_DISABLED=1, l'hôte étant lui-même en région US).
     # No securities/commodities license
-    "US",   # SEC Investment Advisers Act §202(a)(11)
     "GB",   # FCA financial promotion regime — restricted
     # OFAC comprehensive sanctions
     "CU",   # Cuba
@@ -94,6 +109,13 @@ ALLOWED_PATHS: Set[str] = {
     "/openapi.json",
     "/api/v1/terms",
     "/api/v1/privacy",
+    # LEG-1 — the paths the webapp's /conditions and /confidentialite pages
+    # actually fetch. Without these the legal pages 451'd for exactly the
+    # visitors who most need to read WHY they are blocked.
+    "/api/v1/legal/conditions",
+    "/api/v1/legal/privacy",
+    "/api/v1/legal/conditions/meta",
+    "/api/v1/legal/version",
 }
 
 
