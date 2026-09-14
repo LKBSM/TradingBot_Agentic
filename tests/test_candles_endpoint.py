@@ -136,7 +136,7 @@ def test_no_predictive_field_leaks(tmp_path):
 def test_rejects_unsupported_instrument(tmp_path):
     client = TestClient(_make_app(tmp_path=tmp_path))
     resp = client.get(
-        "/api/candles", params={"instrument": "BTCUSD", "timeframe": "M15"}
+        "/api/candles", params={"instrument": "NOTAMARKET", "timeframe": "M15"}
     )
     assert resp.status_code == 400
     assert "Unsupported instrument" in resp.json()["detail"]

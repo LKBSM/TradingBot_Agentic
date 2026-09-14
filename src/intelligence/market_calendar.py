@@ -121,30 +121,61 @@ _METAL_HOURS = InstrumentHours(open_time=time(18, 0), daily_break=(time(17, 0), 
 # Crypto: never closes — and has no session découpage (continuous market).
 _CRYPTO_HOURS = InstrumentHours(always_open=True, sessions=())
 
-INSTRUMENT_HOURS: dict[str, InstrumentHours] = {
-    "XAUUSD": _METAL_HOURS,
-    "XAGUSD": _METAL_HOURS,
-    "EURUSD": _FOREX_HOURS,
-    "GBPUSD": _FOREX_HOURS,
-    "USDJPY": _FOREX_HOURS,
-    "BTCUSD": _CRYPTO_HOURS,
-    "ETHUSD": _CRYPTO_HOURS,
+#: Trading week per ASSET CLASS. This is the rule; the per-symbol table below
+#: exists only for a market whose venue departs from its class.
+_HOURS_BY_TYPE: dict[str, InstrumentHours] = {
+    "fx": _FOREX_HOURS,
+    "metal": _METAL_HOURS,
+    "crypto": _CRYPTO_HOURS,
 }
 
-# Mirror of the frontend heuristic (webapp/lib/market-reading/session.ts) so a
-# symbol we have not explicitly listed but that is obviously crypto is never
+#: Per-symbol OVERRIDES only — deliberately empty for every market its class
+#: already describes. Restating the class here is exactly how this table fell out
+#: of date (DATA-4): it listed 7 symbols while the registry carried 80, so every
+#: crypto but BTC/ETH was treated as a weekday-only forex pair and frozen all
+#: weekend, and every metal but gold and silver lost its rollover pause.
+INSTRUMENT_HOURS: dict[str, InstrumentHours] = {}
+
+# Fallback for a symbol the registry knows nothing about (a test fixture, a
+# market being introduced). Mirrors the frontend heuristic
+# (webapp/lib/market-reading/session.ts) so an obviously-crypto symbol is never
 # reported as closed.
 _CRYPTO_RE = re.compile(r"BTC|ETH|USDT|USDC|crypto", re.IGNORECASE)
 
 
+def _registry_type(market_id: str) -> Optional[str]:
+    """Asset class from the market registry (MKT-1), or None if unknown there.
+
+    Imported lazily and defensively: this module must stay usable where the
+    registry file is absent or points at a fixture.
+    """
+    try:
+        from src.intelligence import market_registry
+
+        return market_registry.spec(market_id).type
+    except Exception:  # noqa: BLE001 — an unknown market is not an error here
+        return None
+
+
 def hours_for(instrument: str) -> InstrumentHours:
-    """Trading hours for ``instrument`` — explicit entry, else crypto-by-name,
-    else the forex default (spot FX week). The forex default is deliberately
-    conservative: an unknown symbol is treated as closed on the weekend rather
-    than assumed 24/7, and the last-candle-age fact still governs regardless."""
+    """Trading hours for ``instrument``.
+
+    Resolution order: explicit per-symbol override, then the ASSET CLASS declared
+    by the market registry, then a crypto-by-name heuristic, then the forex
+    default. Deriving from the class is what keeps adding a market to a one-line
+    registry entry: a new crypto is 24/7 and a new metal gets its rollover pause
+    without touching this module.
+
+    The forex default stays deliberately conservative: a symbol we know nothing
+    about is treated as closed at the weekend rather than assumed 24/7, and the
+    last-candle-age fact still governs regardless.
+    """
     key = (instrument or "").upper()
     if key in INSTRUMENT_HOURS:
         return INSTRUMENT_HOURS[key]
+    mtype = _registry_type(key)
+    if mtype and mtype in _HOURS_BY_TYPE:
+        return _HOURS_BY_TYPE[mtype]
     if _CRYPTO_RE.search(key):
         return _CRYPTO_HOURS
     return _FOREX_HOURS

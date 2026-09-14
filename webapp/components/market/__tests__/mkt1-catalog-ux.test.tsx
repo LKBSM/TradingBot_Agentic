@@ -28,7 +28,15 @@ function render(ui: React.ReactElement) {
 }
 
 const active = { instrument: 'XAUUSD', timeframe: 'M15' };
-const GROUPS = ['fx-major', 'fx-minor', 'fx-exotic', 'metal', 'index', 'crypto'];
+
+// DATA-4 promoted 80 of the 100 catalogue entries into the registry. The
+// catalogue view shows what the engine does NOT follow, so a group whose markets
+// are all followed now has nothing to show and legitimately disappears. Deriving
+// the expected groups keeps these tests true whatever the partition becomes.
+const GROUPS = [...new Set(CATALOG_ONLY_ENTRIES.map((e) => e.group))];
+// A group that still holds display-only markets, to stand for "a category".
+const SAMPLE_GROUP = GROUPS[0];
+const SAMPLE_ENTRY = CATALOG_ONLY_ENTRIES.find((e) => e.group === SAMPLE_GROUP)!;
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -45,14 +53,17 @@ describe('MKT-1 — catalogue on: the mode is visible and the scale is grouped',
   });
 
   it('separates the markets the engine follows from the display-only ones', () => {
-    render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
+    const { container } = render(
+      <MarketSelector variant="panel" active={active} onSelect={() => {}} />,
+    );
     expect(screen.getByText('Suivis par le moteur')).toBeInTheDocument();
-    for (const spec of MARKET_SPECS) {
-      expect(screen.getAllByText(spec.label).length).toBeGreaterThan(0);
-    }
+    // ONE pass: at 80 followed markets, a DOM scan each turned this into an 8 s test.
+    const rendered = container.textContent ?? '';
+    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(spec.label));
+    expect(missing.map((m) => m.id)).toEqual([]);
   });
 
-  it('renders the six categories, every one collapsed at first', () => {
+  it('renders every display-only category, each collapsed at first', () => {
     render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
     for (const group of GROUPS) {
       const section = screen.getByTestId(`mkt-group-${group}`);
@@ -65,15 +76,15 @@ describe('MKT-1 — catalogue on: the mode is visible and the scale is grouped',
 
   it('a category header states how many markets it holds, and opens on click', () => {
     render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
-    const section = screen.getByTestId('mkt-group-metal');
-    const head = screen.getByTestId('mkt-group-head-metal');
-    const metals = CATALOG_ONLY_ENTRIES.filter((e) => e.group === 'metal');
-    expect(head).toHaveTextContent(String(metals.length));
+    const section = screen.getByTestId(`mkt-group-${SAMPLE_GROUP}`);
+    const head = screen.getByTestId(`mkt-group-head-${SAMPLE_GROUP}`);
+    const entries = CATALOG_ONLY_ENTRIES.filter((e) => e.group === SAMPLE_GROUP);
+    expect(head).toHaveTextContent(String(entries.length));
 
     fireEvent.click(head);
     expect(head).toHaveAttribute('aria-expanded', 'true');
-    expect(within(section).getAllByRole('listitem')).toHaveLength(metals.length);
-    expect(within(section).getByText('Argent (XAG/USD)')).toBeInTheDocument();
+    expect(within(section).getAllByRole('listitem')).toHaveLength(entries.length);
+    expect(within(section).getByText(SAMPLE_ENTRY.label)).toBeInTheDocument();
   });
 });
 
@@ -84,16 +95,20 @@ describe('MKT-1 — search at 100 entries', () => {
   }
 
   it('finds a catalogue market by id, and opens its category so the hit is visible', () => {
-    searchFor('XAGUSD');
-    const section = screen.getByTestId('mkt-group-metal');
-    expect(screen.getByTestId('mkt-group-head-metal')).toHaveAttribute('aria-expanded', 'true');
-    expect(within(section).getByText('Argent (XAG/USD)')).toBeInTheDocument();
+    searchFor(SAMPLE_ENTRY.id);
+    const section = screen.getByTestId(`mkt-group-${SAMPLE_GROUP}`);
+    expect(screen.getByTestId(`mkt-group-head-${SAMPLE_GROUP}`)).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(within(section).getByText(SAMPLE_ENTRY.label)).toBeInTheDocument();
   });
 
   it('finds a market by its human label', () => {
-    searchFor('Bitcoin');
-    const section = screen.getByTestId('mkt-group-crypto');
-    expect(within(section).getByText('Bitcoin (BTC/USD)')).toBeInTheDocument();
+    const word = SAMPLE_ENTRY.label.split(' ')[0];
+    searchFor(word);
+    const section = screen.getByTestId(`mkt-group-${SAMPLE_GROUP}`);
+    expect(within(section).getByText(SAMPLE_ENTRY.label)).toBeInTheDocument();
   });
 
   it('finds markets by CATEGORY name — how one actually looks at this scale', () => {
@@ -124,7 +139,7 @@ describe('MKT-1 — performance of the 100-entry list', () => {
     // Type a query character by character — the filter runs on every keystroke
     // over the whole catalogue, which is the cost this test exists to bound.
     const t1 = performance.now();
-    const query = 'bitcoin';
+    const query = SAMPLE_ENTRY.label.split(' ')[0].toLowerCase();
     for (let i = 1; i <= query.length; i += 1) {
       fireEvent.change(input, { target: { value: query.slice(0, i) } });
     }
@@ -146,25 +161,28 @@ describe('MKT-1 — performance of the 100-entry list', () => {
     const rows = container.querySelectorAll('[data-catalog-only="true"]');
     expect(rows).toHaveLength(0);
 
-    fireEvent.click(screen.getByTestId('mkt-group-head-metal'));
-    const metals = CATALOG_ONLY_ENTRIES.filter((e) => e.group === 'metal').length;
-    expect(container.querySelectorAll('[data-catalog-only="true"]')).toHaveLength(metals);
+    fireEvent.click(screen.getByTestId(`mkt-group-head-${SAMPLE_GROUP}`));
+    const opened = CATALOG_ONLY_ENTRIES.filter((e) => e.group === SAMPLE_GROUP).length;
+    expect(container.querySelectorAll('[data-catalog-only="true"]')).toHaveLength(opened);
   });
 });
 
 describe('MKT-1 — a display-only market promises nothing', () => {
   it('offers no pin affordance (pinning a market with no data would be a promise)', () => {
     render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
-    const section = screen.getByTestId('mkt-group-crypto');
-    fireEvent.click(screen.getByTestId('mkt-group-head-crypto'));
+    const section = screen.getByTestId(`mkt-group-${SAMPLE_GROUP}`);
+    fireEvent.click(screen.getByTestId(`mkt-group-head-${SAMPLE_GROUP}`));
     expect(within(section).queryByRole('button', { name: /Épingler/i })).not.toBeInTheDocument();
   });
 
   it('picking one emits its combo, keeping the timeframe the user was on', () => {
     const onSelect = vi.fn();
     render(<MarketSelector variant="panel" active={active} onSelect={onSelect} />);
-    fireEvent.click(screen.getByTestId('mkt-group-head-crypto'));
-    fireEvent.click(screen.getByText('Bitcoin (BTC/USD)'));
-    expect(onSelect).toHaveBeenCalledWith({ instrument: 'BTCUSD', timeframe: 'M15' });
+    fireEvent.click(screen.getByTestId(`mkt-group-head-${SAMPLE_GROUP}`));
+    fireEvent.click(screen.getByText(SAMPLE_ENTRY.label));
+    expect(onSelect).toHaveBeenCalledWith({
+      instrument: SAMPLE_ENTRY.id,
+      timeframe: 'M15',
+    });
   });
 });

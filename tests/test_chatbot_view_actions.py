@@ -157,7 +157,7 @@ def test_set_instrument_timeframe_enums() -> None:
     # M5 is now in the perimeter (TF-1) → accepted.
     ok_m5 = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "XAUUSD", "timeframe": "M5"}})
     assert ok_m5.valid
-    bad_i = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "BTCUSD", "timeframe": "H4"}})
+    bad_i = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "NOTAMARKET", "timeframe": "H4"}})
     assert not bad_i.valid and bad_i.reason == "bad_instrument"
     # W1 is a reference series, not a tradeable/interactive timeframe → rejected.
     bad_tf = v().validate({"action": "set_instrument_timeframe", "params": {"instrument": "XAUUSD", "timeframe": "W1"}})

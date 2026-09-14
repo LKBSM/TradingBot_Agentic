@@ -56,20 +56,23 @@ describe('MKT-1 — with no env var set, the UX-test catalogue does not exist', 
   });
 
   it('lists exactly the registry markets, and no catalogue one', () => {
-    render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
-    for (const spec of MARKET_SPECS) {
-      expect(screen.getAllByText(spec.label).length).toBeGreaterThan(0);
-    }
-    // A market that exists only in the test catalogue must be nowhere to be seen.
-    expect(screen.queryByText(/Bitcoin/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Argent \(XAG\/USD\)/)).not.toBeInTheDocument();
+    const { container } = render(
+      <MarketSelector variant="panel" active={active} onSelect={() => {}} />,
+    );
+    // ONE pass rather than a DOM scan per market — DATA-4 took the registry to 80.
+    const rendered = container.textContent ?? '';
+    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(spec.label));
+    expect(missing.map((m) => m.id)).toEqual([]);
+    // A market that exists ONLY in the test catalogue must be nowhere to be seen.
+    // Bitcoin and silver became followed markets, so the example is now an index.
+    expect(rendered).not.toMatch(/S&P 500/);
     expect(document.querySelectorAll('[data-catalog-only="true"]')).toHaveLength(0);
   });
 
   it('a search for a catalogue market finds nothing, and says so', () => {
     render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
     fireEvent.change(screen.getByLabelText(/Rechercher un marché/i), {
-      target: { value: 'BTCUSD' },
+      target: { value: 'US500' },
     });
     expect(screen.getByText(/Aucun marché ne correspond/)).toBeInTheDocument();
   });
@@ -77,7 +80,7 @@ describe('MKT-1 — with no env var set, the UX-test catalogue does not exist', 
 
 describe('MKT-1 — with the flag off, a catalogue market is not a valid target', () => {
   it('resolveComboFromQuery rejects it, exactly as before the mission', () => {
-    expect(resolveComboFromQuery('BTCUSD', 'M15')).toBeNull();
+    expect(resolveComboFromQuery('US500', 'M15')).toBeNull();
     // The real perimeter is of course untouched.
     expect(resolveComboFromQuery('XAUUSD', 'M15')).toEqual({
       instrument: 'XAUUSD',
@@ -101,7 +104,7 @@ describe('MKT-1 — with the flag off, an unknown market takes the ordinary path
     // A stale deep-link to a catalogue market in a normal build must NOT hit the
     // "not followed" copy, which does not exist there: it is an unsupported
     // combination like any other.
-    const { result } = renderHook(() => useMarketReading('BTCUSD', 'M15', { source: 'live' }));
+    const { result } = renderHook(() => useMarketReading('US500', 'M15', { source: 'live' }));
     await waitFor(() => expect(result.current.error).toBeTruthy());
     expect(fetchSpy).toHaveBeenCalled();
     expect(result.current.error?.name).toBe('MarketReadingValidationError');

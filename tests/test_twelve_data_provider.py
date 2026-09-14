@@ -30,7 +30,7 @@ class TestSymbolMapping:
 
     def test_unsupported_symbol_raises_value_error(self):
         with pytest.raises(ValueError, match="Unsupported symbol"):
-            TwelveDataProvider._map_symbol("BTCUSD")
+            TwelveDataProvider._map_symbol("NOTAMARKET")
 
 
 class TestTimeframeMapping:
@@ -254,6 +254,11 @@ class TestProviderInit:
         provider = TwelveDataProvider(api_key="x")
         assert isinstance(provider, DataProvider)
 
-    def test_available_symbols_returns_xau_and_eur(self):
+    def test_available_symbols_is_the_market_registry(self):
+        """Le perimetre du fournisseur EST le registre (MKT-1) : une table de
+        symboles recopiee ici est exactement ce que DATA-3 a supprime."""
+        from src.intelligence import market_registry
+
         provider = TwelveDataProvider(api_key="x")
-        assert set(provider.available_symbols()) == {"XAUUSD", "EURUSD"}
+        assert set(provider.available_symbols()) == set(market_registry.all_ids())
+        assert {"XAUUSD", "EURUSD"} <= set(provider.available_symbols())
