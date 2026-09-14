@@ -146,7 +146,10 @@ jobs:
       - name: Playwright (chromium)
         working-directory: webapp
         run: |
-          npm ci
+          # --legacy-peer-deps : aligné sur webapp-ci.yml. Sans lui, npm bute sur
+          # un conflit de pairs (vite 8 / @types/node) et `npm ci` sort en erreur
+          # AVANT même d'installer Playwright — le filet ne tourne alors jamais.
+          npm ci --legacy-peer-deps
           npx playwright install --with-deps chromium
 
       - name: Le paiement doit ouvrir l'accès
