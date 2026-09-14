@@ -108,6 +108,20 @@ async function payWithTestCard(page: Page): Promise<void> {
   const postal = page.locator('#billingPostalCode');
   if (await postal.count()) await postal.fill('H2X 1Y4');
 
+  // DÉCLARATION D'AGENT AUTOMATISÉ. Stripe Checkout présente une case
+  // « I am an AI agent acting on behalf of someone else », vue sur la trace d'un
+  // échec : le formulaire restait sans effet et Checkout n'affichait aucune
+  // erreur. On la coche parce que c'est vrai — ce test EST un agent qui paie
+  // pour le compte de quelqu'un — et parce que c'est la voie que Stripe prévoit
+  // pour un paiement automatisé. Conditionnel : la case peut disparaître ou
+  // changer de libellé sans que le test doive casser.
+  const agentBox = page.getByRole('checkbox', {
+    name: /ai agent acting on behalf|agent (ia|ai) agissant/i,
+  });
+  if (await agentBox.count()) {
+    await agentBox.first().check();
+  }
+
   // LE VRAI BOUTON D'ENVOI. Piège vérifié sur une trace d'échec : les boutons de
   // portefeuille (« Apple Pay », « Payer avec Link ») sont AVANT dans le DOM, et
   // un sélecteur CSS à virgules se résout dans l'ordre du DOM, pas dans l'ordre
