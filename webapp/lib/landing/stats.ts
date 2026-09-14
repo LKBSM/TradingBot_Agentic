@@ -8,15 +8,22 @@
  * here, tied to the real config they mirror, so the copy can never drift into
  * fiction. A test asserts they still match their sources.
  *
- * Reality check (verified 2026-08-06, do not inflate):
- *   · markets      = SUPPORTED_INSTRUMENTS  → XAUUSD, EURUSD          (perimeter.ts)
- *   · timeframes   = timeframes with perimeter:true → M1..D1 = 6      (config/timeframes.json)
- *   · combinations = markets × timeframes = 2 × 6 = 12                (enabled_combos)
- *   · conditions   = scanner palette length = 22                      (conditions palette)
+ * Reality check:
+ *   · markets      = the market registry              (config/markets.json)
+ *   · timeframes   = what the selector actually SHOWS  (DISPLAY_TIMEFRAMES)
+ *   · combinations = markets × timeframes              (mirrors enabled_combos())
+ *   · conditions   = scanner palette length = 22       (conditions palette)
  *   · structures   = distinct structure families the detection surfaces = 7
  *
  * The maquette claimed "80 marchés / 480 combinaisons / 21 conditions". Three of
  * those four were fiction; these are the true figures.
+ *
+ * LP-3 — the first two are now DERIVED rather than written down, because they
+ * had silently drifted. Decision DATA-1 (2026-08-16) cut M1 from the perimeter:
+ * the selector shows five units and the scanner sweeps 2 × 5 = 10 combinations,
+ * while this file still said 6 and 12 and the copy repeated it in nine
+ * languages. A number the landing advertises must come from the thing it
+ * describes; if M1 is ever re-enabled, the page follows on its own.
  */
 
 /**
@@ -30,6 +37,9 @@
  *   equal_levels                 → equal highs / lows (EQH / EQL)
  * A test asserts LANDING_STATS.structures === STRUCTURE_TYPES.length.
  */
+import { ALL_MARKET_IDS } from '@/lib/markets';
+import { DISPLAY_TIMEFRAMES } from '@/lib/market-reading/perimeter';
+
 export const STRUCTURE_TYPES = [
   'order_block',
   'fair_value_gap',
@@ -43,9 +53,9 @@ export const STRUCTURE_TYPES = [
 export type StructureType = (typeof STRUCTURE_TYPES)[number];
 
 export const LANDING_STATS = {
-  markets: 2,
-  timeframes: 6,
-  combinations: 12,
+  markets: ALL_MARKET_IDS.length,
+  timeframes: DISPLAY_TIMEFRAMES.length,
+  combinations: ALL_MARKET_IDS.length * DISPLAY_TIMEFRAMES.length,
   conditions: 22,
   structures: STRUCTURE_TYPES.length,
 } as const;

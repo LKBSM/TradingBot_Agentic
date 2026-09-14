@@ -31,12 +31,12 @@
         "lblOb": "OB · não testado",
         "lblChoch": "CHOCH ↑",
         "narr": "O preço está <b>atualmente num Order Block de alta</b> formado há 14 velas, entre 4 026,80 e 4 028,90, e essa zona <b>nunca foi testada</b>. Uma bolsa de liquidez de venda <b>foi varrida</b> há 17 velas. O gráfico de 1 h segue no mesmo sentido.",
-        "b5": "<b>Seis unidades de tempo</b> — do minuto ao dia, a leitura acompanha"
+        "b5": "<b>Cinco unidades de tempo</b> — de M5 a D1, a leitura acompanha"
       },
       "scanner": {
         "tag": "O scanner",
         "h3": "Não consegues vigiar os teus mercados sem parar. Ele consegue.",
-        "p": "Marcas as condições que te interessam — tendência, zona não testada, liquidez recentemente tomada — e o scanner diz-te <b>onde estão reunidas neste momento</b>, nas 12 combinações de mercados e unidades de tempo. Reavaliado a cada fecho de vela.",
+        "p": "Marcas as condições que te interessam — tendência, zona não testada, liquidez recentemente tomada — e o scanner diz-te <b>onde estão reunidas neste momento</b>, nas 10 combinações de mercados e unidades de tempo. Reavaliado a cada fecho de vela.",
         "b1": "<b>22 condições factuais</b> repartidas por estrutura, zonas, liquidez e contexto",
         "b2": "<b>O que vai em sentido contrário</b> também é apresentado — desacordo entre unidades, zona desgastada",
         "b3": "<b>Nenhuma classificação</b>: os resultados nunca são ordenados por «qualidade»",
@@ -57,8 +57,8 @@
       },
       "zones": {
         "tag": "As zonas",
-        "h3": "Uma zona virgem e uma zona desgastada não valem o mesmo",
-        "p": "A maioria das ferramentas mostra-te que um Order Block existe. A MIA conta-te <b>a sua vida inteira</b>: quando se formou, se foi tocado, a que hora, e se acabou por ser preenchido. É a diferença entre ver um retângulo e saber o que ele vale.",
+        "h3": "Uma zona virgem e uma zona desgastada não se leem da mesma forma",
+        "p": "A maioria das ferramentas mostra-te que um Order Block existe. A MIA conta-te <b>a sua vida inteira</b>: quando se formou, se foi tocado, a que hora, e se acabou por ser preenchido. É a diferença entre ver um retângulo e conhecer a sua história.",
         "b1": "<b>Cronologia completa</b>: formada → testada → preenchida, com data e hora",
         "b2": "<b>Taxa de preenchimento</b> para um Fair Value Gap parcialmente preenchido",
         "b3": "<b>Sobreposições</b> com as zonas detetadas noutras unidades de tempo",
@@ -78,7 +78,7 @@
       },
       "news": {
         "tag": "As notícias",
-        "h3": "Sabe quando o mercado vai mexer — e o que aconteceu nas vezes anteriores",
+        "h3": "Sabe quando saem as publicações — e o que aconteceu nas vezes anteriores",
         "p": "Um calendário das publicações económicas, associadas aos mercados que dizem respeito. E para cada uma, <b>o que foi realmente medido nas publicações anteriores</b>: a calmaria que precede, a agitação que se segue, o tempo de vida das zonas criadas nesse dia.",
         "b1": "<b>Calendário mensal</b> com hora local e hora do organismo",
         "b2": "<b>Os últimos doze números publicados</b> de cada indicador, tal como publicados",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "Nenhum mercado reúne estas condições neste momento. <b>Não é um erro</b> — e nada te sugere flexibilizar.",
         "againstLabel": "O que vai em sentido contrário",
         "against": "em Ouro · 4 h, a tendência mantém-se mas <b>a unidade superior não está alinhada</b>, e uma bolsa próxima já foi varrida.",
-        "side": "Nas <b>12 combinações</b> analisadas, o scanner só mantém aquelas em que todas as tuas condições estão reunidas <b>neste momento</b>. Acrescenta uma condição, e a lista aperta-se."
+        "side": "Nas <b>10 combinações</b> analisadas, o scanner só mantém aquelas em que todas as tuas condições estão reunidas <b>neste momento</b>. Acrescenta uma condição, e a lista aperta-se."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "Sem instalação, sem scripts a copiar, sem afinação de indicadores. Abres e está pronto.",
       "step1": {
         "h": "Escolhe o teu mercado",
-        "p": "O ouro ou o euro, em 6 unidades de tempo. As 12 combinações já são analisadas em contínuo, e o resultado mantém-se atualizado a cada fecho de vela."
+        "p": "O ouro ou o euro, em 5 unidades de tempo. As 10 combinações já são analisadas em contínuo, e o resultado mantém-se atualizado a cada fecho de vela."
       },
       "step2": {
         "h": "Lê a estrutura",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "Acompanhas várias unidades de tempo",
-        "p": "Sabes o que procuras mas não consegues olhar para tudo. O scanner vigia as tuas 12 combinações a cada fecho, sem que cliques.",
+        "p": "Sabes o que procuras mas não consegues olhar para tudo. O scanner vigia as tuas 10 combinações a cada fecho, sem que cliques.",
         "lb": "Amplitude",
         "items": {
           "0": "As tuas condições verificadas em todo o lado a cada fecho",
@@ -358,8 +358,8 @@
         "sub": "todo o produto, todos os mercados",
         "perMonth": "mês",
         "bill": "ou {total} $ US por ano, ou seja {perMonth} $ US por mês",
-        "f1": "<b>Os 2 mercados</b>, 6 unidades de tempo",
-        "f2": "Scanner nas 12 combinações",
+        "f1": "<b>Os 2 mercados</b>, 5 unidades de tempo",
+        "f2": "Scanner nas 10 combinações",
         "f3": "Página Zonas e ciclo de vida completo",
         "f4": "Medições registadas nas publicações",
         "f5": "M.I.A Agent sem limite",
@@ -379,7 +379,7 @@
       "q3": "Substitui o TradingView?",
       "a3": "Não, e não é esse o objetivo. O TradingView continua a ser a tua plataforma de gráficos, desenho e execução. A MIA faz o trabalho de leitura estrutural: detetar, datar, acompanhar o ciclo de vida das zonas. <b>Os dois complementam-se.</b>",
       "q4": "Que mercados estão cobertos?",
-      "a4": "Dois mercados atualmente — o ouro (XAU/USD) e o euro (EUR/USD) — em 6 unidades de tempo, do minuto ao dia. A subscrição dá acesso aos dois mercados e a todas as unidades de tempo. Outros mercados seguir-se-ão.",
+      "a4": "Dois mercados atualmente — o ouro (XAU/USD) e o euro (EUR/USD) — em 5 unidades de tempo: M5, M15, H1, H4 e D1. A subscrição dá acesso aos dois mercados e a todas as unidades de tempo. Outros mercados seguir-se-ão.",
       "q5": "Com que frequência são atualizados os dados?",
       "a5": "A cada fecho de vela da unidade de tempo em causa, e não a um intervalo arbitrário. Uma leitura em 15 minutos atualiza-se a cada 15 minutos; uma leitura diária uma vez por dia. <b>Cada ecrã mostra a idade da sua última leitura</b>, para que saibas sempre o que estás a ver.",
       "q6": "Posso cancelar quando quiser?",

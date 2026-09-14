@@ -31,12 +31,12 @@
         "lblOb": "OB · niet getest",
         "lblChoch": "CHOCH ↑",
         "narr": "De koers bevindt zich <b>momenteel in een stijgend Order Block</b> gevormd 14 candles geleden, tussen 4 026,80 en 4 028,90, en deze zone is <b>nog nooit getest</b>. Een verkoop-liquiditeitszone <b>is geveegd</b> 17 candles geleden. Het 1-uursframe wijst dezelfde kant op.",
-        "b5": "<b>Zes tijdseenheden</b> — van de minuut tot de dag, de lezing volgt mee"
+        "b5": "<b>Vijf tijdseenheden</b> — van M5 tot D1, de lezing volgt mee"
       },
       "scanner": {
         "tag": "De scanner",
         "h3": "Jij kunt je markten niet non-stop in de gaten houden. Hij wel.",
-        "p": "Vink de voorwaarden aan die je interesseren — trend, niet-geteste zone, recent genomen liquiditeit — en de scanner vertelt je <b>waar ze op dit moment samenvallen</b>, over de 12 combinaties van markten en tijdframes. Opnieuw beoordeeld bij elke slotkoers van een candle.",
+        "p": "Vink de voorwaarden aan die je interesseren — trend, niet-geteste zone, recent genomen liquiditeit — en de scanner vertelt je <b>waar ze op dit moment samenvallen</b>, over de 10 combinaties van markten en tijdframes. Opnieuw beoordeeld bij elke slotkoers van een candle.",
         "b1": "<b>22 feitelijke voorwaarden</b> verdeeld over structuur, zones, liquiditeit en context",
         "b2": "<b>Wat ertegenin gaat</b> wordt ook getoond — onenigheid tussen tijdframes, versleten zone",
         "b3": "<b>Geen enkele rangschikking</b>: de resultaten worden nooit gesorteerd op « kwaliteit »",
@@ -57,8 +57,8 @@
       },
       "zones": {
         "tag": "De zones",
-        "h3": "Een onaangeroerde zone en een versleten zone zijn niet hetzelfde waard",
-        "p": "De meeste tools laten je zien dat een Order Block bestaat. MIA vertelt je <b>zijn hele levensverhaal</b>: wanneer hij is gevormd, of hij is aangeraakt, op welk tijdstip, en of hij uiteindelijk is opgevuld. Dat is het verschil tussen een rechthoek zien en weten wat hij waard is.",
+        "h3": "Een onaangeroerde zone en een versleten zone lees je niet op dezelfde manier",
+        "p": "De meeste tools laten je zien dat een Order Block bestaat. MIA vertelt je <b>zijn hele levensverhaal</b>: wanneer hij is gevormd, of hij is aangeraakt, op welk tijdstip, en of hij uiteindelijk is opgevuld. Dat is het verschil tussen een rechthoek zien en zijn geschiedenis kennen.",
         "b1": "<b>Volledige chronologie</b>: gevormd → getest → opgevuld, met tijdstempel",
         "b2": "<b>Vulgraad</b> voor een gedeeltelijk opgevulde Fair Value Gap",
         "b3": "<b>Overlappingen</b> met de zones die op andere tijdframes zijn gedetecteerd",
@@ -78,7 +78,7 @@
       },
       "news": {
         "tag": "Het nieuws",
-        "h3": "Weet wanneer de markt gaat bewegen — en wat er de vorige keren is gebeurd",
+        "h3": "Weet wanneer de publicaties verschijnen — en wat er de vorige keren is gebeurd",
         "p": "Een kalender van economische publicaties, gekoppeld aan de markten die ze betreffen. En voor elke publicatie <b>wat er werkelijk is gemeten bij eerdere verschijningen</b>: de rust die eraan voorafgaat, de onrust die erop volgt, de levensduur van de zones die op die dag zijn ontstaan.",
         "b1": "<b>Maandkalender</b> met lokale tijd en tijd van het instituut",
         "b2": "<b>De laatste twaalf gepubliceerde cijfers</b> van elke indicator, zoals gepubliceerd",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "Geen enkele markt verenigt deze voorwaarden op dit moment. <b>Dit is geen fout</b> — en niets stelt je voor om ze te versoepelen.",
         "againstLabel": "Wat ertegenin gaat",
         "against": "op Goud · 4 u houdt de trend stand maar <b>het hogere tijdframe is niet uitgelijnd</b>, en een nabije zone is al geveegd.",
-        "side": "Op de <b>12 combinaties</b> die worden geanalyseerd, houdt de scanner alleen die over waar al je voorwaarden <b>op dit moment</b> samenvallen. Voeg een voorwaarde toe en de lijst wordt korter."
+        "side": "Op de <b>10 combinaties</b> die worden geanalyseerd, houdt de scanner alleen die over waar al je voorwaarden <b>op dit moment</b> samenvallen. Voeg een voorwaarde toe en de lijst wordt korter."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "Geen installatie, geen script om te kopiëren, geen indicator om in te stellen. Je opent en het is klaar.",
       "step1": {
         "h": "Kies je markt",
-        "p": "Goud of de euro, op 6 tijdseenheden. De 12 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
+        "p": "Goud of de euro, op 5 tijdseenheden. De 10 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
       },
       "step2": {
         "h": "Lees de structuur",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "Je volgt meerdere tijdframes",
-        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 12 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
+        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 10 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
         "lb": "Breedte",
         "items": {
           "0": "Je voorwaarden overal gecontroleerd bij elke slotkoers",
@@ -358,8 +358,8 @@
         "sub": "het hele product, alle markten",
         "perMonth": "maand",
         "bill": "of {total} $ US per jaar, oftewel {perMonth} $ US per maand",
-        "f1": "<b>Beide markten</b>, 6 tijdframes",
-        "f2": "Scanner op de 12 combinaties",
+        "f1": "<b>Beide markten</b>, 5 tijdframes",
+        "f2": "Scanner op de 10 combinaties",
         "f3": "Zones-pagina en volledige levenscyclus",
         "f4": "Gemeten waarden bij publicaties",
         "f5": "M.I.A Agent zonder limiet",
@@ -379,7 +379,7 @@
       "q3": "Vervangt het TradingView?",
       "a3": "Nee, en dat is niet het doel. TradingView blijft je platform voor grafieken, tekenen en uitvoeren. MIA doet het werk van de structurele lezing: detecteren, dateren, de levenscyclus van de zones volgen. <b>De twee vullen elkaar aan.</b>",
       "q4": "Welke markten zijn gedekt?",
-      "a4": "Twee markten vandaag — goud (XAU/USD) en de euro (EUR/USD) — op 6 tijdframes van de minuut tot de dag. Het abonnement geeft toegang tot beide markten en alle tijdframes. Andere markten volgen.",
+      "a4": "Twee markten vandaag — goud (XAU/USD) en de euro (EUR/USD) — op 5 tijdframes: M5, M15, H1, H4 en D1. Het abonnement geeft toegang tot beide markten en alle tijdframes. Andere markten volgen.",
       "q5": "Hoe vaak worden de gegevens bijgewerkt?",
       "a5": "Bij elke slotkoers van een candle van het betreffende tijdframe, niet op een willekeurig interval. Een lezing in 15 minuten wordt elke 15 minuten ververst; een dagelijkse lezing eenmaal per dag. <b>Elk scherm toont de ouderdom van zijn laatste lezing</b>, zodat je altijd weet waar je naar kijkt.",
       "q6": "Kan ik opzeggen wanneer ik wil?",
