@@ -515,3 +515,63 @@ seulement dans le code. La condition ``Bloquer si :card_country: not in ('CA','U
 est acceptée par l'éditeur Stripe (syntaxe valide) mais n'a pas pu être enregistrée.
 ⚠️ **Les règles Radar sont séparées entre mode test et mode live** — une règle posée
 en test ne protège PAS la production.
+
+---
+
+## 10. LE FILET EST ARMÉ ET VÉRIFIÉ (2026-09-14)
+
+La réserve du §1 — « ce workflow n'a jamais été exécuté » — est levée.
+
+**Run vert : `34855383764`, 1 test passé en 7,8 s.** Trois webhooks Stripe réels
+livrés et acceptés (`POST /api/billing/webhook` → 200), accès ouvert, mur de
+données franchi. C'est la première preuve de bout en bout que la chaîne
+paiement → événement signé → webhook → accès fonctionne.
+
+### Ce qu'il a fallu corriger pour y arriver
+
+Quatre passages rouges, quatre trouvailles — toutes dans le TEST, aucune dans le
+produit :
+
+1. `npm ci` nu échouait en ERESOLVE avant même d'installer Playwright.
+   `webapp-ci.yml` utilisait déjà `--legacy-peer-deps` partout : alignement.
+2. **Le test ne distinguait pas « paiement refusé » de « webhook mort ».** Il
+   cliquait « payer » puis attendait l'accès ; un clic raté donnait donc le même
+   verdict qu'un webhook mort, et envoyait chercher la panne au mauvais endroit.
+   Corrigé : on vérifie que le paiement a abouti AVANT de mesurer quoi que ce soit.
+3. Le bouton visé n'était pas le bon : « Apple Pay » et « Payer avec Link » sont
+   AVANT « S'abonner » dans le DOM, et un sélecteur CSS à virgules se résout dans
+   l'ordre du DOM, pas dans l'ordre écrit. `.first()` cliquait un portefeuille.
+4. **Stripe refuse la soumission de Checkout depuis un navigateur automatisé.**
+   La page présente une case « I am an AI agent acting on behalf of someone
+   else » ; même cochée, la session interrogée côté Stripe restait
+   `status: open`, `payment_status: unpaid`, `subscription: null`.
+
+### Décision d'architecture qui en découle
+
+La page Checkout appartient à Stripe, et Stripe la protège délibérément contre
+l'automatisation. Ce qui nous appartient, c'est ce qui se passe APRÈS le
+paiement — et c'est là que se loge la panne que cette mission existe pour
+empêcher. Le test crée donc l'abonnement par l'**API Stripe réelle** (jeton de
+test `tok_visa`, prix récurrent, mode test) et mesure la chaîne réelle : vrais
+événements signés → `stripe listen` → notre vérification de signature → accès.
+
+Invariants conservés : aucun faux client Stripe, aucun appel à `/sync` (qui
+rendrait le test vert sur un webhook mort), mur vérifié à 402 AVANT paiement
+(sans quoi un vert ne prouverait rien), `error_if_incomplete` pour qu'un paiement
+raté ne puisse jamais ressembler à un webhook mort.
+
+Non couvert : le rendu de la page Checkout elle-même. C'est la surface de Stripe,
+et le passage manuel du fondateur — condition de fusion — la couvre.
+
+### Reste en attente
+
+| | État |
+|---|---|
+| Prix Stripe 39 $/348 $ (cf. §9) | **non fait** — tableau de bord gelé pendant l'opération |
+| Règle Radar CA/US | **non fait** — bouton d'enregistrement sans réaction |
+| Secrets GitHub | ✅ posés (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`) |
+
+⚠️ `STRIPE_PRICE_MONTHLY` pointe aujourd'hui sur le prix à **39,99 $**
+(`price_1U3HibFiM5Kf1kQcsjkxBzbS`), le seul qui existe. À repointer sur le
+nouveau prix à 39 $ dès qu'il sera créé. Le montant n'affecte pas ce que le test
+mesure — la mécanique — mais il affecte ce qu'un vrai client paierait.
