@@ -469,3 +469,49 @@ Playwright **16/16**.
   pratique un état de plus. Non refermé : c'est la soupape qui permet au test vivant de
   tourner dans un runner. À reconsidérer quand SMTP sera posé en production.
 - **Le compteur de sauvetages** est en mémoire de processus (cf. §3).
+
+---
+
+## 9. ÉCART DE PRIX CONSTATÉ DANS STRIPE (2026-09-14) — à corriger avant toute vente
+
+Constat fait en ouvrant le tableau de bord Stripe (mode test, compte
+``acct_1U2xW9FiM5Kf1kQc``), produit **M.I.A MARKETS** (``prod_V3OVamPC9Neh3f``) :
+
+| | Stripe (créé le 11 août) | Dépôt (PRIX-1, 1ᵉʳ août) |
+|---|---|---|
+| Mensuel | **39,99 $US** (``price_1U3HibFiM5Kf1kQcsjkxBzbS``) | **39 $US** |
+| Annuel | **348,99 $US** | **348 $US** |
+
+**Stripe est périmé, pas le dépôt.** PRIX-1 a tranché 39 $/348 $ le 1ᵉʳ août
+(commit ``4814179``) ; les objets Price ont été créés dix jours plus tard avec des
+montants qui ne correspondent à aucune décision. Trois éléments le confirment :
+
+1. ``webapp/components/landing/__tests__/pricing-prix-1.test.ts`` liste ``39,99``
+   parmi les **prix hérités interdits** (``STALE``) — aligner le dépôt sur Stripe
+   ferait rougir la suite immédiatement ;
+2. ``scripts/gen_pricing.mjs`` **refuse** un annuel non divisible par 12, pour que
+   l'affichage « soit 29 $ par mois » soit exact. 348 ÷ 12 = 29 pile ;
+   348,99 ÷ 12 = 29,0825, et afficher « 29,08 » serait un mensonge d'arrondi
+   (29,08 × 12 = 348,96) ;
+3. le commentaire de ``config/pricing.json`` dit « Amounts are whole USD ».
+
+**Conséquence si rien n'est fait** : le site annonce 39 $ et Stripe prélève
+39,99 $. Annoncer un prix et en facturer un autre n'est pas défendable sous la LPC.
+
+**Correction décidée (fondateur, 2026-09-14)** : créer deux NOUVEAUX tarifs Stripe
+à 39,00 $ et 348,00 $ (un prix Stripe ne se modifie pas), archiver les anciens, et
+repointer ``STRIPE_PRICE_MONTHLY`` / ``STRIPE_PRICE_ANNUAL``. **Le code ne bouge
+pas.** À refaire en mode **live** avant la mise en vente réelle : les objets Price
+sont séparés entre les deux modes.
+
+État au moment où ces lignes sont écrites : **non fait** — le tableau de bord Stripe
+a cessé de répondre pendant l'opération.
+
+### Radar — même visite
+
+Les **8 règles** Radar du compte sont toutes des règles Stripe par défaut :
+**aucune règle de pays**. Le trou G2 est donc confirmé côté Stripe aussi, pas
+seulement dans le code. La condition ``Bloquer si :card_country: not in ('CA','US')``
+est acceptée par l'éditeur Stripe (syntaxe valide) mais n'a pas pu être enregistrée.
+⚠️ **Les règles Radar sont séparées entre mode test et mode live** — une règle posée
+en test ne protège PAS la production.
