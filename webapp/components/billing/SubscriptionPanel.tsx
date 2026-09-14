@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import * as React from 'react';
 import { Check, CreditCard, ShieldCheck } from 'lucide-react';
+import { acceptConsents } from '@/lib/auth/api-client';
 import {
   BillingError,
   fetchPricing,
@@ -18,9 +20,12 @@ import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { PRICING } from '@/lib/pricing.generated';
 import { Button } from '@/components/ui/button';
-import { FormError, FormSuccess } from '@/components/auth/fields';
+import { CheckField, FormError, FormSuccess } from '@/components/auth/fields';
 
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+
+/** Ties the disabled plan CTAs to the sentence saying WHY they are disabled. */
+const CONSENT_REASON_ID = 'consent-required-reason';
 
 /**
  * The app-facing subscription states (PAY-1), derived from the Stripe status +
@@ -98,6 +103,10 @@ export function SubscriptionPanel() {
   const [busy, setBusy] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [activateMsg, setActivateMsg] = React.useState<string | null>(null);
+  // LEG-1 — consent before payment. Starts FALSE on every render of this
+  // screen: never pre-ticked, never restored from storage, so the box is always
+  // an act by the customer on the document version shown to them right now.
+  const [consented, setConsented] = React.useState(false);
 
   const checkoutStatus = searchParams.get('status');
 
@@ -186,8 +195,23 @@ export function SubscriptionPanel() {
   }
 
   async function onSubscribe(planKey: string) {
+    // Defence in depth: the CTAs are already disabled without consent, but a
+    // programmatic call must not reach Checkout either.
+    if (!consented) return;
     setError(null);
     setBusy(planKey);
+
+    // Record the accepted version + timestamp BEFORE leaving for Stripe. If
+    // this fails we do not start the checkout: we would otherwise take money
+    // with no trace of what the customer accepted.
+    try {
+      await acceptConsents();
+    } catch {
+      setError(t('consent.error'));
+      setBusy(null);
+      return;
+    }
+
     try {
       const url = await startCheckout(planKey);
       window.location.href = url;
@@ -329,7 +353,8 @@ export function SubscriptionPanel() {
               perMonth={t('perMonth')}
               cta={ctaLabel}
               busy={busy === 'MONTHLY'}
-              disabled={busy !== null}
+              disabled={busy !== null || !consented}
+              describedBy={consented ? undefined : CONSENT_REASON_ID}
               onClick={() => onSubscribe('MONTHLY')}
             />
           )}
@@ -346,12 +371,57 @@ export function SubscriptionPanel() {
               highlighted
               cta={ctaLabel}
               busy={busy === 'ANNUAL'}
-              disabled={busy !== null}
+              disabled={busy !== null || !consented}
+              describedBy={consented ? undefined : CONSENT_REASON_ID}
               onClick={() => onSubscribe('ANNUAL')}
             />
           )}
         </div>
       )}
+
+      {/* LEG-1 — consent gate. The two plan CTAs above stay inactive until this
+          box is ticked; the reason is written out rather than left to a greyed
+          button, and both documents open in a new tab so ticking is not lost. */}
+      <div className="space-y-2 rounded-lg border border-border/60 bg-muted/10 p-4">
+        <CheckField
+          id="accept-legal"
+          name="accept_legal"
+          checked={consented}
+          onChange={(e) => setConsented(e.currentTarget.checked)}
+          data-testid="consent-checkbox"
+          label={t.rich('consent.label', {
+            terms: (chunks) => (
+              <Link
+                href={lh('/conditions')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link
+                href={lh('/confidentialite')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        />
+        {!consented && (
+          <p
+            id={CONSENT_REASON_ID}
+            data-testid="consent-blocked"
+            className="pl-7 text-xs text-muted-foreground"
+          >
+            {t('consent.blocked')}
+          </p>
+        )}
+      </div>
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
@@ -389,6 +459,7 @@ function PlanCard({
   cta,
   busy,
   disabled,
+  describedBy,
   onClick,
 }: {
   name: string;
@@ -402,6 +473,8 @@ function PlanCard({
   cta: string;
   busy: boolean;
   disabled: boolean;
+  /** Id of the sentence explaining why the CTA is disabled (LEG-1 consent). */
+  describedBy?: string;
   onClick: () => void;
 }) {
   return (
@@ -436,7 +509,12 @@ function PlanCard({
           </p>
         )}
       </div>
-      <Button className="mt-auto w-full" onClick={onClick} disabled={disabled}>
+      <Button
+        className="mt-auto w-full"
+        onClick={onClick}
+        disabled={disabled}
+        aria-describedby={describedBy}
+      >
         {busy ? '…' : cta}
       </Button>
     </div>

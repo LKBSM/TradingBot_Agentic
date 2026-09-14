@@ -159,6 +159,20 @@ export async function fetchMe(): Promise<Account | null> {
   }
 }
 
+/**
+ * Record acceptance of the CURRENT legal documents (LEG-1).
+ *
+ * The version is deliberately NOT sent: the server stamps it from its single
+ * source, so the consent can never be recorded against a version the customer
+ * did not see. The returned account carries the updated `consents` list.
+ */
+export function acceptConsents(): Promise<Account> {
+  return request<Account>('/consents', {
+    method: 'POST',
+    body: JSON.stringify({ accept: true }),
+  });
+}
+
 export function updateProfile(email: string): Promise<Account> {
   return request<Account>('/profile', {
     method: 'PATCH',

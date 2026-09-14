@@ -94,6 +94,13 @@ ALLOWED_PATHS: Set[str] = {
     "/openapi.json",
     "/api/v1/terms",
     "/api/v1/privacy",
+    # LEG-1 — the paths the webapp's /conditions and /confidentialite pages
+    # actually fetch. Without these the legal pages 451'd for exactly the
+    # visitors who most need to read WHY they are blocked.
+    "/api/v1/legal/conditions",
+    "/api/v1/legal/privacy",
+    "/api/v1/legal/conditions/meta",
+    "/api/v1/legal/version",
 }
 
 

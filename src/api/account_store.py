@@ -576,6 +576,68 @@ class AccountStore:
                 conn.close()
         return self._row_to_public(row) if row else None
 
+    def record_consents(
+        self,
+        account_id: int,
+        consents: Sequence[Tuple[str, str]],
+    ) -> List[Dict[str, Any]]:
+        """Record consent to legal documents OUTSIDE account creation (LEG-1).
+
+        Used by the consent screen that precedes Stripe Checkout: the customer
+        ticks one box, and the version of BOTH documents plus the timestamp are
+        written against their account. Nothing else is stored — the table holds
+        only ``(doc, version, accepted_at)``.
+
+        Consents are APPEND-ONLY: re-accepting a version the account already
+        accepted writes nothing (idempotent), but accepting a NEW version adds a
+        row, so the history of what was accepted and when stays intact. Returns
+        the account's full consent list.
+        """
+        docs = {d for d, _ in consents}
+        missing = [d for d in VALID_CONSENT_DOCS if d not in docs]
+        if missing:
+            raise AccountError(
+                "consent_required",
+                "Vous devez accepter les Conditions d'utilisation et la "
+                "Politique de confidentialité.",
+            )
+        for doc, version in consents:
+            if doc not in VALID_CONSENT_DOCS:
+                raise AccountError("invalid_consent_doc", f"Document inconnu : {doc!r}.")
+            if not version or not str(version).strip():
+                raise AccountError(
+                    "invalid_consent_version",
+                    "La version du document de consentement est manquante.",
+                )
+
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%S")
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute(
+                    "SELECT 1 FROM accounts WHERE id = ?", (account_id,)
+                )
+                if cur.fetchone() is None:
+                    raise AccountError("account_not_found", "Compte introuvable.")
+                for doc, version in consents:
+                    already = conn.execute(
+                        "SELECT 1 FROM account_consents "
+                        "WHERE account_id = ? AND doc = ? AND version = ?",
+                        (account_id, doc, str(version)),
+                    ).fetchone()
+                    if already is not None:
+                        continue
+                    conn.execute(
+                        "INSERT INTO account_consents "
+                        "(account_id, doc, version, accepted_at) "
+                        "VALUES (?, ?, ?, ?)",
+                        (account_id, doc, str(version), now_iso),
+                    )
+                conn.commit()
+            finally:
+                conn.close()
+        return self.get_consents(account_id)
+
     def get_consents(self, account_id: int) -> List[Dict[str, Any]]:
         with self._lock:
             conn = self._get_connection()

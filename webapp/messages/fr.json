@@ -1909,7 +1909,12 @@
     "alreadyPaid": "Tu as déjà payé ?",
     "activateAccess": "Activer mon accès",
     "activating": "Vérification…",
-    "noPaymentFound": "Aucun paiement actif trouvé pour ce compte. Si tu viens de payer, patiente un instant puis réessaie."
+    "noPaymentFound": "Aucun paiement actif trouvé pour ce compte. Si tu viens de payer, patiente un instant puis réessaie.",
+    "consent": {
+      "label": "J'ai lu et j'accepte les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy>.",
+      "blocked": "Coche la case ci-dessus pour continuer vers le paiement.",
+      "error": "Ton acceptation n'a pas pu être enregistrée. Réessaie dans un instant."
+    }
   },
   "access": {
     "paywall": {
@@ -2354,51 +2359,21 @@
     }
   },
   "legal": {
+    "document": {
+      "versionLabel": "Version {version}",
+      "loading": "Chargement du document…",
+      "error": "Ce document est momentanément indisponible. Réessayez plus tard."
+    },
     "conditions": {
       "meta": {
         "title": "Conditions d’utilisation",
         "description": "Conditions Générales d’Utilisation de M.I.A Markets — service d’information, posture éducative, avertissement sur les risques."
-      },
-      "versionLabel": "Version {version}",
-      "loading": "Chargement du document…",
-      "error": "Le document des Conditions est momentanément indisponible. Réessayez plus tard."
+      }
     },
     "privacy": {
       "meta": {
         "title": "Politique de confidentialité",
         "description": "Politique de confidentialité de M.I.A Markets — données traitées, base légale, droits RGPD / Loi 25."
-      },
-      "title": "Politique de confidentialité",
-      "pendingNotice": "Version préliminaire structurée. Le texte définitif (relu juridiquement) sera publié avec le terminal légal. La structure ci-dessous décrit fidèlement les traitements en vigueur.",
-      "sections": {
-        "responsable": {
-          "title": "1. Responsable du traitement",
-          "body": "Loukmane Bessam (exploitant unique) — loukmanebessam@gmail.com."
-        },
-        "donnees": {
-          "title": "2. Données traitées",
-          "body": "Nom d’utilisateur, adresse e-mail, mot de passe (haché, jamais en clair), consentements (version + horodatage), données de session. Aucune donnée de carte bancaire n’est collectée par M.I.A Markets."
-        },
-        "bases": {
-          "title": "3. Bases légales",
-          "body": "Exécution du contrat (compte et service), intérêt légitime (sécurité), consentement (acceptation des Conditions et de la présente Politique à l’inscription)."
-        },
-        "droits": {
-          "title": "4. Vos droits (RGPD / Loi 25)",
-          "body": "Accès, rectification, effacement, portabilité, limitation et opposition. Toute demande à loukmanebessam@gmail.com — réponse sous 30 jours."
-        },
-        "conservation": {
-          "title": "5. Conservation",
-          "body": "Les données de compte sont conservées pour la durée du compte. Les sessions expirent automatiquement. Les détails de conservation par catégorie seront précisés dans la version définitive."
-        },
-        "contact": {
-          "title": "6. Contact",
-          "body": "Pour toute question relative à vos données : loukmanebessam@gmail.com."
-        },
-        "dictee": {
-          "title": "7. Dictée vocale",
-          "body": "Le scanner conversationnel propose une saisie à la voix. La reconnaissance vocale est effectuée par votre navigateur ; sur certains navigateurs (par ex. Chrome, Edge), l’audio capté peut être transmis aux serveurs de l’éditeur du navigateur pour y être transcrit — il s’agit alors d’un transfert à un tiers susceptible de se situer hors du Québec. Cette transcription produit du texte, que vous relisez et pouvez corriger avant tout envoi. Aucun enregistrement audio n’est conservé, ni sur votre appareil, ni sur nos serveurs : nous ne recevons que le texte que vous choisissez de soumettre. La saisie au clavier reste disponible à tout moment ; si votre navigateur ne prend pas en charge la dictée, le bouton n’apparaît pas."
-        }
       }
     },
     "disclaimer": {

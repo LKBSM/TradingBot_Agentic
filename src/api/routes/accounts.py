@@ -4,6 +4,7 @@
   POST   /api/auth/login             username OR email + password → session cookie
   POST   /api/auth/logout            revoke session + clear cookie
   GET    /api/auth/me                current account (or 401)
+  POST   /api/auth/consents          accept the current legal docs (version stamped here)
   PATCH  /api/auth/profile           update email
   POST   /api/auth/password-reset/request   issue a single-use reset token
   POST   /api/auth/password-reset/confirm   burn token + set new password
@@ -110,6 +111,16 @@ class ConsentOut(BaseModel):
     doc: str
     version: str
     accepted_at: str
+
+
+class ConsentAcceptBody(BaseModel):
+    # ONE box for both documents (LEG-1 consent screen). The version is NOT a
+    # client input: the server stamps the current one, so a stale or forged
+    # client can never record consent to a text the customer did not see.
+    accept: bool = Field(
+        ...,
+        description="Accepte les Conditions d'utilisation ET la Politique de confidentialité",
+    )
 
 
 class AccountOut(BaseModel):
@@ -319,6 +330,39 @@ async def me(
     account: Dict[str, Any] = Depends(require_account),
 ):
     return _account_out(_store(request), account)
+
+
+@router.post("/consents", response_model=AccountOut)
+async def accept_consents(
+    payload: ConsentAcceptBody,
+    request: Request,
+    account: Dict[str, Any] = Depends(require_account),
+):
+    """Record acceptance of the CURRENT legal documents (LEG-1).
+
+    This is what the consent screen before Stripe Checkout calls. The client
+    sends only "I accept" — the VERSION is decided here, server-side, from the
+    single source (``legal.LAST_UPDATED``), so a client can never stamp a
+    consent against a version it made up or a stale one it had cached.
+
+    Only the version and the timestamp are written, against the account. The
+    call is idempotent for a version already accepted.
+    """
+    if not payload.accept:
+        raise HTTPException(
+            status_code=422,
+            detail="Vous devez accepter les Conditions d'utilisation et la "
+            "Politique de confidentialité pour continuer.",
+        )
+    store = _store(request)
+    try:
+        store.record_consents(
+            account["id"],
+            [("terms", TERMS_VERSION), ("privacy", PRIVACY_VERSION)],
+        )
+    except AccountError as exc:
+        _raise_account_error(exc)
+    return _account_out(store, account)
 
 
 @router.patch("/profile", response_model=AccountOut)
