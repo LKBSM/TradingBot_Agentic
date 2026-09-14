@@ -34,8 +34,15 @@ const active = { instrument: 'XAUUSD', timeframe: 'M15' };
 // are all followed now has nothing to show and legitimately disappears. Deriving
 // the expected groups keeps these tests true whatever the partition becomes.
 const GROUPS = [...new Set(CATALOG_ONLY_ENTRIES.map((e) => e.group))];
+
+/** First word of a label — a search term a human would actually type. */
+function firstWord(label: string): string {
+  return label.split(' ')[0] ?? label;
+}
 // A group that still holds display-only markets, to stand for "a category".
-const SAMPLE_GROUP = GROUPS[0];
+// Le catalogue garde forcement des entrees affichage-seul (les indices) : si
+// un jour il n'en reste aucune, ce fichier n'a plus d'objet et doit le dire.
+const SAMPLE_GROUP = GROUPS[0]!;
 const SAMPLE_ENTRY = CATALOG_ONLY_ENTRIES.find((e) => e.group === SAMPLE_GROUP)!;
 
 beforeEach(() => {
@@ -105,8 +112,7 @@ describe('MKT-1 — search at 100 entries', () => {
   });
 
   it('finds a market by its human label', () => {
-    const word = SAMPLE_ENTRY.label.split(' ')[0];
-    searchFor(word);
+    searchFor(firstWord(SAMPLE_ENTRY.label));
     const section = screen.getByTestId(`mkt-group-${SAMPLE_GROUP}`);
     expect(within(section).getByText(SAMPLE_ENTRY.label)).toBeInTheDocument();
   });
@@ -139,7 +145,7 @@ describe('MKT-1 — performance of the 100-entry list', () => {
     // Type a query character by character — the filter runs on every keystroke
     // over the whole catalogue, which is the cost this test exists to bound.
     const t1 = performance.now();
-    const query = SAMPLE_ENTRY.label.split(' ')[0].toLowerCase();
+    const query = firstWord(SAMPLE_ENTRY.label).toLowerCase();
     for (let i = 1; i <= query.length; i += 1) {
       fireEvent.change(input, { target: { value: query.slice(0, i) } });
     }
