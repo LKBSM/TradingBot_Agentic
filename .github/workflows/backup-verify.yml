@@ -1,0 +1,94 @@
+name: Backup verify
+
+# BKP-1 — The loud half of the backup.
+#
+# The backup itself runs inside mia-backend on Render (a Render Cron Job cannot
+# be given the persistent disk, so nothing outside that process can read the
+# databases). This workflow is the part that has to SHOUT when it did not.
+#
+# It deliberately lives OUTSIDE Render: if the backend is dead, wedged, or
+# quietly failing every night, a check running inside it would be dead too.
+# Here, GitHub runs it no matter what state the product is in, and emails the
+# repository owner on every failed run — no extra vendor, no cost.
+#
+# It reads the bucket with a READ-ONLY R2 token. It can see the backups; it
+# cannot delete one.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   BACKUP_S3_ENDPOINT            https://<account-id>.r2.cloudflarestorage.com
+#   BACKUP_S3_BUCKET              e.g. mia-backups
+#   BACKUP_S3_ACCESS_KEY_ID       R2 token, "Object Read only" on that bucket
+#   BACKUP_S3_SECRET_ACCESS_KEY
+# Optional:
+#   BACKUP_S3_PREFIX              key prefix, if the bucket is shared
+#
+# Setup + what to do when it fails: docs/ops/sauvegardes-sqlite.md
+
+on:
+  schedule:
+    # 05:40 UTC — a couple of hours after the 03:17 UTC backup, so a slow run
+    # or a redeploy that pushed it late is not mistaken for a failure.
+    - cron: "40 5 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: backup-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Is yesterday's backup really there?
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # boto3 only: the verifier touches no database and imports nothing else.
+      - name: Install boto3
+        run: pip install --quiet "boto3>=1.28.0"
+
+      - name: Verify the backup store
+        env:
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          BACKUP_S3_PREFIX: ${{ secrets.BACKUP_S3_PREFIX }}
+          BACKUP_S3_REGION: auto
+        run: |
+          python scripts/backup_sqlite.py verify --json | tee verdict.json
+          python scripts/backup_sqlite.py list
+
+      # Runs even when the step above failed, so the summary carries the reason
+      # instead of "see the logs".
+      - name: Summary
+        if: always()
+        run: |
+          if [ -s verdict.json ]; then
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+          d = json.loads(pathlib.Path("verdict.json").read_text())
+          ok = d.get("healthy")
+          print("## Backup verify — " + ("OK" if ok else "FAILED"))
+          print()
+          print(f"- store: `{d.get('destination')}`")
+          print(f"- backups held: {d.get('count')}")
+          print(f"- most recent: `{d.get('latest_key')}`")
+          print(f"- age: {d.get('latest_age_hours')} h")
+          print(f"- size: {d.get('latest_size')} bytes (median {d.get('median_size')})")
+          for p in d.get("problems") or []:
+              print(f"- **problem**: {p}")
+          if not ok:
+              print()
+              print("What to do: docs/ops/sauvegardes-sqlite.md, section « Quand l'alerte se déclenche ».")
+          PY
+          else
+            echo "## Backup verify — FAILED before producing a verdict" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "No verdict file: the store could not be reached at all (credentials, endpoint, or network)." >> "$GITHUB_STEP_SUMMARY"
+            echo "See docs/ops/sauvegardes-sqlite.md." >> "$GITHUB_STEP_SUMMARY"
+          fi

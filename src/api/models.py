@@ -116,6 +116,13 @@ class HealthResponse(BaseModel):
     # live provider is wired. The daily figure is the one that matters: the free
     # plan caps at 800/day and the steady state already spends ~254.
     data_provider_credits: Optional[Dict[str, Any]] = None
+    # BKP-1 — daily SQLite backup: {enabled, last_success_utc,
+    # last_backup_age_hours, last_archive, last_size_bytes, last_error, fresh}.
+    # Absent (None) when BACKUP_ENABLED is off. Read from the local state file so
+    # a health check never costs a request to the object store; the
+    # authoritative check is the daily GitHub Actions verifier, which reads the
+    # bucket itself and can therefore also catch "this backend is dead".
+    backup: Optional[Dict[str, Any]] = None
 
 
 # =============================================================================

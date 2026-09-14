@@ -125,6 +125,39 @@ services:
         value: "true"
       - key: LIVE_TICK_ENABLED
         value: "true"          # 1 shared Twelve Data WS (free tier allows 1 conn)
+      # BKP-1 — DAILY BACKUP of every SQLite store to Cloudflare R2.
+      # The disk above is the single copy of everything the product sells: the
+      # life of each zone, its dated contacts, the accounts and their Stripe
+      # links. Render disks have no snapshot a customer can restore from, and
+      # a Render CRON JOB CANNOT BE GIVEN THIS DISK ("You can't add a disk to a
+      # cron job service") — so the backup runs inside THIS process, on
+      # APScheduler, at BACKUP_HOUR_UTC:BACKUP_MINUTE_UTC.
+      # Set the four BACKUP_S3_* VALUES in the dashboard (R2 → bucket →
+      # "Manage API tokens", Object Read & Write, scoped to that one bucket).
+      # Procedure + restore: docs/ops/sauvegardes-sqlite.md
+      - key: BACKUP_ENABLED
+        value: "1"
+      - key: BACKUP_HOUR_UTC          # 03:17 UTC — off-hours, off the top of the hour
+        value: "3"
+      - key: BACKUP_MINUTE_UTC
+        value: "17"
+      - key: BACKUP_RETENTION_DAYS
+        value: "30"
+      # Snapshots are staged OFF the data disk: /tmp is the container's
+      # ephemeral filesystem, so a backup can never be the thing that fills the
+      # volume it is protecting.
+      - key: BACKUP_STAGING_DIR
+        value: /tmp
+      - key: BACKUP_S3_ENDPOINT       # https://<account-id>.r2.cloudflarestorage.com
+        sync: false
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_ACCESS_KEY_ID
+        sync: false
+      - key: BACKUP_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: BACKUP_S3_REGION         # R2 ignores the region; "auto" is its convention
+        value: auto
       - key: VOL_MODE
         value: har
       - key: SYMBOLS
