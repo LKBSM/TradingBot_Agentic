@@ -27,6 +27,15 @@ précisément pour ça que la panne est invisible depuis le compte du fondateur.
 **Le backend refuse maintenant de démarrer dans cet état.** Le message d'erreur
 nomme les deux sorties.
 
+> ⚠️ **Une valeur fausse est plus dangereuse qu'une valeur absente.** Le garde de
+> démarrage ne voit qu'une absence totale de SMTP. Il n'aurait rien dit le
+> 2026-09-14, quand `SMTP_FROM` valait `no-reply@mia.market` — sans le « s », un
+> domaine **appartenant à un tiers**. Le relais acceptait chaque message sans
+> broncher ; le courrier partait simplement non authentifié, DKIM désaligné,
+> droit vers les indésirables. C'est `check_email_delivery.py` (§1.4) qui tranche
+> ce cas, en résolvant les enregistrements DKIM du domaine expéditeur. **Lancez-le
+> après toute modification d'une variable `SMTP_*`.**
+
 ---
 
 ## 1. Mise en place avec Brevo
@@ -169,6 +178,13 @@ Pour le débloquer à la main, en attendant : confirmer son adresse côté base
 
 Presque toujours la **clé d'API v3 utilisée à la place de la clé SMTP** (§1.2).
 Sinon : `SMTP_USER` doit être le *SMTP login* Brevo, pas l'adresse d'expédition.
+
+### `sender domain: '<domaine>' carries no brevo DKIM record`
+
+`SMTP_FROM` désigne un domaine qui n'est pas authentifié chez le relais.
+**Relisez-le lettre par lettre** : c'est exactement ainsi que
+`no-reply@mia.market` (sans « s ») est resté en production, pointant vers un
+domaine détenu par quelqu'un d'autre. Le relais ne s'en plaint jamais.
 
 ### Les courriels partent mais n'arrivent pas
 

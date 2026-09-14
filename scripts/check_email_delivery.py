@@ -77,6 +77,52 @@ def _env(name: str) -> str:
     return (os.environ.get(name) or "").strip()
 
 
+def _check_sender_is_authenticated(report: "Report", domain: str, relay_host: str) -> None:
+    """Warn when the From domain carries no DKIM record for this relay.
+
+    Uses nslookup rather than a DNS library so the check costs no dependency —
+    it is advisory, and a machine without nslookup simply skips it.
+    """
+    selectors = {
+        "brevo": ("brevo1._domainkey", "brevo2._domainkey"),
+        "sendgrid": ("s1._domainkey", "s2._domainkey"),
+        "mailgun": ("mailo._domainkey", "k1._domainkey"),
+    }
+    provider = next((p for p in selectors if p in relay_host.lower()), None)
+    if provider is None:
+        return  # unknown relay — no selector to look for, stay silent
+
+    import shutil
+    import subprocess
+
+    if not shutil.which("nslookup"):
+        return
+    found = []
+    for sel in selectors[provider]:
+        try:
+            out = subprocess.run(
+                ["nslookup", "-type=CNAME", f"{sel}.{domain}"],
+                capture_output=True, text=True, timeout=10,
+            ).stdout.lower()
+        except Exception:
+            return  # no network / no resolver — advisory check, stay silent
+        if "canonical name" in out or provider in out:
+            found.append(sel)
+    if not found:
+        report.add(
+            "sender domain",
+            False,
+            f"{domain!r} carries no {provider} DKIM record — this domain is not "
+            f"authenticated at the relay",
+            "The relay will still ACCEPT the message; it just goes out\n"
+            "unauthenticated and lands in spam. Check SMTP_FROM for a typo\n"
+            "(one wrong letter can point at a domain you do not own), and\n"
+            "that the domain is authenticated at the provider.",
+        )
+    else:
+        report.add("sender domain", True, f"{domain} is DKIM-authenticated at {provider}")
+
+
 def check(to_email: str, *, dry_run: bool = False) -> Report:
     import os
 
@@ -128,6 +174,18 @@ def check(to_email: str, *, dry_run: bool = False) -> Report:
             "rejected or spam-foldered. Use an address on your own authenticated "
             "domain.",
         )
+    else:
+        # Does the From domain actually carry the relay's DKIM records?
+        #
+        # Added after a real incident: SMTP_FROM read "no-reply@mia.market" —
+        # the authenticated domain is "mia.markets". One missing letter, and a
+        # domain belonging to someone else entirely. The relay accepted every
+        # message without complaint, so nothing anywhere said a word; the mail
+        # simply went out unauthenticated, DKIM unaligned, straight to spam.
+        #
+        # A relay accepting a sender proves nothing about that sender being
+        # yours. Resolving its DKIM selector does.
+        _check_sender_is_authenticated(report, sender_domain, host)
 
     # ---- 2. Reachability + STARTTLS -------------------------------------- #
     started = time.time()

@@ -390,3 +390,42 @@ def test_checker_never_prints_the_password(monkeypatch, capsys):
     _checker().check("a@b.c", dry_run=True)
 
     assert "tres-secret-xkeysib" not in capsys.readouterr().out
+
+
+def test_checker_flags_a_sender_domain_without_the_relay_dkim(monkeypatch):
+    """The incident this check exists for.
+
+    SMTP_FROM read "no-reply@mia.market" in production — the authenticated
+    domain is "mia.markets". One missing letter, pointing at a domain owned by
+    somebody else. The relay accepted every message, so nothing complained; the
+    mail just went out unauthenticated and landed in spam.
+    """
+    checker = _checker()
+    report = checker.Report()
+
+    checker._check_sender_is_authenticated(report, "mia.market", "smtp-relay.brevo.com")
+
+    steps = [s for s in report.steps if s["step"] == "sender domain"]
+    assert steps, "the sender domain must be judged, not assumed"
+    assert steps[0]["passed"] is False
+    assert "typo" in steps[0]["fix"]
+
+
+def test_checker_accepts_a_sender_domain_that_carries_the_dkim(monkeypatch):
+    checker = _checker()
+    report = checker.Report()
+
+    checker._check_sender_is_authenticated(report, "mia.markets", "smtp-relay.brevo.com")
+
+    steps = [s for s in report.steps if s["step"] == "sender domain"]
+    assert steps and steps[0]["passed"] is True
+
+
+def test_checker_stays_silent_on_an_unknown_relay():
+    """No selector to look for — say nothing rather than guess wrong."""
+    checker = _checker()
+    report = checker.Report()
+
+    checker._check_sender_is_authenticated(report, "example.com", "smtp.unknown-relay.net")
+
+    assert report.steps == []

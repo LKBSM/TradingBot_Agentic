@@ -20,13 +20,48 @@ ensemble, forment autre chose :
    `render.yaml` → le mur de confirmation est **debout** en production.
 2. `src/api/routes/access.py:52` : `has_access = False` pour tout compte non
    confirmé. `enforce_access` bloque les routes de données de la même façon.
-3. **`SMTP_HOST` n'était déclaré nulle part** dans `render.yaml` → la clé de ce
-   mur n'est jamais envoyée.
+3. **`SMTP_HOST` n'était déclaré nulle part** dans `render.yaml`.
 
-**Conséquence en production : tout client qui s'inscrivait était enfermé dehors
-définitivement.** Avec `BETA_LOCKDOWN=0` (inscriptions ouvertes) et
-`SUBSCRIPTION_GATE_ENFORCED=1` (payer est la condition d'entrée), un client
-pouvait payer et ne jamais obtenir l'accès.
+### ⚠️ Correction du 2026-09-14 — la conclusion ci-dessus était FAUSSE
+
+Ce rapport affirmait initialement qu'aucun courriel ne partait de la production.
+**C'est inexact, et l'erreur est la mienne** : j'ai conclu sur l'état de la
+production en lisant le seul `render.yaml`, sans jamais interroger le tableau de
+bord Render. Vérification faite via l'API Render le 2026-09-14, les cinq
+variables `SMTP_*` **étaient bien posées** sur `mia-backend`, et les identifiants
+Brevo s'authentifient correctement (connexion, STARTTLS, AUTH : tout passe).
+
+La leçon vaut d'être écrite : `render.yaml` décrit ce que le *blueprint* déclare,
+pas ce que le *service* exécute. Les deux avaient divergé.
+
+### Le vrai défaut, trouvé en vérifiant
+
+`SMTP_FROM` valait **`no-reply@mia.market`** — sans le « s ». Le domaine
+authentifié est `mia.markets` ; `mia.market` est un domaine **qui appartient à un
+tiers** (il résout vers des IP AWS parquées).
+
+La production envoyait donc chaque code de confirmation, chaque
+réinitialisation de mot de passe et chaque préavis de renouvellement **en se
+réclamant d'un domaine qui n'est pas le sien**. Conséquences : DKIM ne peut pas
+s'aligner, le message part en indésirable ou se fait rejeter par le destinataire,
+et le compte Brevo s'expose à être signalé pour usurpation. Le relais, lui,
+accepte sans broncher — c'est pourquoi rien ne criait.
+
+**Corrigé le 2026-09-14** : `SMTP_FROM=no-reply@mia.markets`, envoi réel revérifié
+de bout en bout. `EMAIL_VERIFICATION_ENFORCED=1` a été posée explicitement dans
+la foulée.
+
+### Ce que ce PR change, à la lumière de ça
+
+Tout reste valable, et deux points gagnent en importance :
+
+- **Déclarer les `SMTP_*` dans `render.yaml`** n'est plus une formalité : c'est
+  précisément parce qu'elles vivaient uniquement dans le tableau de bord que la
+  faute de frappe n'a été vue par personne, et qu'une synchronisation de
+  blueprint aurait pu les effacer sans bruit.
+- **Le garde de démarrage** n'aurait PAS bloqué ce déploiement (SMTP_HOST était
+  défini). Il protège d'une absence totale, pas d'une valeur fausse — d'où le
+  contrôle d'expéditeur ajouté à `check_email_delivery.py`.
 
 Et la raison pour laquelle personne ne l'a vu : `email_verified()` **exempte le
 propriétaire** (`role == "owner"`, semé déjà vérifié). Le compte du fondateur
