@@ -1,0 +1,51 @@
+   N Sc  Strategie                    Total/j  Moy/min  Pointe  vs 55  vs 144  vs 377
+-------------------------------------------------------------------------------------------------------------
+  84 S1  Code actuel tel quel           18732    13.01     420  NE PASSE PAS (+365 au pire, 96 min/j)  NE PASSE PAS (+276 au pire, 96 min/j)  NE PASSE PAS (+43 au pire, 1 min/j)
+  84 S2  Etalement seul                 34860    24.21      27  PASSE  PASSE  PASSE
+  84 S3  Etalement + derivation         24276    16.86      18  PASSE  PASSE  PASSE
+  84 S4  S3 + amorcage historique       26136    18.15      48  PASSE  PASSE  PASSE
+ 100 S1  Code actuel tel quel           22300    15.49     500  NE PASSE PAS (+445 au pire, 96 min/j)  NE PASSE PAS (+356 au pire, 96 min/j)  NE PASSE PAS (+123 au pire, 6 min/j)
+ 100 S2  Etalement seul                 41500    28.82      31  PASSE  PASSE  PASSE
+ 100 S3  Etalement + derivation         28900    20.07      21  PASSE  PASSE  PASSE
+ 100 S4  S3 + amorcage historique       31120    21.61      51  PASSE  PASSE  PASSE
+ 150 S1  Code actuel tel quel           33450    23.23     750  NE PASSE PAS (+695 au pire, 96 min/j)  NE PASSE PAS (+606 au pire, 96 min/j)  NE PASSE PAS (+373 au pire, 24 min/j)
+ 150 S2  Etalement seul                 62250    43.23      45  PASSE  PASSE  PASSE
+ 150 S3  Etalement + derivation         43350     30.1      31  PASSE  PASSE  PASSE
+ 150 S4  S3 + amorcage historique       46650     32.4      61  NE PASSE PAS (+6 au pire, 110 min/j)  PASSE  PASSE
+
+  Amorcage 84 marches (1848 requetes) sur la seule marge de S3 :
+    plafond  55 -> 0.8 h (termine)
+    plafond 144 -> 0.2 h (termine)
+    plafond 377 -> 0.1 h (termine)
+  Amorcage 100 marches (2200 requetes) sur la seule marge de S3 :
+    plafond  55 -> 1.1 h (termine)
+    plafond 144 -> 0.3 h (termine)
+    plafond 377 -> 0.1 h (termine)
+  Amorcage 150 marches (3300 requetes) sur la seule marge de S3 :
+    plafond  55 -> 2.3 h (termine)
+    plafond 144 -> 0.5 h (termine)
+    plafond 377 -> 0.2 h (termine)
+
+Rapport JSON : docs/audits/data-3/simulation.json
+   N Sc  Strategie                    Total/j  Moy/min  Pointe  vs 55  vs 144  vs 377
+-------------------------------------------------------------------------------------------------------------
+ 100 S1  Code actuel tel quel           19040    13.22     400  NE PASSE PAS (+345 au pire, 96 min/j)  NE PASSE PAS (+256 au pire, 96 min/j)  NE PASSE PAS (+23 au pire, 3 min/j)
+ 100 S2  Etalement seul                 35440    24.61      30  PASSE  PASSE  PASSE
+ 100 S3  Etalement + derivation         24680    17.14      20  PASSE  PASSE  PASSE
+ 100 S4  S3 + amorcage historique       26900    18.68      47  PASSE  PASSE  PASSE
+
+  Amorcage 100 marches (2200 requetes) sur la seule marge de S3 :
+    plafond  55 -> 1.0 h (termine)
+    plafond 144 -> 0.3 h (termine)
+    plafond 377 -> 0.1 h (termine)
+   N Sc  Strategie                    Total/j  Moy/min  Pointe  vs 55  vs 144  vs 377
+-------------------------------------------------------------------------------------------------------------
+ 100 S1  Code actuel tel quel           27875    19.36     625  NE PASSE PAS (+570 au pire, 96 min/j)  NE PASSE PAS (+481 au pire, 96 min/j)  NE PASSE PAS (+248 au pire, 6 min/j)
+ 100 S2  Etalement seul                 51875    36.02      39  PASSE  PASSE  PASSE
+ 100 S3  Etalement + derivation         36125    25.09      26  PASSE  PASSE  PASSE
+ 100 S4  S3 + amorcage historique       38900    27.01      64  NE PASSE PAS (+9 au pire, 74 min/j)  PASSE  PASSE
+
+  Amorcage 100 marches (2200 requetes) sur la seule marge de S3 :
+    plafond  55 -> 1.3 h (termine)
+    plafond 144 -> 0.3 h (termine)
+    plafond 377 -> 0.1 h (termine)

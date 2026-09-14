@@ -1,0 +1,551 @@
+{
+  "caps": [
+    55,
+    144,
+    377
+  ],
+  "sessions": "continuous",
+  "retry_multiplier": 1.0,
+  "runs": [
+    {
+      "scenario": "S1",
+      "label": "Code actuel tel quel",
+      "note": "aucun etalement, aucune derivation ; M5 a la demande plafonne a 1/900 s",
+      "markets": 84,
+      "sessions": "continuous",
+      "polled_units": [
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 18732,
+      "peak_per_minute": 420,
+      "mean_per_minute_over_24h": 13.01,
+      "mean_per_active_minute": 195.12,
+      "active_minutes": 96,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": false,
+          "minutes_over": 96,
+          "worst_overshoot": 365,
+          "credits_lost_per_day": 13452
+        },
+        "144": {
+          "passes": false,
+          "minutes_over": 96,
+          "worst_overshoot": 276,
+          "credits_lost_per_day": 4908
+        },
+        "377": {
+          "passes": false,
+          "minutes_over": 1,
+          "worst_overshoot": 43,
+          "credits_lost_per_day": 43
+        }
+      }
+    },
+    {
+      "scenario": "S2",
+      "label": "Etalement seul",
+      "note": "chaque unite demandee separement, repartie sur la fenetre entre 2 clotures",
+      "markets": 84,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 34860,
+      "peak_per_minute": 27,
+      "mean_per_minute_over_24h": 24.21,
+      "mean_per_active_minute": 24.21,
+      "active_minutes": 1440,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S3",
+      "label": "Etalement + derivation",
+      "note": "seul M5 (+ D1, jamais derive) demande au fournisseur ; M15/H1/H4 agreges",
+      "markets": 84,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "D1"
+      ],
+      "total_per_day": 24276,
+      "peak_per_minute": 18,
+      "mean_per_minute_over_24h": 16.86,
+      "mean_per_active_minute": 16.86,
+      "active_minutes": 1440,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S4",
+      "label": "S3 + amorcage historique",
+      "note": "amorcage 1 an de M5 (22 requetes/marche) en parallele du suivi en direct",
+      "markets": 84,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "D1"
+      ],
+      "total_per_day": 26136,
+      "peak_per_minute": 48,
+      "mean_per_minute_over_24h": 18.15,
+      "mean_per_active_minute": 18.15,
+      "active_minutes": 1440,
+      "backfill_requests_total": 1848,
+      "backfill_minutes": 62,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      },
+      "backfill_on_headroom": [
+        {
+          "cap": 55,
+          "requests": 1848,
+          "minutes": 50,
+          "hours": 0.8,
+          "completed_within_30_days": true
+        },
+        {
+          "cap": 144,
+          "requests": 1848,
+          "minutes": 15,
+          "hours": 0.2,
+          "completed_within_30_days": true
+        },
+        {
+          "cap": 377,
+          "requests": 1848,
+          "minutes": 6,
+          "hours": 0.1,
+          "completed_within_30_days": true
+        }
+      ]
+    },
+    {
+      "scenario": "S1",
+      "label": "Code actuel tel quel",
+      "note": "aucun etalement, aucune derivation ; M5 a la demande plafonne a 1/900 s",
+      "markets": 100,
+      "sessions": "continuous",
+      "polled_units": [
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 22300,
+      "peak_per_minute": 500,
+      "mean_per_minute_over_24h": 15.49,
+      "mean_per_active_minute": 232.29,
+      "active_minutes": 96,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": false,
+          "minutes_over": 96,
+          "worst_overshoot": 445,
+          "credits_lost_per_day": 17020
+        },
+        "144": {
+          "passes": false,
+          "minutes_over": 96,
+          "worst_overshoot": 356,
+          "credits_lost_per_day": 8476
+        },
+        "377": {
+          "passes": false,
+          "minutes_over": 6,
+          "worst_overshoot": 123,
+          "credits_lost_per_day": 238
+        }
+      }
+    },
+    {
+      "scenario": "S2",
+      "label": "Etalement seul",
+      "note": "chaque unite demandee separement, repartie sur la fenetre entre 2 clotures",
+      "markets": 100,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 41500,
+      "peak_per_minute": 31,
+      "mean_per_minute_over_24h": 28.82,
+      "mean_per_active_minute": 28.82,
+      "active_minutes": 1440,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S3",
+      "label": "Etalement + derivation",
+      "note": "seul M5 (+ D1, jamais derive) demande au fournisseur ; M15/H1/H4 agreges",
+      "markets": 100,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "D1"
+      ],
+      "total_per_day": 28900,
+      "peak_per_minute": 21,
+      "mean_per_minute_over_24h": 20.07,
+      "mean_per_active_minute": 20.07,
+      "active_minutes": 1440,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S4",
+      "label": "S3 + amorcage historique",
+      "note": "amorcage 1 an de M5 (22 requetes/marche) en parallele du suivi en direct",
+      "markets": 100,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "D1"
+      ],
+      "total_per_day": 31120,
+      "peak_per_minute": 51,
+      "mean_per_minute_over_24h": 21.61,
+      "mean_per_active_minute": 21.61,
+      "active_minutes": 1440,
+      "backfill_requests_total": 2200,
+      "backfill_minutes": 74,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      },
+      "backfill_on_headroom": [
+        {
+          "cap": 55,
+          "requests": 2200,
+          "minutes": 65,
+          "hours": 1.1,
+          "completed_within_30_days": true
+        },
+        {
+          "cap": 144,
+          "requests": 2200,
+          "minutes": 18,
+          "hours": 0.3,
+          "completed_within_30_days": true
+        },
+        {
+          "cap": 377,
+          "requests": 2200,
+          "minutes": 7,
+          "hours": 0.1,
+          "completed_within_30_days": true
+        }
+      ]
+    },
+    {
+      "scenario": "S1",
+      "label": "Code actuel tel quel",
+      "note": "aucun etalement, aucune derivation ; M5 a la demande plafonne a 1/900 s",
+      "markets": 150,
+      "sessions": "continuous",
+      "polled_units": [
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 33450,
+      "peak_per_minute": 750,
+      "mean_per_minute_over_24h": 23.23,
+      "mean_per_active_minute": 348.44,
+      "active_minutes": 96,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": false,
+          "minutes_over": 96,
+          "worst_overshoot": 695,
+          "credits_lost_per_day": 28170
+        },
+        "144": {
+          "passes": false,
+          "minutes_over": 96,
+          "worst_overshoot": 606,
+          "credits_lost_per_day": 19626
+        },
+        "377": {
+          "passes": false,
+          "minutes_over": 24,
+          "worst_overshoot": 373,
+          "credits_lost_per_day": 2802
+        }
+      }
+    },
+    {
+      "scenario": "S2",
+      "label": "Etalement seul",
+      "note": "chaque unite demandee separement, repartie sur la fenetre entre 2 clotures",
+      "markets": 150,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "M15",
+        "H1",
+        "H4",
+        "D1"
+      ],
+      "total_per_day": 62250,
+      "peak_per_minute": 45,
+      "mean_per_minute_over_24h": 43.23,
+      "mean_per_active_minute": 43.23,
+      "active_minutes": 1440,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S3",
+      "label": "Etalement + derivation",
+      "note": "seul M5 (+ D1, jamais derive) demande au fournisseur ; M15/H1/H4 agreges",
+      "markets": 150,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "D1"
+      ],
+      "total_per_day": 43350,
+      "peak_per_minute": 31,
+      "mean_per_minute_over_24h": 30.1,
+      "mean_per_active_minute": 30.1,
+      "active_minutes": 1440,
+      "backfill_requests_total": 0,
+      "backfill_minutes": 0,
+      "verdicts": {
+        "55": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      }
+    },
+    {
+      "scenario": "S4",
+      "label": "S3 + amorcage historique",
+      "note": "amorcage 1 an de M5 (22 requetes/marche) en parallele du suivi en direct",
+      "markets": 150,
+      "sessions": "continuous",
+      "polled_units": [
+        "M5",
+        "D1"
+      ],
+      "total_per_day": 46650,
+      "peak_per_minute": 61,
+      "mean_per_minute_over_24h": 32.4,
+      "mean_per_active_minute": 32.4,
+      "active_minutes": 1440,
+      "backfill_requests_total": 3300,
+      "backfill_minutes": 110,
+      "verdicts": {
+        "55": {
+          "passes": false,
+          "minutes_over": 110,
+          "worst_overshoot": 6,
+          "credits_lost_per_day": 660
+        },
+        "144": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        },
+        "377": {
+          "passes": true,
+          "minutes_over": 0,
+          "worst_overshoot": 0,
+          "credits_lost_per_day": 0
+        }
+      },
+      "backfill_on_headroom": [
+        {
+          "cap": 55,
+          "requests": 3300,
+          "minutes": 138,
+          "hours": 2.3,
+          "completed_within_30_days": true
+        },
+        {
+          "cap": 144,
+          "requests": 3300,
+          "minutes": 30,
+          "hours": 0.5,
+          "completed_within_30_days": true
+        },
+        {
+          "cap": 377,
+          "requests": 3300,
+          "minutes": 10,
+          "hours": 0.2,
+          "completed_within_30_days": true
+        }
+      ]
+    }
+  ]
+}
