@@ -235,6 +235,16 @@ def _auto_register_default_handlers(
     if live_bridge is not None and hasattr(live_bridge, "stop"):
         _add("live-tick-bridge", live_bridge.stop, budget_s=6.0)
 
+    # BKP-1 — daily SQLite backup. Stopped BEFORE the stores close below: a
+    # snapshot caught mid-teardown would read a database being closed under it.
+    # Registered only when backups are switched on, so a deployment without them
+    # carries no handler for a daemon that will never run.
+    from src.persistence.backup_daemon import stop_backup_daemon
+    from src.persistence.backup_service import is_backup_enabled
+
+    if is_backup_enabled():
+        _add("backup-daemon", stop_backup_daemon, budget_s=5.0)
+
     # The drain worker isn't stored on AppState today — callers that
     # wire it call coord.register("webhook-drain", worker.stop) before
     # startup. Nothing auto here.
@@ -452,6 +462,16 @@ def create_app(
                 live_bridge.start()
             except Exception:
                 logger.exception("live-tick bridge failed to start")
+        # BKP-1 — daily SQLite backup to object storage. Opt-in via
+        # BACKUP_ENABLED; a missing destination is logged at ERROR rather than
+        # failing boot, because a backend that refuses to serve is worse than a
+        # backend that serves while shouting that it is not backed up.
+        try:
+            from src.persistence.backup_daemon import start_backup_daemon
+
+            app_state.backup_daemon = start_backup_daemon()
+        except Exception:
+            logger.exception("backup daemon failed to start")
         try:
             yield
         finally:

@@ -28,6 +28,8 @@ from typing import Iterable, List, Optional, Protocol, Sequence, Tuple
 
 from src.intelligence import lookback_config, market_calendar
 
+from src.intelligence.data_providers.twelve_data_provider import credit_purpose
+
 logger = logging.getLogger(__name__)
 
 # Free-plan ceiling for a single time_series request. Every LB-1 target depth is
@@ -136,7 +138,11 @@ def backfill_combo(
             instrument, timeframe, target, MAX_OUTPUTSIZE, MAX_OUTPUTSIZE,
         )
 
-    candles = provider.fetch_candles(instrument, timeframe, request_size)
+    # DATA-3: the seeding pages are labelled so /health shows what the backfill
+    # spends versus what live tracking spends. The credit limiter paces them —
+    # a backfill can never crowd the live perimeter out of the per-minute budget.
+    with credit_purpose("backfill"):
+        candles = provider.fetch_candles(instrument, timeframe, request_size)
     upserted = store.upsert_candles(instrument, timeframe, candles)
     logger.info(
         "backfill %s %s: requested %d, fetched %d, upserted %d (target %d)",
@@ -187,7 +193,10 @@ def deep_backfill_combo(
     while (have + fetched) < target_bars and pages < max_pages:
         want = min(page, target_bars - have - fetched) or page
         try:
-            candles = provider.fetch_candles_until(instrument, timeframe, want, end_date)
+            with credit_purpose("backfill"):
+                candles = provider.fetch_candles_until(
+                    instrument, timeframe, want, end_date
+                )
         except Exception as exc:  # surface the reason instead of a silent stop
             logger.exception("deep backfill page failed for %s %s", instrument, timeframe)
             error = f"{type(exc).__name__}: {exc}"[:300]

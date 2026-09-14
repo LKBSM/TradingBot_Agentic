@@ -188,7 +188,18 @@ def test_safety_probe_rate_limited_on_holiday():
         clock=lambda: XMAS.astimezone(timezone.utc),
     )
     now = XMAS.astimezone(timezone.utc)
-    assert sched._should_safety_probe("EURUSD", "M15", now) is True   # first probe due
-    assert sched._should_safety_probe("EURUSD", "M15", now) is False  # rate-limited
-    later = now + timedelta(seconds=1801)
-    assert sched._should_safety_probe("EURUSD", "M15", later) is True  # window elapsed
+    # DATA-3: the first sighting SEEDS the combo's clock with a stable per-combo
+    # offset instead of probing straight away. Before that, every combination was
+    # stamped in the same tick and so came due again in the same tick 30 min later
+    # — measured as one probe per market landing in a single minute (100-200
+    # credits in one minute at 100 markets) on a day the market is CLOSED. The
+    # price is that a combination's first probe waits up to one window.
+    assert sched._should_safety_probe("EURUSD", "M15", now) is False   # seeded, not probed
+    seeded = sched._last_safety_probe[("EURUSD", "M15")]
+    assert seeded <= now, "the seed must sit in the past so the probe comes due"
+
+    # Still rate-limited to one probe per window, counted from the seed.
+    assert sched._should_safety_probe("EURUSD", "M15", now) is False
+    due = seeded + timedelta(seconds=1800)
+    assert sched._should_safety_probe("EURUSD", "M15", due) is True    # window elapsed
+    assert sched._should_safety_probe("EURUSD", "M15", due) is False   # rate-limited again

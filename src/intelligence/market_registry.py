@@ -35,6 +35,12 @@ class MarketSpec:
     glyph: str            # short mono badge for the compact market row
     timeframes: Tuple[str, ...]  # perimeter timeframe ids served for this market
     index: int            # display order (0 = first in the column)
+    #: Exact Twelve Data ticker when it differs from ``symbol`` (e.g. ``XAU/USD``).
+    #: Optional — the provider derives it from ``symbol`` + ``type`` when absent,
+    #: so adding a market stays a one-line entry. DATA-3 moved the provider's
+    #: hard-coded two-symbol table here: it was the reason a third market raised
+    #: ``ValueError: Unsupported symbol``.
+    provider_symbol: Optional[str] = None
 
 
 def _default_path() -> Path:
@@ -70,6 +76,9 @@ def _load() -> Tuple[MarketSpec, ...]:
             glyph=str(m["glyph"]),
             timeframes=tuple(str(t).upper() for t in m["timeframes"]),
             index=i,
+            provider_symbol=(
+                str(m["providerSymbol"]) if m.get("providerSymbol") else None
+            ),
         ))
     _cache = tuple(specs)
     return _cache

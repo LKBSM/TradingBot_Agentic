@@ -1,0 +1,107 @@
+{
+  "limiter": {
+    "default_per_minute": 8,
+    "default_per_day": 800,
+    "effective_limit_with_env_set_to_55": {
+      "per_minute": 8,
+      "per_day": 800
+    },
+    "per_minute_settable_from_env": false,
+    "bootstrap_overrides_limits": false,
+    "main_overrides_limits": false
+  },
+  "symbol_perimeter": {
+    "provider_symbol_map": [
+      "XAUUSD",
+      "EURUSD"
+    ],
+    "market_registry_ids": [
+      "XAUUSD",
+      "EURUSD"
+    ]
+  },
+  "derivation_and_jitter": {
+    "resample_helper_exists": true,
+    "resample_used_in_live_path": false,
+    "jitter_in_scheduler": false
+  },
+  "ttl_cache": {
+    "ttl_seconds": 300.0,
+    "calls_for_2_identical_fetches": 1,
+    "extra_call_for_different_lookback": 1,
+    "extra_call_for_different_timeframe": 1
+  },
+  "retry_cost": {
+    "http_attempts_for_one_logical_fetch": 4,
+    "max_retries": 4
+  },
+  "scheduler_tick": {
+    "warm_combos": 8,
+    "tick1_regenerated": 8,
+    "tick1_provider_calls": 8,
+    "tick1_seconds": 8.86,
+    "tick2_regenerated": 2,
+    "tick2_provider_calls": 0
+  },
+  "lagging_feed": {
+    "warm_combos": 2,
+    "ticks": 10,
+    "provider_calls_per_tick": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "total_provider_calls": 2
+  },
+  "holiday_probe": {
+    "combos_probed": 10,
+    "instruments": 2,
+    "calls_per_tick_31min_apart": [
+      10,
+      2,
+      2
+    ],
+    "calls_detail": [
+      [
+        "XAU/USD/5min",
+        "XAU/USD/15min",
+        "XAU/USD/1h",
+        "XAU/USD/4h",
+        "XAU/USD/1day",
+        "EUR/USD/5min",
+        "EUR/USD/15min",
+        "EUR/USD/1h",
+        "EUR/USD/4h",
+        "EUR/USD/1day"
+      ],
+      [
+        "XAU/USD/4h",
+        "EUR/USD/4h"
+      ],
+      [
+        "XAU/USD/4h",
+        "EUR/USD/4h"
+      ]
+    ],
+    "note": "tick 1 = demarrage a froid (1 appel/combo) ; ticks suivants = sonde de reouverture, toutes les combos echues DANS LE MEME tick"
+  },
+  "tick_duration": {
+    "combos_regenerated": 4,
+    "seconds_total": 3.34,
+    "seconds_per_combo": 0.836,
+    "combos_fitting_in_a_60s_tick": 71,
+    "tick_is_sequential_single_instance": true
+  },
+  "user_sessions": {
+    "tabs": 3,
+    "cold_start_calls": 3,
+    "steady_state_calls": 0
+  }
+}

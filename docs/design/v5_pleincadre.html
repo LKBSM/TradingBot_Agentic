@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>M.I.A Markets — Direction E · Plein cadre</title>
+<style>
+:root{--bg:#0C0D0F;--panel:#141518;--panel-2:#1C1E22;--panel-3:#26282D;--txt:#E8E8E9;--dim:#97999E;--faint:#5F6167;--acc:#C9A14A;--acc-dim:rgba(201,161,74,.14);--acc-txt:#14100A;--bull:#37b98c;--bear:#dd6b7a;--ob:#d98aa3;--fvg:#8b7fd9;--liq:#d6a24a;--sans:-apple-system,"Inter","Segoe UI",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:16px;line-height:1.55;overflow-x:hidden}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}a{color:inherit;text-decoration:none}
+.wrap{max-width:1160px;margin:0 auto;padding:0 28px}
+.btn{display:inline-block;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--txt);font-family:inherit}
+.btn.primary{background:var(--acc);color:var(--acc-txt)}.btn.ghost{border-color:var(--panel-3)}.btn.sm{padding:6px 12px;font-size:13px}
+nav{position:sticky;top:0;z-index:30;background:rgba(12,13,15,.84);backdrop-filter:blur(12px);border-bottom:1px solid var(--panel-3)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.14em;font-weight:600;color:#fff}.brand svg{height:22px;width:auto}
+.nav-links{display:flex;gap:22px;font-size:14px;color:var(--dim)}.nav-links a:hover{color:var(--txt)}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);border:1px solid var(--panel-3);border-radius:99px;padding:5px 12px;margin-bottom:22px}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--bull)}
+section{padding:90px 0;border-top:1px solid var(--panel-2)}
+.eyebrow{color:var(--acc);font-size:13px;font-weight:600;margin-bottom:10px}
+h1{font-size:60px;line-height:1.02;font-weight:600;letter-spacing:-.025em;margin:0 0 20px}
+h1 em{font-style:normal;color:var(--acc)}
+h2{font-size:38px;line-height:1.08;font-weight:600;margin:0 0 12px;letter-spacing:-.02em}
+h3{font-size:24px;line-height:1.15;font-weight:600;margin:0 0 12px}
+h4{font-size:16px;font-weight:600;margin:0 0 6px}
+.lede{font-size:19px;color:var(--dim);max-width:58ch;margin:0 0 28px}
+.sub{font-size:17px;color:var(--dim);max-width:62ch;margin:0 0 30px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--panel-3);border-radius:14px;overflow:hidden;margin-top:44px}
+.stats div{padding:22px;text-align:center;border-right:1px solid var(--panel-3)}.stats div:last-child{border-right:none}
+.stats b{display:block;font-size:34px;font-weight:600;line-height:1}.stats small{color:var(--dim);font-size:13px}
+.early{font-family:var(--mono);font-size:12px;color:var(--faint);text-align:center;margin-top:14px}.early b{color:var(--txt);font-weight:600}
+.card{background:var(--panel);border:1px solid var(--panel-3);border-radius:14px;padding:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;padding:7px 12px;border-radius:99px;border:1px solid var(--panel-3);background:var(--panel-2);color:var(--txt);cursor:pointer}
+.chip:hover{border-color:var(--dim)}
+.feat4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px}
+.feat4 .card{padding:18px}.feat4 p{margin:0;color:var(--dim);font-size:14px}.feat4 b{color:var(--txt)}
+.chat{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.msg{max-width:92%;padding:10px 13px;border-radius:10px}
+.msg.u{align-self:flex-end;background:var(--acc-dim);border:1px solid rgba(201,161,74,.4)}.msg.m{align-self:flex-start;background:var(--panel-2);border:1px solid var(--panel-3)}.msg.m.rf{border-color:var(--acc)}
+.msg b{font-weight:600}
+.ask{display:flex;gap:8px;margin-top:10px}.ask input{flex:1;background:var(--panel-2);border:1px solid var(--panel-3);border-radius:8px;padding:9px 11px;color:var(--txt);font-family:inherit;font-size:13px;outline:none}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--panel-3);margin-bottom:18px;overflow-x:auto}
+.tab{font-size:14px;font-weight:600;color:var(--dim);padding:12px 16px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.on{color:var(--txt);border-bottom-color:var(--acc)}
+.scr{display:none}.scr.on{display:block}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;background:var(--panel-2);border:1px solid var(--panel-3);color:var(--txt);cursor:pointer;user-select:none;margin:0 4px 6px 0}
+.pill.off{color:var(--faint)}.pill.off .sw{opacity:.25}.sw{width:8px;height:8px;border-radius:2px;display:inline-block}
+.chart{display:block;width:100%;height:auto;background:#0A0B0D;border-radius:10px;border:1px solid var(--panel-3)}
+.reading{font-size:14px;line-height:1.6;margin-top:12px;background:var(--panel-2);border:1px solid var(--panel-3);border-radius:10px;padding:12px 14px}
+.reading b{font-weight:600}
+.illu{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:8px}
+.cond{font-size:12.5px;padding:5px 10px;border-radius:7px;border:1px solid var(--panel-3);background:var(--panel-2);color:var(--dim);cursor:pointer;margin:0 4px 6px 0;display:inline-block}
+.cond.on{color:var(--acc);border-color:rgba(201,161,74,.45);background:var(--acc-dim)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--panel-3);font-size:13px}.row span:last-child{color:var(--dim);text-align:right}
+.fill{height:5px;background:var(--panel-3);border-radius:99px;overflow:hidden;margin:8px 0 6px;max-width:260px}.fill i{display:block;height:100%;background:var(--acc)}
+.tool{display:grid;grid-template-columns:1fr 1.15fr;gap:40px;align-items:center;padding:54px 0}
+.tool ul{list-style:none;padding:0;margin:0}.tool li{padding:7px 0;font-size:15px;color:var(--dim)}.tool li b{color:var(--txt)}.tool li::before{content:"✓";color:var(--acc);margin-right:10px;font-weight:700}
+.tool .ill{background:var(--panel);border:1px solid var(--panel-3);border-radius:14px;padding:18px;font-size:13.5px}
+.tool .ill .ph{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px}
+.steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.steps3 .card .n{font-family:var(--mono);color:var(--acc);font-size:13px;margin-bottom:10px}.steps3 p{margin:0;color:var(--dim);font-size:14.5px}
+.who3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.who3 .card .t{font-size:12px;color:var(--acc);font-weight:600;margin-bottom:8px}.who3 p{color:var(--dim);font-size:14.5px;margin:0 0 10px}
+.who3 ul{margin:0;padding-left:18px;color:var(--dim);font-size:13.5px}
+.distinct{max-width:760px}.distinct p{color:var(--dim);font-size:17px}.distinct p b{color:var(--txt)}
+.price{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.pbig{font-size:50px;font-weight:600;line-height:1}.pbig small{font-size:15px;color:var(--dim);font-weight:400}
+.plist{list-style:none;padding:0;margin:18px 0}.plist li{padding:6px 0;font-size:15px;color:var(--dim)}.plist li::before{content:"✓";color:var(--acc);margin-right:10px;font-weight:700}
+.legal{font-size:12px;color:var(--faint);max-width:70ch}
+.faq details{border-top:1px solid var(--panel-2);padding:16px 0}.faq summary{cursor:pointer;font-size:17px;font-weight:600;list-style:none;display:flex;justify-content:space-between}.faq summary::after{content:"+";color:var(--faint)}.faq details[open] summary::after{content:"–"}.faq p{margin:10px 0 0;color:var(--dim);font-size:15px}
+.cta{text-align:center;padding:100px 0}
+footer{border-top:1px solid var(--panel-3);padding:40px 0 50px;color:var(--faint);font-size:12px}
+footer .cols{display:grid;grid-template-columns:2fr 1fr 1fr;gap:30px;margin-bottom:26px}footer b{color:var(--txt);display:block;margin-bottom:8px;font-size:13px}footer a{display:block;padding:3px 0}
+@media(max-width:960px){h1{font-size:38px}.stats,.feat4,.steps3,.who3,.price,.tool{grid-template-columns:1fr}.nav-links{display:none}footer .cols{grid-template-columns:1fr}}
+
+.hero{min-height:calc(100vh - 60px);display:flex;align-items:center;padding:40px 0;position:relative}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 70% 40%,rgba(201,161,74,.10),transparent 65%);pointer-events:none}
+.hero-in{display:grid;grid-template-columns:.9fr 1.1fr;gap:44px;align-items:center;width:100%}
+h1{font-size:56px}
+.hero-vis .card{padding:0;overflow:hidden;box-shadow:0 50px 120px rgba(0,0,0,.55)}
+.hero-vis .top{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--panel-3);font-family:var(--mono);font-size:11px;color:var(--dim)}
+.hero-vis .chart{border:none;border-radius:0}
+.hero-vis .reading{margin:0;border:none;border-radius:0;border-top:1px solid var(--panel-3);min-height:70px}
+.hero-vis .chat{padding:12px 14px;border-top:1px solid var(--panel-3)}
+.stats-wrap{grid-column:1/-1}
+.mia-grid,.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+section{padding:110px 0}
+h2{font-size:46px}
+.tool{padding:70px 0;position:relative}
+.tool>div:first-child{position:relative;padding-top:20px}
+.tool>div:first-child::before{content:"0" attr(data-i);position:absolute;left:-6px;top:-60px;font-family:var(--mono);font-size:140px;font-weight:600;color:var(--panel-2);line-height:1;z-index:-1}
+.tool:nth-child(even){direction:rtl}.tool:nth-child(even)>*{direction:ltr}
+.reg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.reg div{background:var(--panel-2);border-radius:8px;padding:10px}.reg small{display:block;font-size:11px;color:var(--faint)}.reg b{display:block;font-size:14px}.reg i{font-style:normal;font-size:11px;color:var(--dim)}
+.rv{opacity:0;transform:translateY(30px);transition:all .8s cubic-bezier(.2,.8,.2,1)}.rv.in{opacity:1;transform:none}
+.cta{min-height:60vh;display:flex;align-items:center}
+.v-progress{position:fixed;top:0;left:0;height:2px;background:var(--acc);z-index:40;width:0}
+@media(max-width:960px){.hero-in,.mia-grid,.demo-grid{grid-template-columns:1fr}h1{font-size:38px}h2{font-size:32px}.tool:nth-child(even){direction:ltr}.tool>div:first-child::before{font-size:80px}}
+</style></head><body>
+
+<nav><div class="wrap nav-in"><a class="brand" href="#"><svg viewBox="0 0 44 22" aria-hidden="true"><rect x="1" y="12" width="4" height="10" fill="#C9A14A"/><rect x="10" y="7" width="4" height="15" fill="#C9A14A"/><rect x="19" y="1" width="4" height="21" fill="#C9A14A"/><rect x="28" y="7" width="4" height="15" fill="#C9A14A"/><rect x="37" y="12" width="4" height="10" fill="#C9A14A"/></svg>M.I.A MARKETS</a><div class="nav-links"><a href="#mia">M.I.A</a><a href="#demo">Démo</a><a href="#outils">Outils</a><a href="#tarifs">Tarifs</a><a href="#faq">FAQ</a></div><div style="display:flex;gap:10px"><a class="btn ghost sm" href="#">Connexion</a><a class="btn primary sm" href="#tarifs">S'abonner</a></div></div></nav>
+<div class="v-progress" id="vprog"></div>
+
+<header class="hero" id="hero"><div class="wrap hero-in">
+  <div class="hero-txt">
+    <span class="badge"><i></i>Accès anticipé · l'or et l'euro aujourd'hui</span>
+    <h1>Le marché a déjà tout écrit. <em>MIA te le lit.</em></h1>
+    <p class="lede">Order Blocks, Fair Value Gaps, cassures de structure, poches de liquidité — détectés automatiquement et décrits en langage clair. Et un assistant qui répond quand tu ne comprends pas.</p>
+    <a class="btn primary" href="#tarifs">S'abonner</a> <a class="btn ghost" href="#demo">Voir les outils</a>
+    <p class="illu" style="margin-top:14px">Accès complet dès l'abonnement · Résiliable à tout moment</p>
+  </div>
+  <div class="hero-vis" id="heroVis"></div>
+</div></header>
+
+<section id="mia" class="rv"><div class="wrap">
+  <div class="eyebrow">Ce qui n'existe nulle part ailleurs</div>
+  <h2>Un assistant qui t'explique le marché</h2>
+  <p class="sub">La plupart des outils de trading affichent. MIA explique. Tu peux lui parler comme à quelqu'un qui aurait le graphique sous les yeux.</p>
+  <div class="mia-grid">
+    <div>
+      <div class="illu" style="margin:0 0 8px">M.I.A Agent · disponible sur toutes les surfaces</div>
+      <h3>Pose la question que tu n'oses pas poser dans un groupe</h3>
+      <p style="color:var(--dim)">Tu ne comprends pas pourquoi cette bougie est un Order Block ? Tu veux savoir ce qui s'est passé sur l'or hier ? Tu ne sais pas ce que « mitigation » veut dire ? <b style="color:var(--txt)">Demande-lui.</b> Elle répond avec les niveaux réels et les horodatages réels du marché que tu regardes.</p>
+      <div class="chips" id="miaChips"><span class="chip">Explique-moi ce CHOCH</span><span class="chip">Quelle est la différence BOS / CHOCH ?</span><span class="chip">Cette zone a été testée combien de fois ?</span><span class="chip">Montre-moi seulement les OB non testés</span><span class="chip">Où est la liquidité la plus proche ?</span><span class="chip">C'est quoi un Fair Value Gap ?</span></div>
+    </div>
+    <div class="card"><div class="illu" style="margin:0 0 10px">M.I.A Agent · Or 15 min</div>
+      <div class="chat" id="chat"><div class="msg u">pourquoi cette bougie est un order block ?</div><div class="msg m">C'est la dernière bougie baissière avant le mouvement qui a cassé la structure. Elle s'est formée <b>à 12:30</b>, juste avant le BOS haussier de 14:15 à 4 025,10. Sa zone couvre <b>4 026,80 à 4 028,90</b>.</div><div class="msg u">elle a été testée ?</div><div class="msg m">Non. <b>Jamais depuis sa formation.</b> Le prix y est entré il y a 30 minutes, c'est son premier contact.</div><div class="msg u">tu penses que ça va rebondir ?</div><div class="msg m rf"><b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne te dis pas quand acheter ou vendre. Je peux te décrire l'état de la zone ou t'expliquer le concept.</div></div>
+      <div class="ask"><input id="q" placeholder="Écris-lui…"><button class="btn primary sm" id="send">Envoyer</button></div>
+    </div>
+  </div>
+  <div class="feat4">
+    <div class="card"><h4>Elle enseigne le SMC</h4><p>Order Block, Fair Value Gap, BOS, CHOCH, mitigation, liquidité — <b>chaque concept expliqué sur ton propre marché</b>.</p></div>
+    <div class="card"><h4>Elle décrit ce qui est là</h4><p>Elle ne cite que des niveaux réellement détectés : <b>une référence inventée est rejetée par le code</b>.</p></div>
+    <div class="card"><h4>Elle pilote ton affichage</h4><p>« Masque les FVG », « isole cette zone », « passe en 4 h » : tu parles, <b>le graphique change</b>.</p></div>
+    <div class="card"><h4>Elle refuse de deviner</h4><p>Aucune prédiction, aucune indication d'intervention, aucun conseil : <b>c'est un outil descriptif</b>.</p></div>
+  </div>
+</div></section>
+
+<section id="demo" class="rv"><div class="wrap">
+  <div class="eyebrow">Essaie sans créer de compte</div>
+  <h2>Voilà à quoi ça ressemble</h2>
+  <p class="sub">Une lecture d'illustration, manipulable ici même. Clique, coche, pose une question — tout fonctionne sans compte.</p>
+  <div class="card demo-card">
+    <div class="tabs"><span class="tab on" data-t="lire">Lire une structure</span><span class="tab" data-t="strat">Définir une stratégie</span><span class="tab" data-t="zone">Suivre une zone</span><span class="tab" data-t="parler">Parler à M.I.A</span><span class="tab" data-t="calc">Ouvrir le calcul</span></div>
+    <div class="scr on" data-t="lire"><div class="demo-grid">
+      <div><div id="layers"><span class="pill" data-l="ob"><i class="sw" style="background:var(--ob)"></i>Order Blocks</span><span class="pill" data-l="fvg"><i class="sw" style="background:var(--fvg)"></i>Fair Value Gaps</span><span class="pill" data-l="liq"><i class="sw" style="background:var(--liq)"></i>Liquidité</span><span class="pill" data-l="str"><i class="sw" style="background:var(--dim)"></i>BOS / CHOCH</span></div><svg class="chart" id="chart" viewBox="0 0 700 260"></svg><div class="reading" id="reading"></div><div class="illu">Données d'illustration</div></div>
+      <div><h4>La lecture se met à jour</h4><p style="color:var(--dim);font-size:14.5px">Décoche une couche : <b style="color:var(--txt)">le paragraphe se réécrit</b> pour ne décrire que ce qui reste affiché. La narration n'est jamais un texte figé — elle est composée à partir de ce qui a été détecté.</p><a class="btn primary sm" href="#tarifs">S'abonner</a></div>
+    </div></div>
+    <div class="scr" data-t="strat"><div class="demo-grid"><div><div class="illu" style="margin:0 0 8px">Structure</div><span class="cond on" data-c="trend">Tendance haussière</span><span class="cond on" data-c="mtf">Unités alignées</span><span class="cond" data-c="choch">CHOCH récent</span><div class="illu" style="margin:8px 0">Zones</div><span class="cond on" data-c="ob">Prix dans un OB</span><span class="cond on" data-c="tested">Jamais testée</span><span class="cond" data-c="fvg">Prix dans un FVG</span><div class="illu" style="margin:8px 0">Liquidité</div><span class="cond" data-c="liq">Poche prise récemment</span><span class="cond" data-c="near">Proche d'une poche intacte</span><div id="res" style="margin-top:12px"></div></div><div><h4>Ou décris-la en une phrase</h4><p style="color:var(--dim);font-size:14.5px">M.I.A la traduit en conditions vérifiables, tu valides ce qu'elle a compris, et seulement ensuite la recherche tourne — sur tes marchés, à chaque clôture. Ce qui va à l'encontre est toujours affiché. Aucun classement.</p></div></div></div>
+    <div class="scr" data-t="zone"><div class="demo-grid"><div><div class="zsel"><span class="cond on" data-z="0">Order Block · jamais testé</span><span class="cond" data-z="1">Fair Value Gap · comblé à 60 %</span><span class="cond" data-z="2">Order Block · comblé</span></div><div id="zd" style="margin-top:12px"></div></div><div><h4>Trois zones, trois histoires</h4><p style="color:var(--dim);font-size:14.5px">Un rectangle sur un graphique ne dit rien. <b style="color:var(--txt)">Une zone vierge et une zone déjà comblée ne se lisent pas pareil</b> — et MIA garde cette histoire pour chaque zone détectée.</p></div></div></div>
+    <div class="scr" data-t="parler"><div class="demo-grid"><div class="chat" id="chat2" style="min-height:160px"><div class="msg m" style="color:var(--faint)">Choisis une question ci-contre pour me voir répondre.</div></div><div><h4>Pose-lui une vraie question</h4><p style="color:var(--dim);font-size:14.5px">M.I.A explique les concepts, décrit ce qui a été détecté et pilote l'affichage. <b style="color:var(--txt)">Elle refuse tout ce qui relève de la prédiction</b> — clique la dernière option pour voir.</p><div class="chips" id="chips2"><span class="chip">C'est quoi un Order Block ?</span><span class="chip">Pourquoi cette zone est-elle importante ?</span><span class="chip">Montre-moi seulement les OB non testés</span><span class="chip">Tu penses que ça va monter ?</span></div></div></div></div>
+    <div class="scr" data-t="calc"><div class="demo-grid"><div class="card" style="background:var(--panel-2)"><div class="illu" style="margin:0 0 8px">Comment ce comblement est calculé</div><div class="row"><span>Zone</span><span>Fair Value Gap baissier · 4 020,10 – 4 021,85</span></div><div class="row"><span>Hauteur</span><span class="num">1,75</span></div><div class="row"><span>Pénétration maximale du prix</span><span class="num">1,05 (à 4 021,15)</span></div><div class="row"><span>Comblement</span><span class="num">1,05 / 1,75 = 60 %</span></div></div><div><h4>Chaque tuile explique sa méthode</h4><p style="color:var(--dim);font-size:14.5px">Les règles de détection sont publiées. Un chiffre à l'écran a toujours son dénominateur : combien, sur quel marché, sur quelle période.</p></div></div></div>
+  </div>
+  <p class="illu" style="text-align:center;margin-top:14px">Données d'illustration · le produit affiche les vraies lectures de marché</p>
+</div></section>
+
+<section id="outils" class="rv"><div class="wrap">
+  <div class="eyebrow">Cinq outils, un même produit</div>
+  <h2>Tout ce dont tu as besoin pour lire une structure</h2>
+  <p class="sub">Chaque outil répond à une question que tu te poses déjà. La différence, c'est le temps que tu mets à obtenir la réponse.</p>
+  <div class="tools">
+  <div class="tool" data-i="1"><div><div class="eyebrow">L'espace de lecture</div><h3>Bien plus qu'un graphique annoté</h3><p style="color:var(--dim)">Les zones sont bornées, les cassures datées, la liquidité positionnée. En dessous, un paragraphe décrit la situation. À côté, le régime du marché, le journal des événements, et M.I.A. <b style="color:var(--txt)">Tout ce qu'il te faut sur un seul écran.</b></p><ul><li><b>Graphique à couches</b> — chaque famille de structure s'affiche ou se masque</li><li><b>Lecture narrée</b> composée à partir des faits détectés, jamais d'un texte figé</li><li><b>Panneau de régime</b> — tendance, volatilité, position, accord entre unités</li><li><b>Journal des événements</b> — chaque cassure horodatée, cliquable sur le graphique</li><li><b>Cinq unités de temps</b> — de M5 à D1, la lecture suit</li></ul></div>
+    <div class="ill"><div class="ph"><span>Régime de marché · Or 15 min</span><span>bougie clôturée il y a 4 min</span></div><div class="reg"><div><small>Tendance</small><b>Haussière</b><i>depuis 14:15</i></div><div><small>Volatilité</small><b>Étendue</b><i>7 vs 20 bougies</i></div><div><small>Position</small><b>Tiers haut</b><i>4 012 – 4 037</i></div><div><small>Alignement</small><b>1 h d'accord</b><i>4 h opposé</i></div><div><small>Maturité</small><b>9 bougies</b><i>depuis le BOS</i></div><div><small>Densité</small><b>8 OB · 12 FVG</b><i>sur la fenêtre</i></div><div><small>Dernier évén.</small><b>BOS ↑</b><i>à 14:15</i></div><div><small>Session</small><b>New York</b><i>ouverte</i></div></div><div class="illu" style="margin-top:10px">Journal · BOS ↑ 14:15 · Poche vente balayée 13:30 · CHOCH ↑ 12:45 · OB ↑ 12:30 · FVG ↓ 11:00 — clique un événement, le graphique s'y positionne</div></div></div>
+  <div class="tool" data-i="2"><div><div class="eyebrow">Le scanner</div><h3>Tu ne peux pas surveiller tes marchés en continu. Lui, oui.</h3><p style="color:var(--dim)">Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b style="color:var(--txt)">où elles sont réunies en ce moment</b>, sur toutes les combinaisons de marchés et d'unités de temps. Réévalué à chaque clôture de bougie.</p><ul><li><b>22 conditions factuelles</b> réparties en structure, zones, liquidité et contexte</li><li><b>Ce qui va à l'encontre</b> est affiché aussi — désaccord entre unités, zone usée</li><li><b>Aucun classement</b> : les résultats ne sont jamais triés par « qualité »</li><li><b>Lectures enregistrées</b> : retrouve tes conditions habituelles</li></ul></div>
+    <div class="ill"><div class="ph"><span>Scanner · 4 conditions actives</span><span>réévalué il y a 4 min</span></div><div class="chips" style="margin-bottom:10px"><span class="cond on">tendance haussière</span><span class="cond on">unités alignées</span><span class="cond on">dans un OB</span><span class="cond on">jamais testée</span></div><div class="row"><span><b>Or · 15 min</b> <span class="num">4 027,36</span></span><span>4 / 4</span></div><div class="row"><span><b>Euro · 15 min</b> <span class="num">1,0842</span></span><span>4 / 4</span></div><div class="row"><span><b>Or · 4 h</b> <span class="num">4 026,90</span></span><span>2 / 4 · à l'encontre : 4 h baissier</span></div></div></div>
+  <div class="tool" data-i="3"><div><div class="eyebrow">Les zones</div><h3>Une zone vierge et une zone usée ne se lisent pas pareil</h3><p style="color:var(--dim)">La plupart des outils te montrent qu'un Order Block existe. MIA te raconte <b style="color:var(--txt)">sa vie entière</b> : quand il s'est formé, s'il a été touché, à quelle heure, et s'il a fini par être comblé. C'est la différence entre voir un rectangle et connaître son histoire.</p><ul><li><b>Chronologie complète</b> : formée → testée → comblée, horodatée</li><li><b>Taux de remplissage</b> pour un Fair Value Gap partiellement comblé</li><li><b>Recoupements</b> avec les zones détectées sur d'autres unités de temps</li><li><b>Masquable une par une</b> pour garder un graphique lisible</li></ul></div>
+    <div class="ill"><div class="ph"><span>Zones · Or · 15 minutes</span><span>2 zones au prix</span></div><div class="row" style="border:none;padding-top:0"><span><i class="sw" style="background:var(--ob)"></i> <b>Order Block ↑</b> <span class="num">4 026,80 – 4 028,90</span></span><span>jamais testée</span></div><div class="illu">Formée · il y a 3 h 30 ──────────── maintenant</div><div class="row" style="margin-top:10px"><span><i class="sw" style="background:var(--fvg);border-radius:50%"></i> <b>Fair Value Gap ↓</b> <span class="num">4 020,10 – 4 021,85</span></span><span>comblée à 60 %</span></div><div class="fill"><i style="width:60%"></i></div></div></div>
+  <div class="tool" data-i="4"><div><div class="eyebrow">Les actualités</div><h3>Sache quand les publications tombent — et ce qui s'est passé les fois d'avant</h3><p style="color:var(--dim)">Un calendrier des publications économiques, rattachées aux marchés qu'elles concernent. Et pour chacune, <b style="color:var(--txt)">ce qui a réellement été mesuré aux parutions précédentes</b> : le calme qui précède, l'agitation qui suit, la durée de vie des zones créées ce jour-là.</p><ul><li><b>Calendrier mensuel</b> avec heure locale et heure de l'organisme</li><li><b>Les douze derniers chiffres publiés</b> de chaque indicateur, tels que publiés</li><li><b>Mesures relevées</b> aux parutions passées — des décomptes, pas des prévisions</li><li><b>Sources officielles uniquement</b> : BLS, BEA, Census, Réserve fédérale, Eurostat, BCE</li></ul></div>
+    <div class="ill"><div class="ph"><span>Indice des prix à la consommation · 12 août</span><span>BLS · 8:30 ET</span></div><div class="row"><span>Le marché se calme-t-il avant ?</span><span>L'heure qui précède a été plus calme <b>10 fois sur 12</b>.</span></div><div class="row"><span>Combien de temps ça dure ?</span><span>Le plus souvent <b>1 à 3 h</b>. De 15 min à 4 h 45.</span></div><div class="row"><span>Les zones créées ont-elles été traversées ?</span><span>Sur <b>34 zones</b> créées, 26 traversées en deux heures.</span></div><div class="row"><span>Où en est la structure ?</span><span>Tiers haut du range <b>8 fois sur 12</b>.</span></div><div class="illu" style="margin-top:8px">Décomptes de journées passées. Rien ne s'applique à la parution à venir.</div></div></div>
+  </div>
+</div></section>
+
+<section id="comment" class="rv"><div class="wrap">
+  <div class="eyebrow">Comment ça marche</div>
+  <h2>Trois minutes pour comprendre ton marché</h2>
+  <p class="sub">Aucune installation, aucun script à copier, aucun réglage d'indicateur. Tu ouvres et c'est prêt.</p>
+  <div class="steps3"><div class="card"><div class="n">01</div><h4>Choisis ton marché</h4><p>L'or ou l'euro, sur 5 unités de temps. Les combinaisons sont déjà analysées en continu, et le résultat reste à jour à chaque clôture de bougie.</p></div><div class="card"><div class="n">02</div><h4>Lis la structure</h4><p>Zones bornées, cassures datées, liquidité positionnée, et un paragraphe qui décrit la situation. Tu vois en dix secondes ce qui t'aurait pris vingt minutes.</p></div><div class="card"><div class="n">03</div><h4>Cherche ou approfondis</h4><p>Lance le scanner pour retrouver tes conditions ailleurs, ouvre la page Zones pour l'historique, ou demande à M.I.A ce que tu n'as pas compris.</p></div></div>
+</div></section>
+
+<section id="pourqui" class="rv"><div class="wrap">
+  <div class="eyebrow">Pour qui</div>
+  <h2>Fait pour les traders SMC et ICT</h2>
+  <p class="sub">Si tu traces tes Order Blocks à la main tous les matins, tu es exactement la personne pour qui ce produit existe.</p>
+  <div class="who3">
+    <div class="card"><div class="t">Apprendre</div><h4>Tu apprends le SMC</h4><p>Voir la structure marquée correctement, avec un agent qui explique chaque élément quand tu le lui demandes, remplace des dizaines d'heures de vidéos.</p><ul><li>Chaque concept expliqué sur ton marché, pas en théorie</li><li>Les règles de détection sont publiées, tu peux les vérifier</li><li>Tu apprends en regardant, pas en mémorisant</li></ul></div>
+    <div class="card"><div class="t">Constance</div><h4>Tu traces à la main</h4><p>Tu passes du temps chaque jour à marquer tes zones. MIA le fait sur l'or et l'euro, en continu, avec le cycle de vie en prime.</p><ul><li>Les mêmes règles appliquées de la même façon, toujours</li><li>Le cycle de vie complet de chaque zone, conservé</li><li>Rien n'est oublié un jour de fatigue</li></ul></div>
+    <div class="card"><div class="t">Étendue</div><h4>Tu suis plusieurs unités de temps</h4><p>Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes combinaisons à chaque clôture, sans que tu cliques.</p><ul><li>Tes conditions vérifiées partout à chaque clôture</li><li>Le contexte défavorable affiché, pas seulement ce qui confirme</li><li>Un calendrier de sources officielles, vérifiables</li></ul></div>
+  </div>
+</div></section>
+
+<section id="honnetete" class="rv"><div class="wrap distinct">
+  <div class="eyebrow">Ce qui nous distingue</div>
+  <h2>MIA ne te dira jamais où va le prix</h2>
+  <p>Pas parce qu'elle en est incapable — parce que <b>personne ne le sait</b>. Le marché des outils de trading est plein de produits qui vendent des prédictions invérifiables. MIA fait autre chose : elle décrit ce qui est là, maintenant, et s'arrête là.</p>
+  <p>Concrètement, le contexte défavorable est affiché à égalité du contexte favorable, les résultats ne sont jamais classés par « qualité », et quand l'analyse ne sait pas, l'écran te le dit au lieu de deviner. <b>Tu gardes la décision. On te donne la lecture.</b></p>
+</div></section>
+
+<section id="tarifs" class="rv"><div class="wrap">
+  <div class="eyebrow">Tarif</div>
+  <h2>Un seul abonnement, tout compris</h2>
+  <p class="sub">Accès complet dès l'abonnement, résiliable à tout moment.</p>
+  <div class="price">
+    <div class="card"><div class="eyebrow">Complet</div><h3 style="margin:0">Abonnement</h3><p style="color:var(--dim);margin:2px 0 16px;font-size:14px">tout le produit, tous les marchés</p><div class="pbig"><span class="num">39,99 $ US</span> <small>/ mois</small></div><p style="color:var(--dim);margin:8px 0 0">ou <span class="num">348 $ US</span> par an, soit <span class="num">29 $ US</span> par mois</p><ul class="plist"><li><b>Les 2 marchés</b>, 5 unités de temps</li><li>Scanner sur toutes les combinaisons</li><li>Page Zones et cycle de vie complet</li><li>Mesures relevées aux publications</li><li>M.I.A Agent sans limite</li><li>Lectures enregistrées illimitées</li></ul><a class="btn primary" href="#">Commencer</a> <span class="illu">annulable à tout moment</span></div>
+    <p class="legal">Prix en dollars américains. M.I.A Markets est un outil d'information et d'éducation : il ne fournit ni conseil en investissement, ni recommandation, ni indication d'intervention sur les marchés. Le trading comporte un risque de perte. Réservé aux personnes de 18 ans et plus. Aucun palier gratuit, aucun essai gratuit : la démonstration ci-dessus en tient lieu.</p>
+  </div>
+</div></section>
+
+<section id="faq" class="rv"><div class="wrap faq" style="max-width:820px">
+  <div class="eyebrow">Questions fréquentes</div>
+  <h2>Ce qu'on nous demande le plus</h2>
+  <details><summary>Est-ce que MIA dit quand acheter ou vendre ?</summary><p>Non. Jamais. Aucun signal, aucune cible, aucun biais, aucun score. Elle décrit ce que le moteur a détecté, au présent, et refuse le reste.</p></details>
+  <details><summary>Faut-il connaître le Smart Money Concepts pour s'en servir ?</summary><p>Non. Chaque concept est expliqué là où il apparaît, et M.I.A répond quand tu ne comprends pas — avec l'exemple sous les yeux.</p></details>
+  <details><summary>Est-ce que ça remplace TradingView ?</summary><p>Non. C'est une lecture de structure, pas une plateforme de graphiques ni d'exécution. Beaucoup utilisent les deux côte à côte.</p></details>
+  <details><summary>Quels marchés sont couverts ?</summary><p>Deux aujourd'hui : XAU/USD et EUR/USD, sur M5, M15, H1, H4 et D1. Jusqu'à 80 marchés OTC prévus au lancement.</p></details>
+  <details><summary>À quelle fréquence les données sont-elles mises à jour ?</summary><p>À chaque clôture de bougie, sur chaque unité de temps. La lecture narrée et le scanner sont recomposés à ce moment-là.</p></details>
+  <details><summary>Puis-je annuler quand je veux ?</summary><p>Oui. L'accès reste ouvert jusqu'à la fin de la période payée. À l'annuel, garantie volontaire de 14 jours.</p></details>
+  <details><summary>D'où viennent les données de prix ?</summary><p>D'un fournisseur de données licencié pour l'affichage à des abonnés. Les publications économiques viennent uniquement des organismes officiels.</p></details>
+  <details><summary>Le produit fonctionne-t-il sur téléphone ?</summary><p>Oui. M.I.A s'affiche en bulle flottante ou en colonne, à ton choix, et le choix persiste.</p></details>
+</div></section>
+
+<section class="cta rv"><div class="wrap"><h2>Arrête de tracer. Commence à lire.</h2><p class="sub" style="margin:0 auto 26px">Abonne-toi et regarde ce que MIA voit sur ton marché préféré. Accès complet dès l'abonnement, résiliable à tout moment.</p><a class="btn primary" href="#tarifs">S'abonner</a> <a class="btn ghost" href="#outils">Revoir les outils</a></div></section>
+
+<footer><div class="wrap"><div class="cols"><div><b>M.I.A Markets · Accès anticipé</b>Multi-asset Intelligence Assistant for Markets. Indicateur de marché conversationnel. Posture éducative, compréhension augmentée du marché — pas une performance financière promise.<br>mia.markets · contact@mia.markets</div><div><b>Produit</b><a href="#outils">Multi-actifs</a><a href="#demo">Chatbot M.I.A Agent</a><a href="#honnetete">Transparence</a><a href="#">Méthodologie</a><a href="#tarifs">Tarifs</a><a href="#faq">FAQ</a></div><div><b>Légal</b><a href="#">Conditions d'utilisation</a><a href="#">Confidentialité</a><a href="#">Contact</a></div></div>Démonstration en accès anticipé · Lecture algorithmique éducative · Ne constitue ni un signal de trading, ni un conseil en investissement personnalisé · Le trading à effet de levier comporte un risque élevé de perte.<br>© 2026 M.I.A Markets — tous droits réservés.</div></footer>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],NS='http://www.w3.org/2000/svg',mono='JetBrains Mono, monospace';
+const el=(t,a,x)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(x)e.textContent=x;return e;};
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const CAND=[[40,150,182,0],[66,142,176,0],[92,128,162,0],[118,150,134,1],[144,144,116,1],[170,128,104,1],[196,112,88,1],[222,98,78,1],[248,88,120,1],[274,94,118,0],[300,102,124,0],[326,104,94,1],[352,102,108,0],[378,100,106,1],[404,98,104,1],[430,96,102,1],[456,94,100,1],[482,88,98,1],[508,80,94,1],[534,74,88,1],[560,68,82,1],[586,70,84,0],[612,72,86,0],[638,66,78,1],[664,62,74,1]];
+function buildChart(svg,animate){const g={};['fvg','ob','liq','str','c'].forEach(k=>{g[k]=el('g',{});svg.appendChild(g[k]);});
+ g.fvg.append(el('rect',{x:330,y:124,width:370,height:18,fill:'rgba(139,127,217,.13)'}),el('rect',{x:330,y:124,width:370,height:18,fill:'none',stroke:'#8b7fd9','stroke-dasharray':'4 3'}),el('text',{x:336,y:137,fill:'#8b7fd9','font-family':mono,'font-size':10},'FVG · comblé à 60 %'));
+ g.ob.append(el('rect',{x:490,y:72,width:210,height:22,fill:'rgba(217,138,163,.12)'}),el('rect',{x:490,y:72,width:210,height:22,fill:'none',stroke:'#d98aa3','stroke-dasharray':'4 3'}),el('text',{x:496,y:66,fill:'#d98aa3','font-family':mono,'font-size':10},'OB haussier · jamais testé'));
+ g.liq.append(el('line',{x1:20,y1:32,x2:700,y2:32,stroke:'#d6a24a','stroke-dasharray':'3 4'}),el('text',{x:24,y:26,fill:'#d6a24a','font-family':mono,'font-size':10},'Liquidité achat · intacte'),el('line',{x1:20,y1:222,x2:700,y2:222,stroke:'#d6a24a','stroke-dasharray':'3 4',opacity:.5}),el('text',{x:24,y:238,fill:'#d6a24a','font-family':mono,'font-size':10,opacity:.7},'Liquidité vente · balayée'));
+ [[196,112,'CHOCH ↑ · 4 021,45'],[326,96,'BOS ↑ · 4 025,10']].forEach(([x,y,t])=>g.str.append(el('line',{x1:x-8,y1:y,x2:x+70,y2:y,stroke:'#97999E'}),el('text',{x:x-8,y:y-4,fill:'#97999E','font-family':mono,'font-size':10},t)));
+ const draw=([x,o,c,up])=>{const col=up?'#37b98c':'#dd6b7a',top=Math.min(o,c),h=Math.abs(o-c)||2;g.c.append(el('line',{x1:x,y1:top-7,x2:x,y2:top+h+7,stroke:col,opacity:.7}),el('rect',{x:x-4,y:top,width:8,height:h,fill:col}));};
+ if(animate){(async()=>{['fvg','ob','liq','str'].forEach(k=>g[k].style.opacity=0);for(const c of CAND){draw(c);await wait(40);}for(const k of ['str','ob','fvg','liq']){g[k].style.transition='opacity .5s';g[k].style.opacity=1;await wait(350);}})();}else CAND.forEach(draw);
+ svg.append(el('rect',{x:654,y:58,width:46,height:14,fill:'#C9A14A',rx:2}),el('text',{x:658,y:68,fill:'#14100A','font-family':mono,'font-size':9,'font-weight':'600'},'4 026,77'));return g;}
+const S={str:'Un <b>CHOCH haussier s\'est confirmé</b> à 4 021,45, suivi d\'un <b>BOS haussier</b> à 4 025,10.',ob:'Le prix est <b>dans un Order Block haussier</b> formé il y a 14 bougies, entre 4 026,80 et 4 028,90, <b>jamais testé</b>.',fvg:'Un <b>Fair Value Gap baissier comblé à 60 %</b> se trouve sous le prix, entre 4 020,10 et 4 021,85.',liq:'Une poche de <b>liquidité achat reste intacte</b> à 4 034,20 ; une poche vente <b>a été balayée</b> sous 4 011,40.'};
+const st={ob:1,fvg:1,liq:1,str:1};let G=null;
+function rr(){if(G)for(const k in st)G[k].style.display=st[k]?'':'none';const p=['str','ob','fvg','liq'].filter(k=>st[k]).map(k=>S[k]);$('#reading').innerHTML=p.length?'<b>Sur l\'or en 15 minutes :</b> '+p.join(' '):'<span style="color:var(--faint)">Aucune couche affichée. La lecture n\'a rien à décrire.</span>';$$('#layers .pill').forEach(b=>b.classList.toggle('off',!st[b.dataset.l]));}
+G=buildChart($('#chart'),false);$$('#layers .pill').forEach(b=>b.addEventListener('click',()=>{st[b.dataset.l]=st[b.dataset.l]?0:1;rr();}));rr();
+/* tabs */
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{$$('.tab').forEach(x=>x.classList.toggle('on',x===t));$$('.scr').forEach(s=>s.classList.toggle('on',s.dataset.t===t.dataset.t));}));
+/* scanner */
+const combos=[{m:'Or · 15 min',p:'4 027,36',has:['trend','mtf','ob','tested'],ag:'Rien à l\'encontre.'},{m:'Euro · 15 min',p:'1,0842',has:['trend','mtf','ob','tested'],ag:'Rien à l\'encontre.'},{m:'Or · 4 h',p:'4 026,90',has:['ob','tested','fvg'],ag:'4 h baissier.'},{m:'Euro · 1 h',p:'1,0839',has:['trend','choch','liq','near'],ag:'Le 15 min est baissier.'}];
+function res(){const a=$$('.scr[data-t=strat] .cond.on').map(c=>c.dataset.c);const r=combos.filter(c=>a.length&&a.every(x=>c.has.includes(x)));$('#res').innerHTML=`<div class="row" style="border:none"><span><b>${r.length}</b> combinaison${r.length>1?'s':''} correspondent</span><span>réévalué à chaque clôture</span></div>`+(!a.length?'<div class="row"><span>Coche au moins une condition.</span></div>':!r.length?'<div class="row"><span>Aucune combinaison ne correspond. Rien n\'est assoupli à ta place.</span></div>':r.map(c=>`<div class="row"><span><b>${c.m}</b> <span class="num">${c.p}</span></span><span>${a.length} / ${a.length} · ${c.ag}</span></div>`).join(''));}
+$$('.scr[data-t=strat] .cond').forEach(c=>c.addEventListener('click',()=>{c.classList.toggle('on');res();}));res();
+/* zones */
+const Z=[['ORDER BLOCK ↑','4 026,80 – 4 028,90','active · jamais testée',0,'Cette zone s\'est formée juste avant le BOS haussier. Le prix y est entré il y a 30 minutes. <b>Elle n\'a jamais été comblée.</b>'],['FAIR VALUE GAP ↓','4 020,10 – 4 021,85','comblé à 60 %',60,'Le prix est entré à 4 021,15 puis est ressorti. <b>Il reste 40 % de la zone non visitée.</b>'],['ORDER BLOCK ↓','4 041,30 – 4 043,05','comblé',100,'Le prix a traversé la zone de part en part hier à 16:00. <b>Elle n\'est plus active</b> et ne s\'affiche qu\'avec la couche « mitigées ».']];
+function zr(i){const z=Z[i];$('#zd').innerHTML=`<div class="row" style="border:none"><span><span class="num" style="color:var(--acc);font-size:11px">${z[0]}</span> <b class="num">${z[1]}</b></span><span>${z[2]}</span></div><div class="fill"><i style="width:${z[3]}%"></i></div><div class="illu">Formée ──────────── maintenant</div><p style="font-size:14px;color:var(--dim);margin:10px 0 0">${z[4]}</p>`;$$('.zsel .cond').forEach(x=>x.classList.toggle('on',+x.dataset.z===i));}
+$$('.zsel .cond').forEach(x=>x.addEventListener('click',()=>zr(+x.dataset.z)));zr(0);
+/* chat */
+const R=[[/rebond|mont|descend|va (aller|faire)|pr[ée]di|cible|achet|vend|signal|setup|gagn|biais|probab/,'<b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne te dis pas quand acheter ou vendre. Je peux te décrire l\'état de la zone ou t\'expliquer le concept.','rf'],[/masque|cache|seulement les ob/,'FVG'],[/order block|\bob\b/,'La dernière bougie contraire avant le mouvement qui casse la structure. Ici : la bougie de 12:30, avant le BOS de 14:15. Sa zone couvre <b>4 026,80 à 4 028,90</b>, jamais testée.'],[/importante|test/,'Elle n\'a <b>jamais été testée</b> depuis sa formation, et le prix y est en ce moment. Douze contacts sur les zones voisines, aucune traversée ici. Ce que ça vaut, c\'est toi qui le décides.'],[/fvg|fair/,'Un écart laissé entre la mèche de la première bougie et celle de la troisième. Celui-ci est baissier, <b>comblé à 60 %</b>, entre 4 020,10 et 4 021,85.'],[/liquid|poche/,'La plus proche : une poche achat <b>intacte à 4 034,20</b>, 0,18 % au-dessus du prix. Une poche vente a été balayée sous 4 011,40.'],[/choch/,'Un changement de caractère : la structure casse à l\'inverse de la tendance précédente. Ici, haussier, confirmé à <b>4 021,45</b>.'],[/diff[ée]rence|bos/,'Le BOS casse dans le sens de la tendance ; le CHOCH casse à l\'inverse. Ici : CHOCH ↑ à 4 021,45, puis BOS ↑ à 4 025,10.'],[/prix|co[uû]t|combien|abonn/,'<b>39,99 $ US</b> par mois ou 348 $ US par an. Pas d\'essai gratuit : cette page en tient lieu.']];
+function reply(q,box){const l=q.toLowerCase();let a='Je ne sais pas ça. Je parle de ce que le produit sait : ce graphique, ses zones, les concepts SMC, le prix. Je ne comble pas.',cls='m';for(const [re,ans,k] of R){if(re.test(l)){if(ans==='FVG'){st.fvg=0;rr();a='Fait. Les Fair Value Gaps sont masqués sur le graphique de la démo et retirés de la lecture.';}else{a=ans;if(k)cls='m '+k;}break;}}box.insertAdjacentHTML('beforeend',`<div class="msg u">${q}</div>`);setTimeout(()=>{box.insertAdjacentHTML('beforeend',`<div class="msg ${cls}">${a}</div>`);box.scrollTop=1e5;},450);}
+$('#send').addEventListener('click',()=>{const v=$('#q').value.trim();if(v){$('#q').value='';reply(v,$('#chat'));}});$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')$('#send').click();});
+$$('#miaChips .chip').forEach(c=>c.addEventListener('click',()=>reply(c.textContent,$('#chat'))));
+let first2=true;$$('#chips2 .chip').forEach(c=>c.addEventListener('click',()=>{if(first2){$('#chat2').innerHTML='';first2=false;}reply(c.textContent,$('#chat2'));}));
+/* reveal */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:.12});$$('.rv').forEach(s=>io.observe(s));
+window.addEventListener('scroll',()=>{const p=$('#vprog');if(p)p.style.width=(scrollY/(document.body.scrollHeight-innerHeight)*100)+'%';});
+
+$('#heroVis').innerHTML='<div class="card"><div class="top"><span id="hst">Le graphique se charge</span><span>Or (XAU/USD) · 15 min</span></div><svg class="chart" id="heroChart" viewBox="0 0 700 260"></svg><div class="reading" id="heroRead"></div><div class="chat" id="heroChat"></div></div>';
+buildChart($('#heroChart'),true);
+$$('.tool>div:first-child').forEach((d,i)=>d.dataset.i=i+1);
+(async()=>{await wait(1100);$('#hst').textContent='M.I.A lit la structure';await wait(1700);const t='Sur l\'or en 15 minutes : un CHOCH haussier s\'est confirmé à 4 021,45, suivi d\'un BOS haussier à 4 025,10. Le prix est dans un Order Block haussier jamais testé.';const r=$('#heroRead');for(let i=1;i<=t.length;i++){r.textContent=t.slice(0,i);await wait(11);}$('#hst').textContent='lecture à jour';await wait(500);const c=$('#heroChat');c.insertAdjacentHTML('beforeend','<div class="msg u">tu penses que ça va rebondir ?</div>');await wait(800);c.insertAdjacentHTML('beforeend','<div class="msg m rf"><b>Je ne réponds pas à ça.</b> Je ne prédis pas les mouvements de prix et je ne te dis pas quand acheter ou vendre.</div>');})();
+</script>
+</body></html>

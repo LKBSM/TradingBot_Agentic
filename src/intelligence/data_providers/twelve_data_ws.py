@@ -38,13 +38,17 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 
-from src.intelligence.data_providers.twelve_data_provider import _SYMBOL_MAP
+from src.intelligence.data_providers.twelve_data_provider import _symbol_map
 
 logger = logging.getLogger(__name__)
 
-# App-instrument code -> Twelve Data WS symbol (reuse the REST provider's map so
-# the two never drift). The reverse map turns "XAU/USD" ticks back into "XAUUSD".
-_TD_TO_APP: Dict[str, str] = {td: app for app, td in _SYMBOL_MAP.items()}
+# App-instrument code -> Twelve Data WS symbol. Resolved through the REST
+# provider's helper, which derives it from the market registry (MKT-1), so the
+# two never drift AND adding a market needs no edit here. Read at call time
+# rather than at import: the registry is the source of truth, not a snapshot.
+def _td_to_app() -> Dict[str, str]:
+    """Reverse map, turning \"XAU/USD\" ticks back into \"XAUUSD\"."""
+    return {td: app for app, td in _symbol_map().items()}
 
 _WS_URL = "wss://ws.twelvedata.com/v1/quotes/price"
 
@@ -91,14 +95,15 @@ class TwelveDataLiveTickBridge:
             raise ValueError("TwelveDataLiveTickBridge requires a non-empty api_key")
         self._api_key = api_key
         # Default to the full V1 perimeter; validate each against the symbol map.
-        instruments = instruments or list(_SYMBOL_MAP.keys())
-        unknown = [i for i in instruments if i not in _SYMBOL_MAP]
+        symbols = _symbol_map()
+        instruments = instruments or list(symbols.keys())
+        unknown = [i for i in instruments if i not in symbols]
         if unknown:
             raise ValueError(
-                f"Unsupported instrument(s) {unknown}; known: {sorted(_SYMBOL_MAP)}"
+                f"Unsupported instrument(s) {unknown}; known: {sorted(symbols)}"
             )
         self._instruments = instruments
-        self._td_symbols = [_SYMBOL_MAP[i] for i in instruments]
+        self._td_symbols = [symbols[i] for i in instruments]
         self._connect = connect  # resolved lazily so importing websockets is optional
         self._ping_interval = ping_interval
         self._base_backoff_s = base_backoff_s
@@ -154,7 +159,7 @@ class TwelveDataLiveTickBridge:
             return
 
         td_symbol = data.get("symbol")
-        instrument = _TD_TO_APP.get(td_symbol)
+        instrument = _td_to_app().get(td_symbol)
         if instrument is None:
             return
         try:

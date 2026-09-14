@@ -11,6 +11,7 @@ from src.intelligence.data_providers import DataProvider, TwelveDataProvider
 from src.intelligence.data_providers.twelve_data_provider import (
     Candle,
     TwelveDataAuthError,
+    TwelveDataRateLimited,
     TwelveDataError,
     TwelveDataRateLimiter,
 )
@@ -139,7 +140,11 @@ class TestProviderHttpBehaviour:
             provider.get_ohlcv("EURUSD", "H1", 10)
         assert session.get.call_count == 1
 
-    def test_retry_on_429_then_success(self):
+    def test_429_is_terminal_and_costs_exactly_one_request(self):
+        """DATA-3: a refused request is BILLED — measured live, the server's own
+        ``Api-Credits-Used`` still increments on the 429. Retrying it spends more
+        of a budget that is by definition already gone: one failing fetch used to
+        cost 4 credits. It must now cost exactly one, and raise."""
         session = MagicMock()
         session.get.side_effect = [
             _make_response(429, text="rate limited"),
@@ -148,10 +153,9 @@ class TestProviderHttpBehaviour:
         provider = TwelveDataProvider(
             api_key="dummy", session=session, sleep_fn=lambda _: None,
         )
-        df = provider.get_ohlcv("XAUUSD", "M15", 2)
-        assert len(df) == 2
-        assert list(df.columns) == ["Open", "High", "Low", "Close", "Volume"]
-        assert session.get.call_count == 2
+        with pytest.raises(TwelveDataRateLimited):
+            provider.get_ohlcv("XAUUSD", "M15", 2)
+        assert session.get.call_count == 1
 
     def test_retry_on_503_then_success(self):
         session = MagicMock()

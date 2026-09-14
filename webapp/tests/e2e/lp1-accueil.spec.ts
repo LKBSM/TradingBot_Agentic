@@ -171,12 +171,14 @@ for (const loc of LOCALES) {
       });
       test.describe.configure({ retries: 2 });
 
-      test('full page: hero, real stats, illustration mention, pricing, legal', async ({ page }) => {
+      // LP-3 removed the four-tile stats banner from the hero. What the page
+      // must still prove is that it does not advertise the maquette fictions and
+      // that the perimeter claim survives where it now lives (pricing / FAQ).
+      test('full page: hero, illustration mention, pricing, legal', async ({ page }) => {
         await open(page, loc);
         await expect(page.getByRole('heading', { level: 1 })).toContainText(loc.h1);
-        // real figures, not the maquette fictions — LP-2 band ends on "structures"
-        await expect(page.getByText('22', { exact: true }).first()).toBeVisible();
-        await expect(page.getByText(loc.statStructures).first()).toBeVisible();
+        // the removed banner must not grow back
+        await expect(page.getByText(loc.statStructures)).toHaveCount(0);
         await expect(page.locator('body')).not.toContainText('480');
         // illustration mention present at least once
         await expect(page.getByText(loc.illus).first()).toBeVisible();
