@@ -1,4 +1,4 @@
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 /**
  * PAY-3 (G1) — LE TEST VIVANT. La défense contre le scénario le plus coûteux.
@@ -8,28 +8,46 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
  * aucune alarme ; ça se lit comme une baisse de conversion qu'on impute à autre
  * chose pendant des semaines.
  *
- * Aucun test à faux client Stripe ne peut attraper ça — c'est précisément ainsi
- * qu'un `verify_webhook` renvoyant un objet `stripe.Event` (dont `.get()` lève)
- * est passé en production : le faux client, lui, renvoyait un `dict`. Donc ce
- * test-ci pousse une VRAIE carte de test à travers le VRAI Checkout hébergé,
- * attend le VRAI webhook, et échoue bruyamment si l'accès ne s'ouvre pas.
+ * CE QUI EST MESURÉ ICI
+ * ---------------------
+ * La chaîne qui nous appartient, de bout en bout, avec du VRAI Stripe :
+ *
+ *   abonnement créé chez Stripe (API réelle, mode test)
+ *     → Stripe émet de VRAIS événements signés
+ *       → `stripe listen` les relaie vers /api/billing/webhook
+ *         → notre vérification de signature les accepte
+ *           → l'accès s'ouvre, et la route de données cesse de refuser
+ *
+ * Aucun faux client Stripe nulle part. C'est le seul moyen d'attraper la classe
+ * de panne qui compte : un `verify_webhook` renvoyant un objet `stripe.Event`
+ * (dont `.get()` lève) est passé en production précisément parce que le faux
+ * client, lui, renvoyait un `dict`.
+ *
+ * POURQUOI PAS LA PAGE CHECKOUT
+ * -----------------------------
+ * Une version antérieure pilotait la page Checkout hébergée avec la carte 4242.
+ * Constat après plusieurs passages : Stripe refuse la soumission depuis un
+ * navigateur automatisé — la page présente même une case « I am an AI agent
+ * acting on behalf of someone else », et la session reste `status: open`,
+ * `payment_status: unpaid`. C'est une protection anti-robot délibérée de Stripe,
+ * pas une panne du produit, et ce n'est pas une surface qu'on cherche à
+ * contourner. La page Checkout appartient à Stripe ; ce qui nous appartient,
+ * c'est ce qui se passe APRÈS le paiement — exactement ce qui est testé ici. Le
+ * parcours visuel complet reste couvert par le passage manuel du fondateur, qui
+ * est de toute façon la condition de fusion.
  *
  * CE QU'IL NE FAIT SURTOUT PAS
  * ----------------------------
  * Il n'appelle JAMAIS `POST /api/billing/sync`. La réconciliation directe
- * (PAY-3e) sauverait le client et ferait passer le test au vert alors même que
- * le webhook est mort — c'est-à-dire qu'elle masquerait exactement la panne que
- * ce test existe pour détecter. Seul le chemin webhook est mesuré ici.
- *
- * Il ne se désactive pas non plus pour faire passer un déploiement : quand
- * PAY3_LIVE_REQUIRED=1 (ce que pose le workflow), une configuration manquante
- * est un ÉCHEC, pas un skip.
+ * (PAY-3e) sauverait le client et rendrait le test vert alors même que le
+ * webhook est mort — elle masquerait la panne que ce test existe pour détecter.
+ * Seul le chemin webhook est mesuré.
  *
  * PRÉREQUIS (clés de TEST uniquement)
  * -----------------------------------
- *   STRIPE_SECRET_KEY   sk_test_… (une clé live fait échouer le test exprès)
- *   PAY3_API_BASE       base du backend, ex. http://localhost:8000
- *   PAY3_APP_BASE       base du front, ex. http://localhost:3000
+ *   STRIPE_SECRET_KEY      sk_test_… (une clé live fait échouer le test exprès)
+ *   STRIPE_PRICE_MONTHLY   price_… récurrent, dans le MÊME mode
+ *   PAY3_API_BASE          base du backend, ex. http://127.0.0.1:8000
  *   et, côté backend lancé pour le test :
  *     STRIPE_WEBHOOK_SECRET issu de `stripe listen`, SUBSCRIPTION_GATE_ENFORCED=1,
  *     EMAIL_VERIFICATION_ENFORCED=0 (pas de SMTP dans un runner).
@@ -41,27 +59,26 @@ import { test, expect, type APIRequestContext, type Page } from '@playwright/tes
 const WEBHOOK_DEADLINE_MS = 90_000;
 const POLL_INTERVAL_MS = 2_000;
 
+const STRIPE_API = 'https://api.stripe.com';
+
 const REQUIRED = process.env.PAY3_LIVE_REQUIRED === '1';
 const SECRET = process.env.STRIPE_SECRET_KEY ?? '';
+const PRICE_ID = process.env.STRIPE_PRICE_MONTHLY ?? '';
 const API_BASE = (process.env.PAY3_API_BASE ?? '').replace(/\/$/, '');
-const APP_BASE = (process.env.PAY3_APP_BASE ?? '').replace(/\/$/, '');
 
 const missing: string[] = [];
 if (!SECRET) missing.push('STRIPE_SECRET_KEY');
+if (!PRICE_ID) missing.push('STRIPE_PRICE_MONTHLY');
 if (!API_BASE) missing.push('PAY3_API_BASE');
-// PAY3_APP_BASE n'est PAS exigé : ce test ne visite jamais notre front — il va
-// sur la page Checkout hébergée par Stripe et parle au backend en HTTP. Exiger
-// le front obligerait le runner à construire le webapp pour rien.
-void APP_BASE;
 
 test.beforeAll(() => {
-  // Un garde-fou avant tout le reste : ce test crée de vrais objets Stripe et
-  // pousse un vrai numéro de carte. Sur une clé live, ce serait un débit réel.
+  // Garde-fou avant tout le reste : ce test crée de vrais objets Stripe et
+  // déclenche un vrai débit. Sur une clé live, ce serait de l'argent réel.
   if (SECRET.startsWith('sk_live_')) {
     throw new Error(
       'PAY-3 live test refusé : STRIPE_SECRET_KEY est une clé LIVE. ' +
-        "Ce test pousse une carte de test à travers Checkout et ne doit JAMAIS " +
-        "toucher un compte réel. Utilise une clé sk_test_.",
+        'Ce test crée un abonnement facturé et ne doit JAMAIS toucher un compte ' +
+        'réel. Utilise une clé sk_test_.',
     );
   }
   if (REQUIRED && missing.length > 0) {
@@ -83,115 +100,30 @@ function uniqueEmail(): string {
   return `pay3-e2e+${stamp}@mia-markets-test.invalid`;
 }
 
-/** Remplit la page Checkout HÉBERGÉE par Stripe avec la carte de test. */
-async function payWithTestCard(page: Page): Promise<void> {
-  // Les champs de Checkout vivent dans la page elle-même (plus d'iframe depuis
-  // 2022). On attend le numéro de carte : c'est le signal que la page est prête.
-  const cardNumber = page.locator('#cardNumber');
-  await expect(
-    cardNumber,
-    "la page Checkout hébergée ne présente pas de champ carte — l'URL de session " +
-      'est peut-être invalide, ou le prix Stripe est dans un autre mode (test/live)',
-  ).toBeVisible({ timeout: 30_000 });
-
-  await cardNumber.fill('4242424242424242');
-  await page.locator('#cardExpiry').fill('12' + String(new Date().getFullYear() + 2).slice(-2));
-  await page.locator('#cardCvc').fill('123');
-
-  const name = page.locator('#billingName');
-  if (await name.count()) await name.fill('PAY3 Test Buyer');
-
-  // billing_address_collection=required (G2) : le pays est demandé. On paie
-  // depuis le Canada, donc DANS la zone — le filet hors zone ne doit pas mordre.
-  const country = page.locator('#billingCountry');
-  if (await country.count()) await country.selectOption('CA');
-  const postal = page.locator('#billingPostalCode');
-  if (await postal.count()) await postal.fill('H2X 1Y4');
-
-  // DÉCLARATION D'AGENT AUTOMATISÉ. Stripe Checkout présente une case
-  // « I am an AI agent acting on behalf of someone else », vue sur la trace d'un
-  // échec : le formulaire restait sans effet et Checkout n'affichait aucune
-  // erreur. On la coche parce que c'est vrai — ce test EST un agent qui paie
-  // pour le compte de quelqu'un — et parce que c'est la voie que Stripe prévoit
-  // pour un paiement automatisé. Conditionnel : la case peut disparaître ou
-  // changer de libellé sans que le test doive casser.
-  const agentBox = page.getByRole('checkbox', {
-    name: /ai agent acting on behalf|agent (ia|ai) agissant/i,
+/** Appel à l'API Stripe RÉELLE (mode test), form-encoded comme Stripe l'attend. */
+async function stripe(
+  api: APIRequestContext,
+  path: string,
+  form?: Record<string, string>,
+): Promise<Record<string, unknown>> {
+  const resp = await api.post(`${STRIPE_API}${path}`, {
+    headers: { Authorization: `Bearer ${SECRET}` },
+    form: form ?? {},
   });
-  if (await agentBox.count()) {
-    // `force` : Stripe rend un <input> reel masque hors viewport, pilote par un
-    // libelle stylise. Sans force, Playwright refuse de cliquer ("element is
-    // outside of the viewport") et mange tout le budget du test. Le timeout
-    // court evite qu'un echec ici masque le vrai verdict : si la case ne se
-    // coche pas, on laisse le controle de soumission ci-dessous le dire.
-    await agentBox
-      .first()
-      .check({ force: true, timeout: 10_000 })
-      .catch(() => undefined);
-  }
-
-  // LE VRAI BOUTON D'ENVOI. Piège vérifié sur une trace d'échec : les boutons de
-  // portefeuille (« Apple Pay », « Payer avec Link ») sont AVANT dans le DOM, et
-  // un sélecteur CSS à virgules se résout dans l'ordre du DOM, pas dans l'ordre
-  // écrit. `.SubmitButton, button[type="submit"]` suivi de `.first()` cliquait
-  // donc un portefeuille : le formulaire n'était jamais soumis, Checkout
-  // n'affichait aucune erreur, et le test accusait le webhook à tort.
-  // On vise le bouton par son libellé réel (Checkout est en français ici).
-  const byLabel = page.getByRole('button', {
-    name: /s['’]abonner|subscribe|payer maintenant|pay now/i,
-  });
-  const submit = (await byLabel.count()) ? byLabel.last() : page.locator('.SubmitButton').last();
-  await expect(
-    submit,
-    "aucun bouton d'envoi trouvé sur la page Checkout — le libellé du bouton a " +
-      'peut-être changé, ou la page a été rendue dans une autre langue',
-  ).toBeVisible({ timeout: 15_000 });
-  await submit.click();
-
-  // VÉRIFIER QUE LE PAIEMENT A ABOUTI, avant d'attendre quoi que ce soit.
-  // Sans ce contrôle, un clic qui échoue est INDISCERNABLE d'un webhook mort :
-  // les deux donnent « pas d'accès après 90 s », et on cherche la panne au
-  // mauvais endroit pendant ce temps. Checkout quitte son domaine dès que le
-  // paiement passe (redirection vers success_url) — c'est le signal le plus
-  // fiable, et il ne dépend pas de notre front, qui ne tourne pas forcément.
-  const left = await page
-    .waitForURL((u) => !u.host.endsWith('stripe.com'), { timeout: 60_000 })
-    .then(() => true)
-    .catch(() => false);
-
-  if (!left) {
-    const shown = await page
-      .locator('[role="alert"], .FieldError, .Notice, .ConfirmPayment-Error')
-      .allInnerTexts()
-      .catch(() => [] as string[]);
-    const visible = shown.map((t) => t.trim()).filter(Boolean).join(' | ');
+  const body = (await resp.json()) as Record<string, unknown>;
+  if (!resp.ok()) {
+    const err = (body.error ?? {}) as { message?: string; code?: string };
     throw new Error(
-      [
-        '',
-        '=========================================================================',
-        "LE PAIEMENT N'EST PAS PASSÉ — on est resté sur la page Checkout après 60 s.",
-        '',
-        "Ce n'est PAS un webhook mort : Stripe n'a rien eu à annoncer. Cherche du",
-        'côté du formulaire, pas du côté de la livraison des événements.',
-        '',
-        'À vérifier :',
-        '  1. le prix STRIPE_PRICE_MONTHLY est-il dans le MÊME mode que la clé ?',
-        '  2. une règle Radar bloque-t-elle la carte (dont la règle de zone CA/US) ?',
-        '  3. Checkout demande-t-il un champ que le test ne remplit pas ?',
-        '',
-        visible
-          ? 'Message affiché par Checkout : ' + visible
-          : "Checkout n'affiche aucun message d'erreur.",
-        "URL au moment de l'abandon : " + page.url(),
-        '=========================================================================',
-      ].join('\n'),
+      `Stripe ${path} a répondu ${resp.status()} : ${err.message ?? JSON.stringify(body)}` +
+        (err.code ? ` (code ${err.code})` : ''),
     );
   }
+  return body;
 }
 
 /**
  * Interroge l'état d'abonnement jusqu'à ce que l'accès s'ouvre — PAR LE WEBHOOK.
- * Retourne le dernier corps lu, et le temps écoulé.
+ * Aucun appel à /sync : c'est tout l'intérêt.
  */
 async function waitForWebhookAccess(
   api: APIRequestContext,
@@ -213,105 +145,140 @@ async function waitForWebhookAccess(
   return { granted: false, elapsedMs: Date.now() - started, last };
 }
 
-/** Annule au Stripe réel ce que le test a créé (mode test, mais on ne laisse pas traîner). */
-async function cleanUp(api: APIRequestContext, subscriptionId: string | null): Promise<void> {
-  if (!subscriptionId) return;
-  try {
-    await api.delete(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
-      headers: { Authorization: `Bearer ${SECRET}` },
-    });
-  } catch {
-    /* le ménage ne doit jamais faire échouer le verdict du test */
-  }
-}
-
-test('un paiement réel par carte de test ouvre l\'accès via le webhook', async ({ page, request }) => {
+test("un abonnement réel ouvre l'accès via le webhook", async ({ request }) => {
   test.setTimeout(WEBHOOK_DEADLINE_MS + 120_000);
 
   const email = uniqueEmail();
-  const password = 'pay3-live-test-password-1';
-
-  // 1) Un compte neuf. Le contexte `request` de Playwright garde les cookies,
-  //    donc la session d'inscription sert ensuite aux appels authentifiés.
-  const registered = await request.post(`${API_BASE}/api/auth/register`, {
-    data: {
-      email,
-      password,
-      age_confirmed: true,
-      accept_terms: true,
-      accept_privacy: true,
-    },
-  });
-  expect(
-    registered.status(),
-    `inscription impossible (${registered.status()}) : ${await registered.text()}`,
-  ).toBe(201);
-
-  // 2) Avant de payer, l'accès doit être FERMÉ. Sans cette vérification, un test
-  //    vert ne prouverait rien : un mur désactivé passerait pour un succès.
-  const beforePay = await request.get(`${API_BASE}/api/market-status?instrument=XAUUSD&timeframe=M15`);
-  expect(
-    beforePay.status(),
-    'le mur ne mord pas avant paiement — le test ne prouverait rien. ' +
-      'SUBSCRIPTION_GATE_ENFORCED=1 est-il posé sur le backend de test ?',
-  ).toBe(402);
-
-  // 3) Checkout hébergé.
-  const checkout = await request.post(`${API_BASE}/api/billing/checkout`, {
-    data: { plan_key: 'MONTHLY' },
-  });
-  expect(
-    checkout.status(),
-    `création de la session Checkout impossible (${checkout.status()}) : ${await checkout.text()}`,
-  ).toBe(200);
-  const { url } = (await checkout.json()) as { url: string };
-  expect(url, "Checkout n'a pas renvoyé d'URL").toContain('stripe.com');
-
-  // 4) La vraie carte de test, sur la vraie page hébergée.
-  await page.goto(url);
-  await payWithTestCard(page);
-
-  // 5) LE point de mesure. On n'appelle pas /sync : c'est le webhook qu'on teste.
-  const { granted, elapsedMs, last } = await waitForWebhookAccess(request);
-
   let subscriptionId: string | null = null;
-  if (last && typeof last === 'object') {
-    subscriptionId = (last as { stripe_subscription_id?: string }).stripe_subscription_id ?? null;
+
+  try {
+    // 1) Un compte neuf, par la VRAIE route. Le contexte `request` garde les
+    //    cookies, donc la session d'inscription sert aux appels authentifiés.
+    const registered = await request.post(`${API_BASE}/api/auth/register`, {
+      data: {
+        email,
+        password: 'pay3-live-test-password-1',
+        age_confirmed: true,
+        accept_terms: true,
+        accept_privacy: true,
+      },
+    });
+    expect(
+      registered.status(),
+      `inscription impossible (${registered.status()}) : ${await registered.text()}`,
+    ).toBe(201);
+
+    // 2) Avant de payer, l'accès doit être FERMÉ. Sans cette vérification, un
+    //    test vert ne prouverait rien : un mur désactivé passerait pour un succès.
+    const beforePay = await request.get(
+      `${API_BASE}/api/market-status?instrument=XAUUSD&timeframe=M15`,
+    );
+    expect(
+      beforePay.status(),
+      'le mur ne mord pas avant paiement — le test ne prouverait rien. ' +
+        'SUBSCRIPTION_GATE_ENFORCED=1 est-il posé sur le backend de test ?',
+    ).toBe(402);
+
+    // 3) La route de paiement crée le client Stripe ET le lie au compte. On
+    //    l'appelle vraiment : c'est cette liaison que le webhook utilisera
+    //    ensuite pour retrouver le compte.
+    const checkout = await request.post(`${API_BASE}/api/billing/checkout`, {
+      data: { plan_key: 'MONTHLY' },
+    });
+    expect(
+      checkout.status(),
+      `création de la session Checkout impossible (${checkout.status()}) : ${await checkout.text()}`,
+    ).toBe(200);
+
+    // 4) Retrouver ce client chez Stripe, par l'e-mail du compte.
+    const found = await request.get(
+      `${STRIPE_API}/v1/customers?email=${encodeURIComponent(email)}&limit=1`,
+      { headers: { Authorization: `Bearer ${SECRET}` } },
+    );
+    const customers = (await found.json()) as { data?: Array<{ id: string }> };
+    const customerId = customers.data?.[0]?.id;
+    expect(
+      customerId,
+      "aucun client Stripe pour ce compte — /api/billing/checkout ne l'a pas créé",
+    ).toBeTruthy();
+
+    // 5) Un moyen de paiement de test, attaché et posé par défaut. `tok_visa`
+    //    est le jeton de test Stripe correspondant à la carte 4242.
+    const pm = await stripe(request, '/v1/payment_methods', {
+      type: 'card',
+      'card[token]': 'tok_visa',
+    });
+    const pmId = String(pm.id);
+    await stripe(request, `/v1/payment_methods/${pmId}/attach`, { customer: customerId! });
+    await stripe(request, `/v1/customers/${customerId}`, {
+      'invoice_settings[default_payment_method]': pmId,
+    });
+
+    // 6) L'abonnement, facturé pour de vrai. `error_if_incomplete` fait échouer
+    //    ICI si la carte ne passe pas, plutôt que de laisser un abonnement
+    //    incomplet ressembler plus tard à un webhook mort.
+    const sub = await stripe(request, '/v1/subscriptions', {
+      customer: customerId!,
+      'items[0][price]': PRICE_ID,
+      payment_behavior: 'error_if_incomplete',
+    });
+    subscriptionId = String(sub.id);
+    expect(
+      String(sub.status),
+      `l'abonnement Stripe n'est pas actif (${String(sub.status)}) — le paiement lui-même a échoué`,
+    ).toMatch(/^(active|trialing)$/);
+
+    // 7) LE point de mesure. Stripe a émis ses événements ; `stripe listen` les
+    //    relaie ; notre webhook doit ouvrir l'accès. On ne touche pas à /sync.
+    const { granted, elapsedMs, last } = await waitForWebhookAccess(request);
+
+    expect(
+      granted,
+      [
+        '',
+        '=========================================================================',
+        "PAYÉ MAIS PAS D'ACCÈS — le webhook Stripe n'a pas mis l'état à jour en " +
+          `${Math.round(elapsedMs / 1000)} s.`,
+        '',
+        "L'abonnement est ACTIF chez Stripe : le paiement a bien eu lieu. C'est la",
+        'chaîne webhook → accès qui est cassée. Un client qui vient de payer',
+        'resterait enfermé dehors, sans que rien ne le signale.',
+        '',
+        'NE PAS désactiver ce test pour débloquer un déploiement : la panne est',
+        'réelle, et coûte un client à chaque fois.',
+        '',
+        'À vérifier, dans cet ordre :',
+        '  1. le endpoint webhook est-il joignable et pointé sur /api/billing/webhook ?',
+        '  2. STRIPE_WEBHOOK_SECRET correspond-il à CE endpoint (et au bon mode) ?',
+        '  3. le journal de livraison Stripe montre-t-il des 4xx/5xx ?',
+        '  4. les événements customer.subscription.* sont-ils bien abonnés ?',
+        '',
+        `Abonnement Stripe : ${subscriptionId} (statut ${String(sub.status)})`,
+        `Dernier état lu côté app : ${JSON.stringify(last)}`,
+        '=========================================================================',
+      ].join('\n'),
+    ).toBe(true);
+
+    // 8) Et le mur doit s'être VRAIMENT ouvert sur la route de données, pas
+    //    seulement dans la réponse d'abonnement. On n'exige pas un 200 : un
+    //    runner n'a pas forcément de données de marché chargées, et l'exiger
+    //    rendrait le test rouge pour une raison étrangère à l'accès.
+    const afterPay = await request.get(
+      `${API_BASE}/api/market-status?instrument=XAUUSD&timeframe=M15`,
+    );
+    expect(
+      [401, 402, 403],
+      `l'abonnement est actif mais la route de données refuse encore l'accès ` +
+        `(${afterPay.status()}) — le point de décision unique ne voit pas l'abonnement`,
+    ).not.toContain(afterPay.status());
+  } finally {
+    // Le ménage ne doit jamais changer le verdict du test.
+    if (subscriptionId) {
+      await request
+        .delete(`${STRIPE_API}/v1/subscriptions/${subscriptionId}`, {
+          headers: { Authorization: `Bearer ${SECRET}` },
+        })
+        .catch(() => undefined);
+    }
   }
-  await cleanUp(request, subscriptionId);
-
-  expect(
-    granted,
-    [
-      '',
-      '=========================================================================',
-      'PAYÉ MAIS PAS D\'ACCÈS — le webhook Stripe n\'a pas mis l\'état à jour en ' +
-        `${Math.round(elapsedMs / 1000)} s.`,
-      '',
-      'Un client qui vient de payer resterait enfermé dehors, sans que rien ne',
-      'le signale. NE PAS désactiver ce test pour débloquer un déploiement :',
-      'c\'est la panne elle-même qu\'il faut corriger.',
-      '',
-      'À vérifier, dans cet ordre :',
-      '  1. le endpoint webhook est-il joignable et pointé sur /api/billing/webhook ?',
-      '  2. STRIPE_WEBHOOK_SECRET correspond-il à CE endpoint (et au bon mode) ?',
-      '  3. le journal de livraison Stripe montre-t-il des 4xx/5xx ?',
-      '  4. les événements customer.subscription.* sont-ils bien abonnés ?',
-      '',
-      `Dernier état lu : ${JSON.stringify(last)}`,
-      '=========================================================================',
-    ].join('\n'),
-  ).toBe(true);
-
-  // 6) Et le mur doit s'être VRAIMENT ouvert sur la route de données, pas
-  //    seulement dans la réponse d'abonnement. On n'exige pas un 200 : un
-  //    runner CI n'a pas forcément de données de marché chargées, et exiger 200
-  //    rendrait le test rouge pour une raison qui n'a rien à voir avec l'accès.
-  //    Ce qui compte est qu'aucun refus d'ACCÈS ne subsiste.
-  const afterPay = await request.get(`${API_BASE}/api/market-status?instrument=XAUUSD&timeframe=M15`);
-  expect(
-    [401, 402, 403],
-    `l'abonnement est actif mais la route de données refuse encore l'accès ` +
-      `(${afterPay.status()}) — le point de décision unique ne voit pas l'abonnement`,
-  ).not.toContain(afterPay.status());
 });
