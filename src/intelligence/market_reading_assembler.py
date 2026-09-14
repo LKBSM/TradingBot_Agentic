@@ -26,6 +26,8 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
@@ -112,6 +114,12 @@ class MarketReadingDataUnavailable(RuntimeError):
 # workers absorb concurrent misses without ever blocking the user past the budget.
 _FETCH_POOL_WORKERS = 4
 
+# Lifetime of the single-flight build memo (seconds). Longer than any single
+# build (bounded fetch + pipeline), shorter than the scheduler's 60 s tick, so
+# it de-duplicates concurrent callers without ever suppressing the next tick's
+# legitimate retry.
+_BUILD_MEMO_TTL_S = 30.0
+
 from src.intelligence.market_reading_mappers import (
     candles_to_regime,
     confluence_signal_to_structure,
@@ -128,6 +136,7 @@ from src.intelligence.market_calendar import (
     compute_market_status,
     market_aware_expected_close,
 )
+from src.intelligence.data_providers.twelve_data_provider import credit_purpose
 from src.intelligence.narrated_reading import build_reading_facts, render_template
 from src.intelligence.provider_snapshot import snapshot_provider_response
 
@@ -333,6 +342,39 @@ class MarketReadingAssembler:
         # Lazily-populated: ThreadPoolExecutor spawns no threads until the first
         # bounded fetch, so unit tests that never hit a slow provider pay nothing.
         self._fetch_pool: Optional[ThreadPoolExecutor] = None
+        # DATA-3 single-flight: one lock per (instrument, timeframe). Measured
+        # before this existed — three tabs opening the same never-generated combo
+        # spent THREE provider credits, because the three cache misses raced past
+        # each other and past the provider's own TTL cache. Now the first caller
+        # builds and the others wait and re-read what it stored: one credit.
+        self._build_locks: Dict[Tuple[str, str], threading.Lock] = {}
+        self._build_locks_guard = threading.Lock()
+        # Result of the last build per combo, keyed by the close it was built for.
+        # The store alone is not enough to de-duplicate: when the feed lags, the
+        # persisted reading carries the candle the PROVIDER actually returned,
+        # which never equals the wall-clock ``expected_close`` — so every waiting
+        # thread would decide it still had to rebuild, and spend its own credit.
+        # This hands the winner's payload to everyone who waited for it.
+        #
+        # It is deliberately SHORT-LIVED. Keeping it for the whole candle would
+        # also suppress the next scheduler tick, so a combo whose feed was briefly
+        # behind could not catch up until the following candle — trading a credit
+        # for silent staleness. A window longer than any single build but shorter
+        # than the tick interval de-duplicates the concurrent callers and nothing
+        # else; the retry a minute later is free anyway, absorbed by the
+        # provider's own TTL cache.
+        self._last_build: Dict[
+            Tuple[str, str], Tuple[datetime, Dict[str, Any], float]
+        ] = {}
+
+    def _build_lock(self, instrument: str, timeframe: str) -> threading.Lock:
+        key = (str(instrument).upper(), str(timeframe).upper())
+        with self._build_locks_guard:
+            lock = self._build_locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._build_locks[key] = lock
+            return lock
 
     # ------------------------------------------------------------------ #
     # Public accessors (used by the Chantier 3 scheduler / bootstrap)
@@ -405,6 +447,49 @@ class MarketReadingAssembler:
         """
         expected_close = market_aware_expected_close(instrument, timeframe, self._clock())
 
+        served = self._serve_stored(instrument, timeframe, expected_close, bound_provider)
+        if served is not None:
+            return served
+
+        # DATA-3 single-flight: only ONE caller per (instrument, timeframe) may
+        # reach the provider. Concurrent cold-start misses (three tabs, or a user
+        # arriving while the scheduler builds) used to each spend a credit; they
+        # now queue here, and the re-check below hands them what the winner just
+        # stored. The lock is per combo, so different markets still build in
+        # parallel and no request is serialised behind an unrelated one.
+        build_lock = self._build_lock(instrument, timeframe)
+        with build_lock:
+            # Re-read AFTER the wait: the thread that held the lock has persisted
+            # its reading, so everyone behind it is now a plain cache hit.
+            served = self._serve_stored(
+                instrument, timeframe, expected_close, bound_provider
+            )
+            if served is not None:
+                return served
+            memoised = self._last_build.get(
+                (str(instrument).upper(), str(timeframe).upper())
+            )
+            if (
+                memoised is not None
+                and memoised[0] == expected_close
+                and (time.monotonic() - memoised[2]) < _BUILD_MEMO_TTL_S
+            ):
+                reading = self._validated_stored(memoised[1])
+                if reading is not None:
+                    self._readings_store.mark_combination_active(instrument, timeframe)
+                    return self._with_status(reading, instrument, timeframe)
+            return self._build_and_persist(
+                instrument, timeframe, expected_close, bound_provider
+            )
+
+    def _serve_stored(
+        self,
+        instrument: str,
+        timeframe: str,
+        expected_close: datetime,
+        bound_provider: bool,
+    ) -> Optional[MarketReading]:
+        """The two zero-credit paths, or ``None`` when a real build is needed."""
         existing = self._readings_store.get_latest_reading(instrument, timeframe)
         # A stored payload that no longer fits the schema is a cache MISS, not an
         # exception: ``_validated_stored`` returns None and every branch below
@@ -437,7 +522,7 @@ class MarketReadingAssembler:
         # bump) is deliberately NOT served: it falls through to a full rebuild so
         # today's derivation rules reach the screen (the MT-D1/D4 invariant that the
         # two definitions never mix). Same for nothing-stored (genuine cold start):
-        # both take the synchronous build below, bounded + read-through as before.
+        # both take the synchronous build, bounded + read-through as before.
         if (
             bound_provider
             and _interactive_serve_stored()
@@ -446,15 +531,26 @@ class MarketReadingAssembler:
         ):
             self._readings_store.mark_combination_active(instrument, timeframe)
             return self._with_status(existing_reading, instrument, timeframe)
+        return None
 
-        # Synchronous build: the background scheduler (bound_provider=False, patient)
-        # and the genuine cold-start / version-bump interactive rebuild. The provider
-        # is bounded on the interactive path (read-through fallback), patient on the
-        # scheduler path.
+    def _build_and_persist(
+        self,
+        instrument: str,
+        timeframe: str,
+        expected_close: datetime,
+        bound_provider: bool,
+    ) -> MarketReading:
+        """Synchronous build: the background scheduler (bound_provider=False,
+        patient) and the genuine cold-start / version-bump interactive rebuild.
+        The provider is bounded on the interactive path (read-through fallback),
+        patient on the scheduler path."""
         try:
-            reading = self._build_fresh(
-                instrument, timeframe, expected_close, bound_provider=bound_provider
-            )
+            # DATA-3: label the credits this build may spend, so /health can say
+            # WHICH trigger consumed the budget instead of one opaque total.
+            with credit_purpose("interactive" if bound_provider else "scheduler"):
+                reading = self._build_fresh(
+                    instrument, timeframe, expected_close, bound_provider=bound_provider
+                )
         except Exception:
             # Provider unavailable / rebuild failed (e.g. no CSV, MT5 down, quota).
             # Serve the LAST STORED reading rather than a blank screen — degraded
@@ -465,6 +561,9 @@ class MarketReadingAssembler:
             # when there is NOTHING stored do we surface the failure.
             logger.exception("build_fresh failed for %s/%s — serving stored reading if any",
                              instrument, timeframe)
+            existing_reading = self._validated_stored(
+                self._readings_store.get_latest_reading(instrument, timeframe)
+            )
             if existing_reading is not None:
                 self._readings_store.mark_combination_active(instrument, timeframe)
                 return self._with_status(existing_reading, instrument, timeframe)
@@ -492,6 +591,13 @@ class MarketReadingAssembler:
         payload["_logic_version"] = READING_LOGIC_VERSION
         self._readings_store.save_reading(
             instrument, timeframe, candle_close_ts, payload
+        )
+        # Single-flight memo: whoever is waiting on this combo's lock gets this
+        # payload instead of spending another credit rebuilding the same thing.
+        self._last_build[(str(instrument).upper(), str(timeframe).upper())] = (
+            candle_close_ts,
+            payload,
+            time.monotonic(),
         )
 
     def _with_status(
@@ -564,9 +670,10 @@ class MarketReadingAssembler:
         # request. Same window ⇒ same key ⇒ the probe and the rebuild it triggers
         # cost one request between them instead of two. It is also the more correct
         # window: ``_build_fresh`` below is handed exactly these candles.
-        raw = self._data_provider.fetch_candles(
-            instrument, timeframe, self._window_bars(timeframe)
-        )
+        with credit_purpose("holiday_probe"):
+            raw = self._data_provider.fetch_candles(
+                instrument, timeframe, self._window_bars(timeframe)
+            )
         candles = drop_unclosed_candles(raw, timeframe, clock_expected)
         if not candles:
             return False
@@ -633,9 +740,10 @@ class MarketReadingAssembler:
             # shares the provider's TTL cache entry instead of forcing its own.
             # ``_window_bars`` falls back to the configured lookback on a unit it
             # does not know (W1), so the reference series keep their current size.
-            raw = self._data_provider.fetch_candles(
-                instrument, timeframe, self._window_bars(timeframe)
-            )
+            with credit_purpose("reference_series"):
+                raw = self._data_provider.fetch_candles(
+                    instrument, timeframe, self._window_bars(timeframe)
+                )
             candles = drop_unclosed_candles(raw, timeframe, expected_close)
             if candles:
                 self._candles_store.upsert_candles(instrument, timeframe, candles)

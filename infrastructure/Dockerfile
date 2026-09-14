@@ -86,7 +86,13 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 EXPOSE 8000
 
 # Default command — Smart Sentinel AI entry point
-CMD ["python", "-m", "src.intelligence.main"]
+# DATA-3: serve the V2 product entry point, NOT ``src.intelligence.main``.
+# ``main`` additionally starts the legacy Sentinel scanner thread, which polls
+# Twelve Data every 60 s per symbol on top of the scheduler — measured at ~288
+# extra credits/day/market (28 800/day at 100 markets) for data the V2 product
+# never reads. ``src.api.asgi`` boots the same FastAPI app with the reading
+# engine, the scheduler and the chatbot wired from env, and nothing else.
+CMD ["uvicorn", "src.api.asgi:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # -----------------------------------------------------------------------------
 # Stage 3: Development (optional)
