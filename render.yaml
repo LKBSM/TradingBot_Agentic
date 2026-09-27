@@ -29,7 +29,12 @@ services:
     dockerfilePath: ./infrastructure/Dockerfile.api
     dockerContext: .
     # Render injects $PORT; bind to it instead of the fixed 8000.
-    dockerCommand: uvicorn src.api.asgi:app --host 0.0.0.0 --port $PORT
+    # ⚠️ `dockerCommand` REMPLACE l'ENTRYPOINT du Dockerfile (Render l'écrit noir
+    # sur blanc dans ses réglages). Le script d'entrée doit donc être appelé ICI,
+    # explicitement : déclaré en ENTRYPOINT il serait purement ignoré, le disque
+    # monté resterait non écrivable, et le service replanterait au démarrage —
+    # la cause de la suspension du 2026-09-14.
+    dockerCommand: /app/infrastructure/docker-entrypoint.sh uvicorn src.api.asgi:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     disk:
       name: mia-data

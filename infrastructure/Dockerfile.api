@@ -51,9 +51,18 @@ WORKDIR /app
 COPY --chown=sentinel:sentinel . .
 
 # Persistent data dir (accounts.db, signals.db, candles.db, market_readings.db).
-RUN mkdir -p /app/data /app/logs && chown -R sentinel:sentinel /app/data /app/logs
+# ⚠️ Ce chown ne SURVIT PAS au montage du disque persistant : Render monte le
+# volume par-dessus /app/data au démarrage, et le volume neuf appartient à root.
+# C'est docker-entrypoint.sh qui répare la propriété à l'exécution — voir son
+# en-tête pour l'incident du 2026-09-14 (suspension pour plantages répétés).
+RUN mkdir -p /app/data /app/logs && chown -R sentinel:sentinel /app/data /app/logs \
+    && chmod +x /app/infrastructure/docker-entrypoint.sh
 
-USER sentinel
+# PAS de `USER sentinel` ici : le conteneur doit DÉMARRER en root pour pouvoir
+# chown le volume monté. docker-entrypoint.sh abandonne les privilèges aussitôt
+# après et exécute l'application en sentinel (uid 10001) — elle ne tourne donc
+# jamais en root.
+ENTRYPOINT ["/app/infrastructure/docker-entrypoint.sh"]
 EXPOSE 8000
 
 # Fail-fast health signal for compose / orchestrators.

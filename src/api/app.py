@@ -306,7 +306,14 @@ def create_app(
     defaults when a subsystem is ``None``.
     """
     if signal_store is None:
-        signal_store = SignalStore(db_path="./data/signals.db")
+        # SIGNAL_DB_PATH était IGNORÉE : le chemin était codé en dur, alors que
+        # la variable est bien posée en production (/app/data/signals.db) et que
+        # AccountStore, juste en dessous, lit correctement la sienne. Ce store
+        # était donc insensible à la configuration du déploiement — et c'est lui
+        # qui plantait au démarrage le 2026-09-14.
+        signal_store = SignalStore(
+            db_path=os.environ.get("SIGNAL_DB_PATH", "./data/signals.db")
+        )
     # Latency tracker is cheap (~1MB max @ default caps) and always
     # useful; default-instantiate so /api/v1/metrics/latency is live
     # even when the caller didn't wire one in.
