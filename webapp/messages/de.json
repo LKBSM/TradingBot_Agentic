@@ -36,7 +36,7 @@
       "scanner": {
         "tag": "Der Scanner",
         "h3": "Du kannst deine Märkte nicht rund um die Uhr beobachten. Er schon.",
-        "p": "Hake die Bedingungen an, die dich interessieren — Trend, ungetestete Zone, kürzlich abgeräumte Liquidität — und der Scanner sagt dir, <b>wo sie gerade zusammentreffen</b>, über alle 10 Kombinationen aus Märkten und Zeiteinheiten. Neu bewertet bei jedem Kerzenschluss.",
+        "p": "Hake die Bedingungen an, die dich interessieren — Trend, ungetestete Zone, kürzlich abgeräumte Liquidität — und der Scanner sagt dir, <b>wo sie gerade zusammentreffen</b>, über alle 400 Kombinationen aus Märkten und Zeiteinheiten. Neu bewertet bei jedem Kerzenschluss.",
         "b1": "<b>22 faktische Bedingungen</b> gegliedert in Struktur, Zonen, Liquidität und Kontext",
         "b2": "<b>Was dagegenspricht</b> wird ebenfalls angezeigt — Uneinigkeit zwischen Einheiten, abgenutzte Zone",
         "b3": "<b>Keine Rangfolge</b>: Die Ergebnisse werden nie nach „Qualität“ sortiert",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "Derzeit erfüllt kein Markt diese Bedingungen. <b>Das ist kein Fehler</b> — und dir wird nichts vorgeschlagen, um es aufzuweichen.",
         "againstLabel": "Was dagegenspricht",
         "against": "auf Gold · 4 h hält der Trend, aber <b>die höhere Einheit ist nicht ausgerichtet</b>, und eine nahe Zone wurde bereits abgeräumt.",
-        "side": "Von den <b>10 analysierten Kombinationen</b> behält der Scanner nur jene, in denen alle deine Bedingungen <b>gerade jetzt</b> zusammentreffen. Füge eine Bedingung hinzu, und die Liste wird enger."
+        "side": "Von den <b>400 analysierten Kombinationen</b> behält der Scanner nur jene, in denen alle deine Bedingungen <b>gerade jetzt</b> zusammentreffen. Füge eine Bedingung hinzu, und die Liste wird enger."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "Keine Installation, kein Skript zum Kopieren, keine Indikator-Einstellung. Du öffnest und es ist bereit.",
       "step1": {
         "h": "Wähl deinen Markt",
-        "p": "Gold oder Euro, auf 5 Zeiteinheiten. Die 10 Kombinationen werden bereits laufend analysiert, und das Ergebnis bleibt bei jedem Kerzenschluss aktuell."
+        "p": "80 Märkte, auf 5 Zeiteinheiten. Die 400 Kombinationen werden bereits laufend analysiert, und das Ergebnis bleibt bei jedem Kerzenschluss aktuell."
       },
       "step2": {
         "h": "Lies die Struktur",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "Du verfolgst mehrere Zeiteinheiten",
-        "p": "Du weißt, wonach du suchst, aber du kannst nicht alles im Blick behalten. Der Scanner überwacht deine 10 Kombinationen bei jedem Schluss, ohne dass du klickst.",
+        "p": "Du weißt, wonach du suchst, aber du kannst nicht alles im Blick behalten. Der Scanner überwacht deine 400 Kombinationen bei jedem Schluss, ohne dass du klickst.",
         "lb": "Umfang",
         "items": {
           "0": "Deine Bedingungen überall bei jedem Schluss geprüft",
@@ -358,8 +358,8 @@
         "sub": "das ganze Produkt, alle Märkte",
         "perMonth": "Monat",
         "bill": "oder {total} $ US pro Jahr, also {perMonth} $ US pro Monat",
-        "f1": "<b>Beide Märkte</b>, 5 Zeiteinheiten",
-        "f2": "Scanner über alle 10 Kombinationen",
+        "f1": "<b>Alle 80 Märkte</b>, 5 Zeiteinheiten",
+        "f2": "Scanner über alle 400 Kombinationen",
         "f3": "Zonen-Seite und vollständiger Lebenszyklus",
         "f4": "Bei Veröffentlichungen erfasste Messungen",
         "f5": "M.I.A Agent ohne Begrenzung",

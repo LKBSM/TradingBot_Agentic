@@ -82,7 +82,14 @@ describe('MKT-1 — the test catalogue never touches the real perimeter', () => 
 
   it('the real registry still holds exactly the markets the engine follows', () => {
     // The catalogue must not have grown the product perimeter as a side effect.
-    expect([...ALL_MARKET_IDS].sort()).toEqual(['EURUSD', 'XAUUSD']);
+    // DATA-4 : le périmètre est passé de 2 à 80 marchés, donc la liste n'est plus
+    // écrite ici — elle est DÉRIVÉE de config/markets.json, la source unique que
+    // le moteur lit lui aussi. Ce que ce test garde, c'est que le registre du
+    // frontend ne contient RIEN d'autre que ce que le backend suit : si un id du
+    // catalogue de démonstration s'y glissait, la comparaison tomberait.
+    const registry = JSON.parse(readFileSync(resolve(REPO, 'config/markets.json'), 'utf-8'));
+    const engineIds: string[] = registry.markets.map((m: { id: string }) => m.id);
+    expect([...ALL_MARKET_IDS].sort()).toEqual([...engineIds].sort());
   });
 
   it('a market present in BOTH files counts as real, never as catalogue-only', async () => {
@@ -98,7 +105,17 @@ describe('MKT-1 — the test catalogue never touches the real perimeter', () => 
     // never shows the same market twice, once real and once empty.
     expect(m.isCatalogOnly('XAUUSD')).toBe(false);
     expect(m.isCatalogOnly('EURUSD')).toBe(false);
-    expect(m.CATALOG_ONLY_COUNT).toBe(catalogueIds.length - 2);
+    // DATA-4 : le recouvrement n'est plus de 2 marchés mais de plusieurs dizaines,
+    // puisque le registre réel a rattrapé une bonne partie du catalogue. Le
+    // nombre d'entrées « catalogue seulement » se DÉDUIT donc du recouvrement
+    // réel, au lieu d'un « -2 » qui figeait l'ancien périmètre. L'invariant tenu
+    // est le même : tout marché présent des deux côtés compte comme RÉEL.
+    const overlap = catalogueIds.filter((id) => (ALL_MARKET_IDS as readonly string[]).includes(id));
+    expect(overlap.length).toBeGreaterThanOrEqual(2);
+    expect(m.CATALOG_ONLY_COUNT).toBe(catalogueIds.length - overlap.length);
+    for (const id of overlap) {
+      expect(m.isCatalogOnly(id), `${id} est un marché réel, jamais catalogue-only`).toBe(false);
+    }
   });
 
   it('catalogue entries carry NO price precision and NO timeframe', () => {
@@ -144,8 +161,16 @@ describe('MKT-1 — catalogue integrity', () => {
     const m = await loadWith('1');
     expect(CATALOG_ENTRIES).toHaveLength(100);
     expect(new Set(CATALOG_ENTRIES.map((e) => e.id)).size).toBe(100);
+    // L'intégrité porte sur le CATALOGUE lui-même : chacun de ses groupes est
+    // peuplé. C'est ce que ce test a toujours voulu dire.
+    const groups = new Set(CATALOG_ENTRIES.map((e) => e.group));
     for (const group of m.CATALOG_GROUPS) {
-      expect(m.catalogEntriesByGroup(group).length, `group ${group} is empty`).toBeGreaterThan(0);
+      expect(groups.has(group), `group ${group} is empty in the catalogue`).toBe(true);
     }
+    // En revanche la vue « catalogue seulement » peut désormais avoir des groupes
+    // VIDES, et c'est une bonne nouvelle : DATA-4 a rendu réels tous les marchés
+    // de fx-major, il ne reste donc rien à y afficher en démonstration. On exige
+    // seulement qu'il reste des entrées de démonstration quelque part.
+    expect(m.CATALOG_ONLY_COUNT).toBeGreaterThan(0);
   });
 });

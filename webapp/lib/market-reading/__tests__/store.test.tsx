@@ -8,22 +8,27 @@ import {
   SUPPORTED_COMBOS,
   useActiveCombo,
 } from '../store';
+import { ALL_MARKET_IDS } from '@/lib/markets';
+import { DISPLAY_TIMEFRAMES } from '@/lib/market-reading/perimeter';
 
 describe('active-combo store', () => {
-  it('exposes the displayed combos (XAUUSD/EURUSD × M5/M15/H1/H4/D1, M1 gated off)', () => {
-    expect(SUPPORTED_COMBOS).toHaveLength(10);
-    expect(SUPPORTED_COMBOS.map(comboKey)).toEqual([
-      'XAUUSD:M5',
-      'XAUUSD:M15',
-      'XAUUSD:H1',
-      'XAUUSD:H4',
-      'XAUUSD:D1',
-      'EURUSD:M5',
-      'EURUSD:M15',
-      'EURUSD:H1',
-      'EURUSD:H4',
-      'EURUSD:D1',
-    ]);
+  it('exposes every market × the five displayed units (M1 gated off)', () => {
+    // DATA-4 : la liste n'est plus écrite à la main — 80 marchés × 5 unités =
+    // 400 combinaisons. Ce que ce test garde, c'est la RÈGLE qui les engendre :
+    // chaque marché du registre croisé avec les 5 unités affichées, dans cet
+    // ordre, et M1 jamais offerte.
+    expect(DISPLAY_TIMEFRAMES).not.toContain('M1');
+    expect(SUPPORTED_COMBOS).toHaveLength(ALL_MARKET_IDS.length * DISPLAY_TIMEFRAMES.length);
+
+    const expected = ALL_MARKET_IDS.flatMap((instrument) =>
+      DISPLAY_TIMEFRAMES.map((timeframe) => `${instrument}:${timeframe}`),
+    );
+    expect(SUPPORTED_COMBOS.map(comboKey)).toEqual(expected);
+
+    // Les deux marchés d'origine restent servis, avec leurs cinq unités.
+    expect(SUPPORTED_COMBOS.map(comboKey)).toEqual(
+      expect.arrayContaining(['XAUUSD:M5', 'XAUUSD:D1', 'EURUSD:M5', 'EURUSD:D1']),
+    );
   });
 
   it('compares combos structurally', () => {
@@ -52,7 +57,7 @@ describe('active-combo store', () => {
     const { result } = renderHook(() => useActiveCombo(), { wrapper });
 
     expect(result.current.active).toBeNull();
-    expect(result.current.combos).toHaveLength(10);
+    expect(result.current.combos).toHaveLength(SUPPORTED_COMBOS.length);
 
     act(() => result.current.select({ instrument: 'EURUSD', timeframe: 'H1' }));
     expect(result.current.active).toEqual({

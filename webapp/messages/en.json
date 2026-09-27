@@ -36,7 +36,7 @@
       "scanner": {
         "tag": "The scanner",
         "h3": "You can't watch your markets non-stop. It can.",
-        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 10 market-and-timeframe combinations. Re-evaluated on every candle close.",
+        "p": "Tick the conditions you care about — trend, untested zone, liquidity recently taken — and the scanner tells you <b>where they line up right now</b>, across the 400 market-and-timeframe combinations. Re-evaluated on every candle close.",
         "b1": "<b>22 factual conditions</b> across structure, zones, liquidity and context",
         "b2": "<b>What goes against it</b> is shown too — disagreement between units, worn zone",
         "b3": "<b>No ranking</b>: results are never sorted by « quality »",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "No market meets these conditions right now. <b>This is not an error</b> — and nothing offers to loosen anything.",
         "againstLabel": "What goes against it",
         "against": "on Gold · 4h, the trend holds but <b>the higher timeframe is not aligned</b>, and a nearby pocket has already been swept.",
-        "side": "Across the <b>10 combinations</b> analysed, the scanner keeps only those where all your conditions line up <b>right now</b>. Add a condition and the list narrows."
+        "side": "Across the <b>400 combinations</b> analysed, the scanner keeps only those where all your conditions line up <b>right now</b>. Add a condition and the list narrows."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "No install, no script to copy, no indicator to tune. You open it and it's ready.",
       "step1": {
         "h": "Choose your market",
-        "p": "Gold or the euro, on 5 timeframes. All 10 combinations are already analysed continuously, and the result stays up to date at every candle close."
+        "p": "80 markets, on 5 timeframes. All 400 combinations are already analysed continuously, and the result stays up to date at every candle close."
       },
       "step2": {
         "h": "Read the structure",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "You follow several timeframes",
-        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 10 combinations on every close, without you clicking.",
+        "p": "You know what you're looking for but you can't watch everything. The scanner watches your 400 combinations on every close, without you clicking.",
         "lb": "Breadth",
         "items": {
           "0": "Your conditions checked everywhere at every close",
@@ -358,8 +358,8 @@
         "sub": "the whole product, all markets",
         "perMonth": "month",
         "bill": "or {total} $ US per year, i.e. {perMonth} $ US per month",
-        "f1": "<b>Both markets</b>, 5 timeframes",
-        "f2": "Scanner across the 10 combinations",
+        "f1": "<b>All 80 markets</b>, 5 timeframes",
+        "f2": "Scanner across the 400 combinations",
         "f3": "Zones page and full lifecycle",
         "f4": "Measurements recorded at releases",
         "f5": "M.I.A Agent unlimited",

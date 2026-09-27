@@ -36,7 +36,7 @@
       "scanner": {
         "tag": "Lo scanner",
         "h3": "Non puoi sorvegliare i tuoi mercati di continuo. Lui sì.",
-        "p": "Spunta le condizioni che ti interessano — tendenza, zona non testata, liquidità presa di recente — e lo scanner ti dice <b>dove sono riunite in questo momento</b>, sulle 10 combinazioni di mercati e unità temporali. Rivalutato a ogni chiusura di candela.",
+        "p": "Spunta le condizioni che ti interessano — tendenza, zona non testata, liquidità presa di recente — e lo scanner ti dice <b>dove sono riunite in questo momento</b>, sulle 400 combinazioni di mercati e unità temporali. Rivalutato a ogni chiusura di candela.",
         "b1": "<b>22 condizioni fattuali</b> ripartite tra struttura, zone, liquidità e contesto",
         "b2": "<b>Ciò che va nella direzione opposta</b> viene mostrato anche — disaccordo tra unità, zona consumata",
         "b3": "<b>Nessuna classifica</b>: i risultati non sono mai ordinati per «qualità»",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "Nessun mercato riunisce queste condizioni in questo momento. <b>Non è un errore</b> — e nulla ti propone di allentare i criteri.",
         "againstLabel": "Ciò che va nella direzione opposta",
         "against": "su Oro · 4 h, la tendenza tiene ma <b>l'unità superiore non è allineata</b>, e una pozza vicina è già stata spazzata.",
-        "side": "Sulle <b>10 combinazioni</b> analizzate, lo scanner mantiene solo quelle in cui tutte le tue condizioni sono riunite <b>in questo momento</b>. Aggiungi una condizione e la lista si restringe."
+        "side": "Sulle <b>400 combinazioni</b> analizzate, lo scanner mantiene solo quelle in cui tutte le tue condizioni sono riunite <b>in questo momento</b>. Aggiungi una condizione e la lista si restringe."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "Nessuna installazione, nessuno script da copiare, nessuna regolazione di indicatore. Apri ed è pronto.",
       "step1": {
         "h": "Scegli il tuo mercato",
-        "p": "L'oro o l'euro, su 5 unità temporali. Le 10 combinazioni sono già analizzate in continuo, e il risultato resta aggiornato a ogni chiusura di candela."
+        "p": "80 mercati, su 5 unità temporali. Le 400 combinazioni sono già analizzate in continuo, e il risultato resta aggiornato a ogni chiusura di candela."
       },
       "step2": {
         "h": "Leggi la struttura",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "Segui più unità temporali",
-        "p": "Sai cosa cerchi ma non puoi guardare tutto. Lo scanner sorveglia le tue 10 combinazioni a ogni chiusura, senza che tu clicchi.",
+        "p": "Sai cosa cerchi ma non puoi guardare tutto. Lo scanner sorveglia le tue 400 combinazioni a ogni chiusura, senza che tu clicchi.",
         "lb": "Ampiezza",
         "items": {
           "0": "Le tue condizioni verificate ovunque a ogni chiusura",
@@ -358,8 +358,8 @@
         "sub": "tutto il prodotto, tutti i mercati",
         "perMonth": "mese",
         "bill": "oppure {total} $ US all'anno, cioè {perMonth} $ US al mese",
-        "f1": "<b>Entrambi i mercati</b>, 5 unità temporali",
-        "f2": "Scanner sulle 10 combinazioni",
+        "f1": "<b>Tutti gli 80 mercati</b>, 5 unità temporali",
+        "f2": "Scanner sulle 400 combinazioni",
         "f3": "Pagina Zone e ciclo di vita completo",
         "f4": "Misure rilevate alle pubblicazioni",
         "f5": "M.I.A Agent senza limiti",

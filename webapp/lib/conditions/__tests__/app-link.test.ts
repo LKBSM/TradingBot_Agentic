@@ -28,7 +28,11 @@ describe('resolveComboFromQuery', () => {
   });
 
   it('rejects out-of-perimeter or missing values', () => {
-    expect(resolveComboFromQuery('BTCUSD', 'H1')).toBeNull();
+    // DATA-4 : BTCUSD servait d'exemple « hors périmètre ». C'est devenu un
+    // marché RÉEL du registre, donc il doit être accepté — et le refus se teste
+    // sur un code qui n'existe nulle part.
+    expect(resolveComboFromQuery('ZZZQQQ', 'H1')).toBeNull();
+    expect(resolveComboFromQuery('BTCUSD', 'H1')).not.toBeNull();
     expect(resolveComboFromQuery('XAUUSD', 'M30')).toBeNull();
     expect(resolveComboFromQuery(undefined, 'H1')).toBeNull();
     expect(resolveComboFromQuery('XAUUSD', undefined)).toBeNull();

@@ -36,7 +36,7 @@
       "scanner": {
         "tag": "De scanner",
         "h3": "Jij kunt je markten niet non-stop in de gaten houden. Hij wel.",
-        "p": "Vink de voorwaarden aan die je interesseren — trend, niet-geteste zone, recent genomen liquiditeit — en de scanner vertelt je <b>waar ze op dit moment samenvallen</b>, over de 10 combinaties van markten en tijdframes. Opnieuw beoordeeld bij elke slotkoers van een candle.",
+        "p": "Vink de voorwaarden aan die je interesseren — trend, niet-geteste zone, recent genomen liquiditeit — en de scanner vertelt je <b>waar ze op dit moment samenvallen</b>, over de 400 combinaties van markten en tijdframes. Opnieuw beoordeeld bij elke slotkoers van een candle.",
         "b1": "<b>22 feitelijke voorwaarden</b> verdeeld over structuur, zones, liquiditeit en context",
         "b2": "<b>Wat ertegenin gaat</b> wordt ook getoond — onenigheid tussen tijdframes, versleten zone",
         "b3": "<b>Geen enkele rangschikking</b>: de resultaten worden nooit gesorteerd op « kwaliteit »",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "Geen enkele markt verenigt deze voorwaarden op dit moment. <b>Dit is geen fout</b> — en niets stelt je voor om ze te versoepelen.",
         "againstLabel": "Wat ertegenin gaat",
         "against": "op Goud · 4 u houdt de trend stand maar <b>het hogere tijdframe is niet uitgelijnd</b>, en een nabije zone is al geveegd.",
-        "side": "Op de <b>10 combinaties</b> die worden geanalyseerd, houdt de scanner alleen die over waar al je voorwaarden <b>op dit moment</b> samenvallen. Voeg een voorwaarde toe en de lijst wordt korter."
+        "side": "Op de <b>400 combinaties</b> die worden geanalyseerd, houdt de scanner alleen die over waar al je voorwaarden <b>op dit moment</b> samenvallen. Voeg een voorwaarde toe en de lijst wordt korter."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "Geen installatie, geen script om te kopiëren, geen indicator om in te stellen. Je opent en het is klaar.",
       "step1": {
         "h": "Kies je markt",
-        "p": "Goud of de euro, op 5 tijdseenheden. De 10 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
+        "p": "80 markten, op 5 tijdseenheden. De 400 combinaties worden al continu geanalyseerd, en het resultaat blijft actueel bij elke slotkoers van een kaars."
       },
       "step2": {
         "h": "Lees de structuur",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "Je volgt meerdere tijdframes",
-        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 10 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
+        "p": "Je weet wat je zoekt maar je kunt niet alles bekijken. De scanner bewaakt je 400 combinaties bij elke slotkoers, zonder dat je hoeft te klikken.",
         "lb": "Breedte",
         "items": {
           "0": "Je voorwaarden overal gecontroleerd bij elke slotkoers",
@@ -358,8 +358,8 @@
         "sub": "het hele product, alle markten",
         "perMonth": "maand",
         "bill": "of {total} $ US per jaar, oftewel {perMonth} $ US per maand",
-        "f1": "<b>Beide markten</b>, 5 tijdframes",
-        "f2": "Scanner op de 10 combinaties",
+        "f1": "<b>Alle 80 markten</b>, 5 tijdframes",
+        "f2": "Scanner op de 400 combinaties",
         "f3": "Zones-pagina en volledige levenscyclus",
         "f4": "Gemeten waarden bij publicaties",
         "f5": "M.I.A Agent zonder limiet",

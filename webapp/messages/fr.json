@@ -36,7 +36,7 @@
       "scanner": {
         "tag": "Le scanner",
         "h3": "Tu ne peux pas surveiller tes marchés en continu. Lui, oui.",
-        "p": "Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b>où elles sont réunies en ce moment</b>, sur les 10 combinaisons de marchés et d'unités de temps. Réévalué à chaque clôture de bougie.",
+        "p": "Coche les conditions qui t'intéressent — tendance, zone non testée, liquidité récemment prise — et le scanner te dit <b>où elles sont réunies en ce moment</b>, sur les 400 combinaisons de marchés et d'unités de temps. Réévalué à chaque clôture de bougie.",
         "b1": "<b>22 conditions factuelles</b> réparties en structure, zones, liquidité et contexte",
         "b2": "<b>Ce qui va à l'encontre</b> est affiché aussi — désaccord entre unités, zone usée",
         "b3": "<b>Aucun classement</b> : les résultats ne sont jamais triés par « qualité »",
@@ -188,7 +188,7 @@
         "emptyNoMatch": "Aucun marché ne réunit ces conditions en ce moment. <b>Ce n'est pas une erreur</b> — et rien ne te propose d'assouplir.",
         "againstLabel": "Ce qui va à l'encontre",
         "against": "sur Or · 4 h, la tendance tient mais <b>l'unité supérieure n'est pas alignée</b>, et une poche proche a déjà été balayée.",
-        "side": "Sur les <b>10 combinaisons</b> analysées, le scanner ne garde que celles où toutes tes conditions sont réunies <b>en ce moment</b>. Ajoute une condition, la liste se resserre."
+        "side": "Sur les <b>400 combinaisons</b> analysées, le scanner ne garde que celles où toutes tes conditions sont réunies <b>en ce moment</b>. Ajoute une condition, la liste se resserre."
       },
       "zones": {
         "side": {
@@ -296,7 +296,7 @@
       "subtitle": "Aucune installation, aucun script à copier, aucun réglage d'indicateur. Tu ouvres et c'est prêt.",
       "step1": {
         "h": "Choisis ton marché",
-        "p": "L'or ou l'euro, sur 5 unités de temps. Les 10 combinaisons sont déjà analysées en continu, et le résultat reste à jour à chaque clôture de bougie."
+        "p": "80 marchés, sur 5 unités de temps. Les 400 combinaisons sont déjà analysées en continu, et le résultat reste à jour à chaque clôture de bougie."
       },
       "step2": {
         "h": "Lis la structure",
@@ -333,7 +333,7 @@
       },
       "w3": {
         "h": "Tu suis plusieurs unités de temps",
-        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 10 combinaisons à chaque clôture, sans que tu cliques.",
+        "p": "Tu sais ce que tu cherches mais tu ne peux pas tout regarder. Le scanner surveille tes 400 combinaisons à chaque clôture, sans que tu cliques.",
         "lb": "Étendue",
         "items": {
           "0": "Tes conditions vérifiées partout à chaque clôture",
@@ -358,8 +358,8 @@
         "sub": "tout le produit, tous les marchés",
         "perMonth": "mois",
         "bill": "ou {total} $ US par an, soit {perMonth} $ US par mois",
-        "f1": "<b>Les 2 marchés</b>, 5 unités de temps",
-        "f2": "Scanner sur les 10 combinaisons",
+        "f1": "<b>Les 80 marchés</b>, 5 unités de temps",
+        "f2": "Scanner sur les 400 combinaisons",
         "f3": "Page Zones et cycle de vie complet",
         "f4": "Mesures relevées aux publications",
         "f5": "M.I.A Agent sans limite",
