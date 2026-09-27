@@ -151,6 +151,33 @@ def _disk_summary() -> str:
     return " | ".join(morceaux)
 
 
+def _largest_files(limit: int = 12) -> list:
+    """Les plus gros fichiers du répertoire de données, du plus lourd au moins.
+
+    Quand le disque est plein, savoir QUI le remplit est toute la question :
+    une base à purger, un cache régénérable à supprimer, ou un journal WAL qui
+    n'a jamais été consolidé. Le calcul est purement local, sans SQLite — il
+    doit fonctionner précisément quand SQLite, lui, ne fonctionne plus.
+    """
+    data_dir = os.environ.get("DATA_DIR", "./data")
+    try:
+        entrees = []
+        for nom in os.listdir(data_dir):
+            chemin = os.path.join(data_dir, nom)
+            try:
+                if os.path.isfile(chemin):
+                    entrees.append((os.path.getsize(chemin), nom))
+            except OSError:
+                continue
+        entrees.sort(reverse=True)
+        return [
+            {"fichier": nom, "mio": round(taille / (1024 * 1024), 1)}
+            for taille, nom in entrees[:limit]
+        ]
+    except OSError as exc:
+        return [{"erreur": f"{exc.__class__.__name__}: {exc}"}]
+
+
 _report_data_dir_state()
 
 from src.api.app import create_app  # noqa: E402 — must follow load_dotenv
@@ -185,6 +212,8 @@ def _degraded_app(exc: BaseException, diagnostic: str):
         "reason": "startup_failed",
         "error": f"{type(exc).__name__}: {exc}",
         "disk": diagnostic,
+        # Qui occupe la place : indispensable pour choisir quoi purger.
+        "largest_files": _largest_files(),
     }
     print(f"[boot] MODE DÉGRADÉ — {detail['error']} | {diagnostic}", flush=True)
 
