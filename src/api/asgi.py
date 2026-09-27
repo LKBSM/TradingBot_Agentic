@@ -109,13 +109,61 @@ def _report_data_dir_state() -> None:
         print(f"[disk] listage de {data_dir} impossible : {exc}", flush=True)
 
 
+def _disk_summary() -> str:
+    """Résumé d'une ligne de l'état du disque, pour l'attacher à une erreur.
+
+    Les lignes ``[disk]`` imprimées sur stdout se perdent dans l'interface de
+    journaux de l'hébergeur (liste virtualisée, recherche capricieuse, fenêtre
+    de temps). La DERNIÈRE ligne d'une trace, elle, est toujours lisible. On
+    embarque donc les chiffres dans le message d'erreur lui-même : quand le
+    démarrage échoue, la cause probable est écrite là où l'œil tombe.
+    """
+    import shutil
+
+    data_dir = os.environ.get("DATA_DIR", "./data")
+    morceaux = [f"dir={data_dir}"]
+    try:
+        u = shutil.disk_usage(data_dir)
+        gio = 1024 ** 3
+        morceaux.append(
+            f"total={u.total / gio:.2f}Gio utilisé={u.used / gio:.2f}Gio "
+            f"libre={u.free / gio:.3f}Gio ({100.0 * u.used / u.total:.1f}%)"
+            if u.total
+            else "espace=illisible"
+        )
+    except OSError as exc:
+        morceaux.append(f"espace=erreur({exc})")
+    try:
+        st = os.stat(data_dir)
+        uid = getattr(os, "getuid", lambda: -1)()
+        morceaux.append(f"uid={uid} owner={st.st_uid}:{st.st_gid} mode={oct(st.st_mode & 0o777)}")
+    except OSError as exc:
+        morceaux.append(f"stat=erreur({exc})")
+    try:
+        sonde = os.path.join(data_dir, ".write-probe")
+        with open(sonde, "w"):
+            pass
+        os.unlink(sonde)
+        morceaux.append("écriture=OK")
+    except OSError as exc:
+        morceaux.append(f"écriture=IMPOSSIBLE({exc.__class__.__name__}: {exc})")
+    return " | ".join(morceaux)
+
+
 _report_data_dir_state()
 
 from src.api.app import create_app  # noqa: E402 — must follow load_dotenv
 
 # Module-level ASGI app uvicorn can import directly. No subsystem injection:
 # everything the V2 product needs is built by the lifespan from env.
-app = create_app()
+try:
+    app = create_app()
+except Exception as _exc:  # noqa: BLE001 — on re-lève, enrichi
+    # Ne masque rien : la cause d'origine reste chaînée (`from`). On ajoute
+    # seulement l'état du disque à la dernière ligne, celle qu'on lit toujours.
+    raise RuntimeError(
+        f"Démarrage impossible. État du disque au moment de l'échec → {_disk_summary()}"
+    ) from _exc
 
 
 __all__ = ["app"]
