@@ -24,6 +24,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.api.app import create_app
+
+# LEGACY_RAG_ROUTES — /api/v1/qa et /api/v1/enrich ne sont plus montées par
+# défaut : leurs prompts imposent « setup haussier / bullish setup », contraire
+# à la ligne descriptive du produit, et la webapp ne les appelle jamais. Ces
+# tests gardent toute leur valeur pour qui rallume la surface : ils l'activent
+# donc explicitement, au lieu de disparaître.
+@pytest.fixture(autouse=True)
+def _expose_legacy_rag_routes(monkeypatch):
+    monkeypatch.setenv("LEGACY_RAG_ROUTES", "1")
+
 from src.api.routes.qa import build_default_rag_pipeline
 
 

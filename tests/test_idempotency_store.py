@@ -149,6 +149,15 @@ from unittest.mock import patch  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from src.api.app import create_app  # noqa: E402
+
+# Ces cas d'idempotence passent par /api/v1/enrich, qui n'est plus montée par
+# défaut (ses prompts imposent « setup haussier », contraire à la ligne
+# descriptive, et la webapp ne l'appelle jamais). Le test garde sa valeur : il
+# active explicitement la surface qu'il éprouve.
+@pytest.fixture(autouse=True)
+def _expose_legacy_rag_routes(monkeypatch):
+    monkeypatch.setenv("LEGACY_RAG_ROUTES", "1")
+
 from src.api.routes.qa import build_default_rag_pipeline  # noqa: E402
 
 

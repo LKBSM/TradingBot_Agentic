@@ -194,6 +194,22 @@ class TestTemplateEngineUE2811:
         offenders = _contains_banned_token(result.validation_reason or "")
         assert offenders == []
 
+    # ⚠️ LES DEUX TESTS CI-DESSOUS ÉPINGLENT UNE SURFACE LEGACY, NON CONFORME.
+    #
+    # Ils EXIGENT que la narration contienne « long setup » / « bullish » —
+    # exactement le vocabulaire que la ligne inviolable du produit interdit (le
+    # produit décrit une structure, il ne qualifie pas une direction).
+    #
+    # Ils restent verts parce qu'ils décrivent `TemplateNarrativeEngine`, le
+    # moteur du scanner LEGACY : il n'est pas démarré en production
+    # (`uvicorn src.api.asgi:app` ne lance ni scanner ni Telegram) et aucune
+    # surface de la webapp ne l'atteint.
+    #
+    # NE PAS S'EN SERVIR COMME PRÉCÉDENT. Le jour où ce moteur alimenterait un
+    # écran client, ce sont ces assertions qu'il faut inverser — pas la ligne.
+    # Le vrai nettoyage (retirer le scanner legacy et ses deux moteurs
+    # narratifs) touche `main.py` et `sentinel_scanner.py` : c'est une décision
+    # de périmètre, pas un détail de vocabulaire.
     def test_long_narrative_uses_setup_or_bullish(self):
         engine = TemplateNarrativeEngine()
         result = engine.generate_narrative(_MockSignal(signal_type="LONG"), tier=NarrativeTier.NARRATOR)
