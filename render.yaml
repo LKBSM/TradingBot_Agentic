@@ -52,10 +52,16 @@ services:
         value: production
       - key: BETA_LOCKDOWN
         value: "0"
-      # The host runs in a US region → the geo-block (which denies US) would
-      # 451 the app against itself via the proxy chain.
-      - key: GEO_BLOCK_DISABLED
-        value: "1"
+      # GEO-0 (2026-09-27) — le géo-blocage est RÉACTIVÉ.
+      # L'ancienne justification ("l'hôte est en région US et le géo-blocage
+      # refuse les US, il 451erait l'app contre elle-même") est PÉRIMÉE depuis
+      # LEG-1 (2026-09-14) : les États-Unis ont été retirés de la liste de refus
+      # (src/api/middleware/geo_block.py). Laisser la coupure en place revenait à
+      # servir le Royaume-Uni (régime FCA sur la promotion financière) et le bloc
+      # OFAC (CU, IR, KP, RU, SY, BY), que le code refuse explicitement.
+      # NB : la liste reste une liste de REFUS. Restreindre réellement le service
+      # à CA+US (clause 4 des conditions) demande une liste d'AUTORISATION —
+      # c'est la mission GEO-1, distincte de cette réactivation.
       - key: SENTINEL_TESTING_MODE
         value: "0"
       - key: SUBSCRIPTION_GATE_ENFORCED

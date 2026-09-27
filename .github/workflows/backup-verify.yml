@@ -60,7 +60,11 @@ jobs:
           BACKUP_S3_PREFIX: ${{ secrets.BACKUP_S3_PREFIX }}
           BACKUP_S3_REGION: auto
         run: |
-          python scripts/backup_sqlite.py verify --json | tee verdict.json
+          # --json is declared on the PARENT parser, so it must precede the
+          # subcommand. "verify --json" exits 2 with "unrecognized arguments"
+          # before it ever looks at the bucket — the workflow was red for that
+          # reason alone, on top of the missing secrets.
+          python scripts/backup_sqlite.py --json verify | tee verdict.json
           python scripts/backup_sqlite.py list
 
       # Runs even when the step above failed, so the summary carries the reason

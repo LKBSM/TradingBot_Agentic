@@ -852,7 +852,7 @@
       "role": "Conversational assistant",
       "thinking": "M.I.A Agent is reading the market",
       "thinkingAria": "M.I.A Agent is thinking",
-      "greeting": "Hi, I'm M.I.A Agent — the M.I.A Markets assistant. I've just read the {instrument} market: the structure points to a {trend} setup.",
+      "greeting": "Hi, I'm M.I.A Agent — the M.I.A Markets assistant. I've just read the {instrument} market: the structure points to a {trend} configuration.",
       "trendBullish": "bullish",
       "trendBearish": "bearish",
       "trendNeutral": "neutral",

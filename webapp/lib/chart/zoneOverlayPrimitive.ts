@@ -38,16 +38,80 @@ import { layoutZoneLabels, type LabelCandidate } from './zoneLabelLayout';
 
 // ─── Palette (moved here from ReadingChart; the overlay owns its own colours) ──
 
-/** Sober zone palette — one base RGB per kind; alpha encodes active vs tested. */
-const ZONE_RGB = {
+/**
+ * Zone palette — DÉRIVÉE des jetons CSS vivants (`--ob-l` / `--fvg-l`), une
+ * seule source de vérité partagée avec le DOM.
+ *
+ * Avant (CHART-3) : le canvas codait en dur une paire bleu-gris pendant que la
+ * légende (`DesktopReading.tsx`), la démo d'accueil (`ZoneRect.tsx`) et `/zones`
+ * lisaient les jetons rouge/violet. La pastille « OB » de la légende était donc
+ * ROUGE et la boîte OB peinte BLEU-GRIS, sur les 4 thèmes — et le canvas peignait
+ * OB et FVG dans deux bleus quasi indiscernables. Les jetons font foi : ils sont
+ * le langage visuel du reste du produit.
+ *
+ * Mis en cache par thème (`data-design` sur <html>, posé par next-themes), donc
+ * `getComputedStyle` ne tourne qu'au changement de thème, jamais par image. Le
+ * repli est l'ancienne paire figée : SSR et jeton absent peignent quand même.
+ */
+type ZoneKind = 'ob' | 'fvg';
+interface ZonePalette {
+  ob: string;
+  fvg: string;
+}
+
+const ZONE_RGB_FALLBACK: ZonePalette = {
   ob: '139, 149, 167', // #8B95A7
   fvg: '110, 132, 176', // #6E84B0
-} as const;
+};
 
-const ZONE_LABEL = {
-  ob: '#9AA4B8',
-  fvg: '#6E84B0',
-} as const;
+let _zoneKey: string | null = null;
+let _zonePalette: ZonePalette = ZONE_RGB_FALLBACK;
+
+/** « rgba(221, 107, 122, .5) » ou « #dd6b7a » → « 221, 107, 122 ». */
+function rgbTriplet(token: string): string | null {
+  const s = token.trim();
+  if (!s) return null;
+  const fn = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(s);
+  if (fn) {
+    const [, r, g, b] = fn;
+    if (r && g && b) {
+      return `${Math.round(Number(r))}, ${Math.round(Number(g))}, ${Math.round(Number(b))}`;
+    }
+  }
+  const hex = /^#([\da-f]{6})$/i.exec(s);
+  if (hex) {
+    const h = hex[1];
+    if (h) {
+      const n = Number.parseInt(h, 16);
+      return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+    }
+  }
+  return null;
+}
+
+function zonePalette(): ZonePalette {
+  if (typeof document === 'undefined') return ZONE_RGB_FALLBACK;
+  const root = document.documentElement;
+  const key = root.getAttribute('data-design') ?? '';
+  if (key === _zoneKey) return _zonePalette;
+  const cs = getComputedStyle(root);
+  _zonePalette = {
+    ob: rgbTriplet(cs.getPropertyValue('--ob-l')) ?? ZONE_RGB_FALLBACK.ob,
+    fvg: rgbTriplet(cs.getPropertyValue('--fvg-l')) ?? ZONE_RGB_FALLBACK.fvg,
+  };
+  _zoneKey = key;
+  return _zonePalette;
+}
+
+/** RGB triplet of a zone kind, from the live tokens. */
+function zoneRgb(kind: ZoneKind): string {
+  return zonePalette()[kind];
+}
+
+/** Solid label colour for a zone kind — the box's own hue at full opacity. */
+function zoneLabelColor(kind: ZoneKind): string {
+  return `rgb(${zoneRgb(kind)})`;
+}
 
 /** Short type code shown INSIDE every box so OB vs FVG is always identifiable. */
 const ZONE_CODE = {
@@ -613,7 +677,7 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
 
     // 2) Zone boxes (fill + border).
     for (const b of this._boxes) {
-      const rgb = ZONE_RGB[b.kind];
+      const rgb = zoneRgb(b.kind);
       const a = b.tested ? ZONE_ALPHA.tested : ZONE_ALPHA.active;
       ctx.save();
       ctx.fillStyle = b.highlighted
@@ -809,7 +873,7 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
     let x = ax;
     const y = ay;
     ctx.save();
-    const codeColor = ZONE_LABEL[b.kind];
+    const codeColor = zoneLabelColor(b.kind);
     const adv = drawPill(
       ctx,
       x,
@@ -821,10 +885,10 @@ export class ZoneOverlayPrimitive implements ISeriesPrimitive<Time> {
     );
     x += adv + 3;
     if (b.statusText) {
-      const stColor = b.statusLive ? LIVE_COLOR : ZONE_LABEL[b.kind];
+      const stColor = b.statusLive ? LIVE_COLOR : zoneLabelColor(b.kind);
       const stBg = b.statusLive
         ? `rgba(${LIVE_RGB}, 0.16)`
-        : `rgba(${ZONE_RGB[b.kind]}, 0.18)`;
+        : `rgba(${zoneRgb(b.kind)}, 0.18)`;
       drawPill(ctx, x, y, b.statusText, 9, stColor, stBg);
     }
     ctx.restore();
