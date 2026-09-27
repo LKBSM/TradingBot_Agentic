@@ -166,12 +166,38 @@ services:
         value: auto
       - key: VOL_MODE
         value: har
-      - key: SYMBOLS
-        value: XAUUSD
+      # SYMBOLS a été RETIRÉ (2026-09-27) : c'était de la configuration morte.
+      # Seuls src/intelligence/main.py (le scanner legacy, jamais démarré ici) et
+      # SecureConfig.from_env() la lisent — l'API n'importe de ce module que
+      # `sanitize_string`. Le périmètre réel vient de config/markets.json via le
+      # registre. La laisser à "XAUUSD" laissait croire que la production ne
+      # couvrait que l'or, alors qu'elle sert désormais 80 marchés.
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: TWELVE_DATA_API_KEY
         sync: false
+      # ── Quota Twelve Data — À POSER, sinon les 80 marchés ne suivent pas ─────
+      # Le limiteur (twelve_data_provider.py) prend ses DÉFAUTS sur l'offre
+      # GRATUITE : 8 crédits/min et 800/jour. Tant que ces deux variables ne sont
+      # pas posées, la production se bride au tarif gratuit MÊME avec un
+      # abonnement payant — l'argent versé à Twelve Data ne change rien.
+      #
+      # Plan actif : GROW, 55 crédits/min (confirmé par le fondateur, 2026-09-27).
+      # Dimensionnement mesuré par l'audit DATA-3 (tools/data_budget/
+      # simulate_credits.py, scénario S2 « étalement seul ») :
+      #   100 marchés × 5 unités → pointe 31 crédits/min (56 % du plafond),
+      #   ~12 700 crédits/jour. À 80 marchés : ~25/min, ~10 000/jour.
+      # L'étalement (SENTINEL_SPREAD_*) est ce qui rend ce chiffre tenable : sans
+      # lui la même charge pointe à 500 crédits/min, 9× le plafond.
+      - key: TWELVE_DATA_PER_MINUTE
+        value: "55"
+      # Garde-fou JOURNALIER volontairement nôtre, pas une limite du fournisseur :
+      # il coupe si la consommation dérape (boucle, retrying, backfill imprévu)
+      # avant que la facture ne le fasse. 20 000 laisse 2× la marge du régime
+      # permanent mesuré (~10 000/jour à 80 marchés). À relever si un amorçage
+      # d'historique complet est lancé — il consomme à part.
+      - key: TWELVE_DATA_PER_DAY
+        value: "20000"
       # Calendar published-value keys (free registration). Set the VALUES in the
       # Render dashboard; absent a key its source stays honestly ``unfetched``.
       - key: BLS_API_KEY          # NFP / CPI / PPI — data.bls.gov/registrationEngine
