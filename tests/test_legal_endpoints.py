@@ -177,10 +177,50 @@ class TestTermsContent:
 
     @pytest.mark.parametrize("lang", legal.LEGAL_LANGS)
     def test_states_price_currency_and_stripe(self, client, lang):
+        """The terms must state the price actually charged — from the SINGLE source.
+
+        The amounts used to be pinned here as "39" and "348". That went stale the
+        moment the Stripe prices changed, and a stale contractual price is worse
+        than no test: it asserts a figure the customer is not charged. They are now
+        read from ``config/pricing.json``, the same file the site and Stripe use,
+        so this test cannot drift again.
+
+        Each language writes the amount with its own decimal separator
+        ("39,99 $ US" in fr, "US$39.99" in en), hence the separator-agnostic match.
+        """
+        import re as _re
+
+        from src.billing.pricing import PLAN_ANNUAL, PLAN_MONTHLY, get_plan
+
         body = _terms(client, lang)
-        assert "39" in body and "348" in body
+        monthly = get_plan(PLAN_MONTHLY)
+        annual = get_plan(PLAN_ANNUAL)
+        for amount in (
+            monthly.amount_usd,
+            annual.amount_usd,
+            annual.monthly_equivalent_usd,
+        ):
+            pattern = f"{amount:.2f}".replace(".", "[.,]")
+            assert _re.search(pattern, body), f"{lang}: {amount:.2f} absent des conditions"
         assert "USD" in body
         assert "Stripe" in body
+
+    @pytest.mark.parametrize("lang", legal.LEGAL_LANGS)
+    def test_states_no_pre_go_live_price(self, client, lang):
+        """39 / 348 were the amounts before the 2026-09-27 Stripe live switch.
+
+        Left in a clause they would be a contractual price nobody is charged, so
+        every price-shaped occurrence of them is barred.
+        """
+        import re as _re
+
+        body = _terms(client, lang)
+        legacy = _re.compile(
+            r"(?:US\$|\$|USD)\s*(?:39|348|29)(?![\d.,])"
+            r"|(?<![\d.,])(?:39|348|29)\s*(?:US\$|\$|USD)"
+        )
+        found = legacy.search(body)
+        assert found is None, f"{lang}: ancien montant « {found.group(0) if found else ''} »"
 
     @pytest.mark.parametrize("lang", legal.LEGAL_LANGS)
     def test_states_the_14_day_annual_guarantee_and_quebec_rights(self, client, lang):

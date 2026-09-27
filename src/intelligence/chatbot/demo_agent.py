@@ -206,8 +206,10 @@ def load_product_knowledge(locale: str = DEFAULT_LOCALE) -> str:
         "le même prix que la page d'abonnement et que le paiement)",
     ]
     for plan in billing_pricing.list_paid_plans():
-        amount = f"{plan.amount_usd:g}"
-        per_month = f"{plan.monthly_equivalent_usd:g}"
+        # Two decimals, French comma — ":g" would have printed "39.99" inside
+        # French prose, and "40" the day an amount lands on a round number.
+        amount = billing_pricing.format_amount(plan.amount_usd)
+        per_month = billing_pricing.format_amount(plan.monthly_equivalent_usd)
         if plan.cadence == "annual":
             parts.append(
                 f"- Abonnement annuel : {amount} {plan.currency} par an, "

@@ -20,11 +20,11 @@ const VIEWPORTS = [
   { name: 'mobile 390×844', width: 390, height: 844 },
 ] as const;
 
-const VERSION = '2026-09-14';
+const VERSION = '2026-09-27';
 
 const TERMS_MD = `# M.I.A Markets — Conditions d'utilisation
 
-_Version : ${VERSION} · Dernière mise à jour : 14 septembre 2026_
+_Version : ${VERSION} · Dernière mise à jour : 27 septembre 2026_
 
 ## 1. Ce qu'est ce service
 
@@ -37,7 +37,7 @@ Tu peux résilier à tout moment, aussi simplement que tu t'es abonné.
 
 const PRIVACY_MD = `# M.I.A Markets — Politique de confidentialité
 
-_Version : ${VERSION} · Dernière mise à jour : 14 septembre 2026_
+_Version : ${VERSION} · Dernière mise à jour : 27 septembre 2026_
 
 ## 1. Qui est responsable de tes renseignements
 

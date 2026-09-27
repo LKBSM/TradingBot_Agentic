@@ -1,6 +1,6 @@
 # M.I.A Markets — Privacy Policy
 
-_Version 2026-09-14 · Last updated: 14 September 2026_
+_Version 2026-09-27 · Last updated: 27 September 2026_
 
 > English version. This is a faithful translation of the French text, which is
 > the one that prevails: in case of divergence, the French version applies.

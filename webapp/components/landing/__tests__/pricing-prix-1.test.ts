@@ -3,9 +3,12 @@
  *
  * The product sells honesty, so pricing has hard invariants:
  *  - amounts live in ONE place (config/pricing.json → pricing.generated.ts);
- *  - the ONLY sanctioned amounts are 39 (monthly), 348 (annual total), 29
- *    (derived monthly equivalent) — no legacy price (49.99 / 39.99 / 479 …)
- *    survives anywhere in the rendered frontend;
+ *  - the ONLY sanctioned amounts are the live Stripe ones — 39.99 (monthly),
+ *    359.88 (annual total), 29.99 (derived monthly equivalent) — and no LEGACY
+ *    price survives anywhere in the rendered frontend. The pre-go-live pair
+ *    (39 / 348, i.e. 29) is now itself a legacy price: it is forbidden in every
+ *    price-shaped form, so a half-finished amount change fails here instead of
+ *    being discovered by a customer charged one figure and shown another;
  *  - every price is shown with an explicit US-dollar currency;
  *  - no tax is added or mentioned; no struck-through price, discount or promo;
  *  - the four mandatory mentions are present in both fr and en.
@@ -27,15 +30,29 @@ describe('PRIX-1 — pricing.generated.ts is the single source', () => {
     expect(PRICING.currency).toBe(cfg.currency);
     expect(PRICING.monthly).toBe(cfg.plans.monthly.amount);
     expect(PRICING.annualPerYear).toBe(cfg.plans.annual.amountPerYear);
-    // Derived, exact.
-    expect(PRICING.annualPerMonth).toBe(cfg.plans.annual.amountPerYear / 12);
+    // Derived, exact — rebuilt from integer cents, like the generator does.
+    expect(PRICING.annualPerMonth).toBe(
+      Math.round(cfg.plans.annual.amountPerYear * 100) / 12 / 100,
+    );
   });
 
-  it('holds the retained prices: $39 / $348 (i.e. $29) in USD', () => {
+  it('holds the live Stripe prices: $39.99 / $359.88 (i.e. $29.99) in USD', () => {
+    // These are the amounts the LIVE Stripe prices charge (go-live 2026-09-27):
+    //   price_1UKOUBFiM5Kf1kQcGwJyVv0W   3999 cents / month
+    //   price_1UKOVNFiM5Kf1kQcizm0JiYB  35988 cents / year
+    // If this test fails, the site is quoting a price Stripe does not charge.
     expect(PRICING.currency).toBe('USD');
-    expect(PRICING.monthly).toBe(39);
-    expect(PRICING.annualPerYear).toBe(348);
-    expect(PRICING.annualPerMonth).toBe(29);
+    expect(PRICING.monthly).toBe(39.99);
+    expect(PRICING.annualPerYear).toBe(359.88);
+    expect(PRICING.annualPerMonth).toBe(29.99);
+  });
+
+  it('the annual total divides by 12 to the exact cent', () => {
+    // 35988 / 12 = 2999. The page says "soit 29,99 $ par mois"; that has to be
+    // the real quotient, not a rounded one dressed up as exact.
+    const annualCents = Math.round(PRICING.annualPerYear * 100);
+    expect(annualCents % 12).toBe(0);
+    expect(annualCents / 12 / 100).toBe(PRICING.annualPerMonth);
   });
 });
 
@@ -72,10 +89,41 @@ describe('PRIX-1 — no stale or hard-coded price in the frontend', () => {
   });
 
   // Decimal-cents amounts are unambiguously prices (never pixels/ids/timestamps).
-  const STALE = [/49[.,]99/, /39[.,]99/, /479[.,]88/, /29[.,]99/, /19[.,]99/, /9[.,]99/];
+  // 39.99 / 359.88 / 29.99 are the CURRENT prices and so are absent from this
+  // list — they are asserted present in pricing.generated.ts above, and that file
+  // is the one place allowed to hold a literal amount.
+  //
+  // Each pattern is anchored with `(?<![\d.,])`: unanchored, /9[.,]99/ matches
+  // inside "39.99" and "29.99", so the CURRENT prices would fail the guard for
+  // containing a legacy one as a substring. The anchor makes each amount match
+  // only when it starts the number.
+  const STALE = [
+    /(?<![\d.,])49[.,]99/,
+    /(?<![\d.,])479[.,]88/,
+    /(?<![\d.,])19[.,]99/,
+    /(?<![\d.,])9[.,]99/,
+  ];
   it.each(STALE.map((re) => [re.source, re] as const))(
     'no occurrence of /%s/',
     (_src, re) => {
+      const offenders = FILES.filter((f) => re.test(f.text)).map((f) => f.rel);
+      expect(offenders).toEqual([]);
+    },
+  );
+
+  // The pre-go-live amounts (39 / 348 / 29) are whole numbers, so a bare "39"
+  // is ambiguous — it is also a pixel size, an opacity, a colour channel. Only
+  // PRICE-SHAPED occurrences are forbidden: the amount glued to a currency
+  // marker, or written with explicit .00 cents. That is precise enough to catch
+  // a missed "39 $ US" and loose enough never to fire on geometry.
+  const LEGACY = [
+    { name: '$39 / US$348 / $29 (symbol before)', re: /(?:US\$|\$|USD)\s*(?:&nbsp;)?\s*(?:39|348|29)(?![\d.,])/ },
+    { name: '39 $ / 348 USD (symbol after)', re: /(?<![\d.,])(?:39|348|29)(?:&nbsp;|\s)*(?:US\$|\$|USD)/ },
+    { name: '39.00 / 348,00 (explicit cents)', re: /(?<![\d.,])(?:39|348|29)[.,]00(?![\d])/ },
+  ] as const;
+  it.each(LEGACY.map((l) => [l.name, l.re] as const))(
+    'no legacy pre-go-live price, %s',
+    (_name, re) => {
       const offenders = FILES.filter((f) => re.test(f.text)).map((f) => f.rel);
       expect(offenders).toEqual([]);
     },

@@ -1,15 +1,15 @@
 {
-  "_comment": "PRIX-1 — SINGLE SOURCE OF TRUTH for the MIA subscription price. ONE paid plan, two billing cadences, US dollars everywhere (including Canadian customers). Amounts are whole USD. `annualPerMonth` is DERIVED (annualPerYear / 12) — never write it by hand. Edit here, then regenerate the frontend module: `node scripts/gen_pricing.mjs`. The backend reads THIS file directly (src/billing/pricing.py). No amount may be hard-coded anywhere else. No tax is ever added or displayed. No struck-through price, no discount, no countdown.",
+  "_comment": "PRIX-1 — SINGLE SOURCE OF TRUTH for the MIA subscription price. ONE paid plan, two billing cadences, US dollars everywhere (including Canadian customers). Amounts are USD and MAY carry cents (go-live 2026-09-27: 39.99 / 359.88) — every display shows exactly two decimals, with the locale's own separator. `annualPerMonth` is DERIVED (annualPerYear / 12, rounded to the cent) — never write it by hand; the generator refuses an annual total whose cents are not divisible by 12, so the monthly equivalent is always exact. Edit here, then regenerate the frontend module: `node scripts/gen_pricing.mjs`. The backend reads THIS file directly (src/billing/pricing.py) and scripts/stripe_preflight.py checks the live Stripe prices against it to the cent. No amount may be hard-coded anywhere else. No tax is ever added or displayed. No trial, no struck-through price, no discount, no countdown.",
   "currency": "USD",
   "plans": {
     "monthly": {
       "key": "MONTHLY",
-      "amount": 39,
+      "amount": 39.99,
       "stripeEnvVar": "STRIPE_PRICE_MONTHLY"
     },
     "annual": {
       "key": "ANNUAL",
-      "amountPerYear": 348,
+      "amountPerYear": 359.88,
       "stripeEnvVar": "STRIPE_PRICE_ANNUAL"
     }
   }

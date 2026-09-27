@@ -1,6 +1,6 @@
 # M.I.A Markets — Condiciones de uso
 
-_Versión 2026-09-14 · Última actualización: 14 de septiembre de 2026_
+_Versión 2026-09-27 · Última actualización: 27 de septiembre de 2026_
 
 > Versión en español. Es una traducción fiel del texto francés, que es el que
 > prevalece: en caso de divergencia, se aplica la versión francesa.
@@ -82,7 +82,8 @@ expone directamente.
 
 ## 7. Precio y facturación
 
-La suscripción cuesta **39 USD al mes**, o **348 USD al año**. Los importes se
+La suscripción cuesta **39,99 USD al mes**, o **359,88 USD al año** (es decir,
+29,99 USD al mes, cobrados en un único pago). Los importes se
 expresan en **dólares estadounidenses (USD)** para todos los clientes, incluidos
 los de Canadá.
 

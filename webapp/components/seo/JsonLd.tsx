@@ -6,6 +6,7 @@
  */
 
 import { PRICING } from '@/lib/pricing.generated';
+import { machineAmount } from '@/lib/pricing';
 
 interface JsonLdProps {
   data: Record<string, unknown>;
@@ -47,19 +48,21 @@ export const softwareApplicationLd = {
   isAccessibleForFree: false,
   // Amounts come from the single pricing source (config/pricing.json) — never
   // hard-coded. Currency is USD everywhere. The annual offer is the yearly
-  // total ($348), consistent with what the pricing section headlines.
+  // total ($359.88), consistent with what the pricing section headlines. Prices
+  // here are MACHINE-readable (schema.org): two decimals, dot separator, never
+  // localised — `machineAmount`, not the display formatter.
   offers: [
     {
       '@type': 'Offer',
       name: 'Accès intégral MIA · mensuel',
-      price: String(PRICING.monthly),
+      price: machineAmount(PRICING.monthly),
       priceCurrency: PRICING.currency,
       category: 'Subscription',
     },
     {
       '@type': 'Offer',
       name: 'Accès intégral MIA · annuel',
-      price: String(PRICING.annualPerYear),
+      price: machineAmount(PRICING.annualPerYear),
       priceCurrency: PRICING.currency,
       category: 'Subscription',
     },

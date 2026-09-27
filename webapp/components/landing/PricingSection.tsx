@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Check, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PRICING } from '@/lib/pricing.generated';
+import { formatAmount } from '@/lib/pricing';
 
 /**
  * Section L5.1 — Pricing (mission PRIX-1).
@@ -16,8 +17,11 @@ import { PRICING } from '@/lib/pricing.generated';
  * Canadian customers). Amounts come EXCLUSIVELY from `@/lib/pricing.generated`
  * (single source: config/pricing.json) — nothing is hard-coded here.
  *
- *   Monthly : $39 US / month, cancel anytime.
- *   Annual  : $348 US / year — i.e. $29 US / month.
+ *   Monthly : $39.99 US / month, cancel anytime.
+ *   Annual  : $359.88 US / year — i.e. $29.99 US / month.
+ *
+ * Amounts carry cents, so they are never rendered raw: `formatAmount` gives the
+ * two decimals with the viewer's own separator (39,99 in fr, 39.99 in en).
  *
  * The annual figure ALWAYS shows the total billed AND the monthly equivalent —
  * a per-month price shown for a yearly single charge would be misleading.
@@ -60,12 +64,13 @@ type Cadence = 'monthly' | 'annual';
 
 export function PricingSection() {
   const t = useTranslations('landing.pricing');
+  const locale = useLocale();
   const [cadence, setCadence] = useState<Cadence>('annual');
   const isAnnual = cadence === 'annual';
 
   // Primary figure: for the annual cadence we headline the TOTAL billed (never
   // the per-month figure alone), with the monthly equivalent right below.
-  const amount = isAnnual ? PRICING.annualPerYear : PRICING.monthly;
+  const amount = formatAmount(isAnnual ? PRICING.annualPerYear : PRICING.monthly, locale);
   const currency = t('currency'); // "$ US" (fr) / "US$" (en) — currency is explicit.
 
   return (
@@ -164,7 +169,7 @@ export function PricingSection() {
               <p className="text-xs text-muted-foreground">
                 {isAnnual
                   ? t('annualBilling', {
-                      perMonth: PRICING.annualPerMonth,
+                      perMonth: formatAmount(PRICING.annualPerMonth, locale),
                       currency,
                     })
                   : t('monthlyBilling')}

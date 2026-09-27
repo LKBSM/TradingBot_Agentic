@@ -45,6 +45,58 @@ def _build_price_to_plan() -> dict[str, str]:
     return out
 
 
+#: The only jurisdictions the product is sold in (terms clause 4: Canada + the
+#: United States). Checkout asks for a billing address, and the address it comes
+#: back with is checked against this set — a billing country outside it means we
+#: just took money in a territory our own terms do not cover.
+BILLING_ALLOWED_COUNTRIES: frozenset = frozenset({"CA", "US"})
+
+
+def renewal_notice(price_id: str) -> Optional[str]:
+    """The sentence shown on the hosted Checkout page, above the pay button.
+
+    Quebec's LPC (and plain honesty) require the customer to see, before paying,
+    that the subscription renews by itself and for how much. Stripe shows the
+    amount in its own summary, but not the renewal in words, so we say both —
+    from ``config/pricing.json``, never retyped.
+
+    Returns None for a price we do not recognise, so an unknown price can never
+    be described with the wrong amount.
+
+    FRENCH ONLY, knowingly. Stripe takes ONE ``custom_text`` string per session,
+    not a per-locale map, and French is the backend's prose baseline (the refund
+    refusals and the renewal e-mail are French too). Localising it means passing
+    the buyer's locale down from the route — worth doing, not worth blocking the
+    go-live on.
+
+    It deliberately says nothing about tax. PRIX-1 is that no tax is ever added
+    OR displayed: the price shown is the price paid, and a "hors taxes" note on
+    the payment page would plant the idea of a supplement that never comes.
+    """
+    from src.billing.pricing import format_amount, get_plan
+
+    plan_key = _build_price_to_plan().get(price_id)
+    if not plan_key:
+        return None
+    plan = get_plan(plan_key)
+    if plan is None:
+        return None
+    amount = f"{format_amount(plan.amount_usd)} {plan.currency}"
+    if plan.cadence == "annual":
+        per_month = f"{format_amount(plan.monthly_equivalent_usd)} {plan.currency}"
+        return (
+            f"Abonnement annuel : {amount} prélevés aujourd'hui en une seule fois "
+            f"(soit {per_month} par mois), puis renouvellement automatique de "
+            f"{amount} chaque année jusqu'à résiliation. Résiliable à tout moment "
+            "depuis ton compte. Prix en dollars américains."
+        )
+    return (
+        f"Abonnement mensuel : {amount} prélevés aujourd'hui, puis renouvellement "
+        f"automatique de {amount} chaque mois jusqu'à résiliation. Résiliable à "
+        "tout moment depuis ton compte. Prix en dollars américains."
+    )
+
+
 @dataclass(frozen=True)
 class StripeWebhookEvent:
     event_type: str            # "customer.subscription.updated" etc.
@@ -359,6 +411,7 @@ class StripeClient:
         account_id: Optional[int] = None,
         trial_days: int = 0,
         automatic_tax: bool = False,
+        require_tos_consent: bool = False,
     ) -> dict:
         """Create a subscription Checkout session.
 
@@ -369,6 +422,22 @@ class StripeClient:
 
         PRIX-1: ``automatic_tax`` stays False — the price shown is the price paid,
         no tax is ever added at Checkout.
+
+        PAY-4 hardening, all three required before taking real money:
+
+        * ``billing_address_collection="required"`` — Stripe asks for the country
+          AND the state/province. Quebec's LPC applies on the customer's address,
+          so a subscription with no address on file cannot be assessed against it;
+          it is also what lets us check the billing country afterwards.
+        * ``custom_text.submit.message`` — the automatic renewal and the exact
+          amount, in words, on the page where the customer clicks "pay". Stripe
+          shows the figure in its own summary but never says "this renews by
+          itself"; that sentence is a consumer-law requirement, not decoration.
+        * ``consent_collection.terms_of_service`` — asked for only when
+          ``require_tos_consent`` is set, because Stripe rejects the parameter
+          unless a terms URL is configured in the dashboard. Our own consent
+          checkbox (LEG-1) gates the button before we ever get here, so this is
+          belt-and-braces rather than the only record.
         """
         stripe = self._require()
         sub_data: dict = {}
@@ -385,12 +454,21 @@ class StripeClient:
             # PRIX-1: no discount surface. The price shown is the price paid — no
             # promotion-code box on the hosted Checkout, no struck-through price.
             "allow_promotion_codes": False,
+            # PAY-4: country + state/province, always. See the docstring.
+            "billing_address_collection": "required",
         }
+        notice = renewal_notice(price_id)
+        if notice:
+            params["custom_text"] = {"submit": {"message": notice}}
+        if require_tos_consent:
+            params["consent_collection"] = {"terms_of_service": "required"}
         if customer:
             params["customer"] = customer
-            # Let Stripe Tax save the address it collects back onto the customer.
-            if automatic_tax:
-                params["customer_update"] = {"address": "auto"}
+            # Save the collected address back onto the customer. Without this,
+            # Stripe DISCARDS the billing address for an existing customer — and
+            # the country we made the customer type would be lost, so neither the
+            # territory check nor an LPC assessment could ever use it.
+            params["customer_update"] = {"address": "auto"}
         elif customer_email:
             params["customer_email"] = customer_email
         if account_id is not None:
@@ -574,6 +652,7 @@ class StripeClient:
 
 __all__ = [
     "ACCOUNT_SUBSCRIPTION_EVENTS",
+    "BILLING_ALLOWED_COUNTRIES",
     "STRIPE_API_KEY_ENV",
     "STRIPE_WEBHOOK_SECRET_ENV",
     "AccountSubscriptionEvent",
@@ -581,4 +660,5 @@ __all__ = [
     "StripeWebhookEvent",
     "parse_account_event",
     "parse_webhook_event",
+    "renewal_notice",
 ]

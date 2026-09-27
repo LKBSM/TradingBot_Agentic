@@ -5,6 +5,7 @@ from src.api.middleware.geo_block import (
     BLOCKED_COUNTRIES,
     BLOCKED_REGIONS,
     ALLOWED_PATHS,
+    country_from_request,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "BLOCKED_COUNTRIES",
     "BLOCKED_REGIONS",
     "ALLOWED_PATHS",
+    "country_from_request",
 ]

@@ -5,8 +5,14 @@ customers). PAY-2 removed the free tier entirely: paying is the condition of
 entry, so the catalog holds ONLY the two purchasable cadences. The public
 landing demos are the only free surface, and they are not a "plan".
 
-    MONTHLY    $39 / month    the full tool, cancel anytime
-    ANNUAL     $348 / year    the full tool, i.e. $29 / month billed yearly
+    MONTHLY    $39.99 / month    the full tool, cancel anytime
+    ANNUAL     $359.88 / year    the full tool, i.e. $29.99 / month billed yearly
+
+Amounts carry CENTS since the 2026-09-27 go-live. The per-month equivalent of
+the annual cadence is derived in integer cents (35988 / 12 = 2999), so it is
+exact and never a rounded figure passed off as an exact one. Use
+:func:`format_amount` whenever an amount becomes prose — it renders both
+decimals with the locale's own separator ("39,99" in French).
 
 The amounts live in EXACTLY ONE place — ``config/pricing.json`` — which the
 frontend also consumes (via the generated ``webapp/lib/pricing.generated.ts``).
@@ -49,8 +55,8 @@ class PricingPlan:
     key: str
     display_name: str
     cadence: str                  # "free" | "monthly" | "annual"
-    amount_usd: float             # amount billed for the cadence (0 / 39 / 348)
-    monthly_equivalent_usd: float # per-month equivalent (0 / 39 / 29)
+    amount_usd: float             # amount billed for the cadence (39.99 / 359.88)
+    monthly_equivalent_usd: float # per-month equivalent (39.99 / 29.99)
     currency: str                 # ISO 4217 — always "USD"
     stripe_price_id: Optional[str]
     is_free: bool = False
@@ -73,9 +79,10 @@ def _build_plans() -> "dict[str, PricingPlan]":
     currency_code = cfg["currency"]
     monthly_amount = float(cfg["plans"]["monthly"]["amount"])
     annual_year = float(cfg["plans"]["annual"]["amountPerYear"])
-    # Derived — never authored. The config keeps annual divisible by 12 so this
-    # is exact (guarded in the generator too).
-    annual_month = annual_year / 12.0
+    # Derived — never authored. Computed in integer CENTS: the config keeps the
+    # annual total divisible by 12 to the cent (guarded in the generator too), so
+    # the monthly equivalent is exact rather than a rounded figure shown as one.
+    annual_month = round(annual_year * 100) / 12 / 100.0
 
     return {
         PLAN_MONTHLY: PricingPlan(
@@ -126,12 +133,23 @@ def currency() -> str:
     return _config()["currency"]
 
 
+def format_amount(amount: float, *, decimal_separator: str = ",") -> str:
+    """Render an amount as prose: always two decimals, given separator.
+
+    Amounts carry cents, so "39" or "39.9" would both be wrong. French prose —
+    the chatbot's product knowledge, the renewal notice — wants a comma, which is
+    why the separator is a parameter rather than baked in.
+    """
+    return f"{amount:.2f}".replace(".", decimal_separator)
+
+
 __all__ = [
     "PLAN_ANNUAL",
     "PLAN_FREE",
     "PLAN_MONTHLY",
     "PricingPlan",
     "currency",
+    "format_amount",
     "get_plan",
     "list_paid_plans",
     "list_plans",

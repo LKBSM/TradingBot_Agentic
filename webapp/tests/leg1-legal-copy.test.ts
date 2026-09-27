@@ -218,11 +218,28 @@ describe('LEG-1 — clauses that must never quietly disappear', () => {
 
   it('the price and the currency are stated, and match the shipped pricing', async () => {
     const { PRICING } = await import('@/lib/pricing.generated');
+    // Amounts carry cents, and each language writes them with its own decimal
+    // separator ("39,99 $ US" in fr, "US$39.99" in en), so the amount is matched
+    // separator-agnostically rather than as a raw JS number string.
+    const stated = (amount: number) =>
+      new RegExp(amount.toFixed(2).replace('.', '[.,]'));
     for (const locale of LEGAL_LOCALES) {
       const body = readDoc('terms', locale);
-      expect(body, `terms.${locale}`).toContain(String(PRICING.monthly));
-      expect(body, `terms.${locale}`).toContain(String(PRICING.annualPerYear));
+      expect(body, `terms.${locale} monthly`).toMatch(stated(PRICING.monthly));
+      expect(body, `terms.${locale} annual`).toMatch(stated(PRICING.annualPerYear));
+      expect(body, `terms.${locale} per-month`).toMatch(stated(PRICING.annualPerMonth));
       expect(body, `terms.${locale}`).toContain('USD');
+    }
+  });
+
+  it('no pre-go-live amount is left in the terms', () => {
+    // 39 / 348 were the amounts before the 2026-09-27 Stripe live switch. Left in
+    // a clause, they would be a contractual price the customer is not charged.
+    for (const locale of LEGAL_LOCALES) {
+      const body = readDoc('terms', locale);
+      expect(body, `terms.${locale}`).not.toMatch(
+        /(?:US\$|\$|USD)\s*(?:39|348|29)(?![\d.,])|(?<![\d.,])(?:39|348|29)\s*(?:US\$|\$|USD)/,
+      );
     }
   });
 

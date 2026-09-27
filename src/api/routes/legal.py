@@ -38,6 +38,11 @@ router = APIRouter(tags=["legal"])
 
 # ─── Version ──────────────────────────────────────────────────────────────
 #
+# 2026-09-27 (PAY-4): the price stated in clause 7 changed with the Stripe live
+# switch — 39.99 USD / month and 359.88 USD / year (29.99 / month, charged once).
+# A stated price is a term of the contract, so the stamp is bumped: every account
+# re-consents rather than being held to a document whose price moved under it.
+#
 # 2026-09-14 (LEG-1): territory opened to the United States (clause 4) — the
 # text, GeoBlockMiddleware and insight_v2's contract were aligned together.
 #
@@ -50,7 +55,7 @@ router = APIRouter(tags=["legal"])
 # Bumping this string is what makes every account re-consent: it is the stamp
 # written into ``account_consents`` and rendered as ``X-Document-Version``. It
 # MUST stay in lockstep with the date in each markdown header.
-LAST_UPDATED = "2026-09-14"
+LAST_UPDATED = "2026-09-27"
 
 #: Back-compat alias — the canonical document version (same stamp).
 CONDITIONS_VERSION = LAST_UPDATED
