@@ -1,7 +1,7 @@
 {
   "home": {
     "hero": {
-      "pill": "Wczesny dostęp · złoto i euro dzisiaj",
+      "pill": "Wczesny dostęp · 80 rynków, 5 interwałów czasowych",
       "h1a": "Rynek już wszystko zapisał.",
       "h1b": "MIA czyta ci to na głos.",
       "lead": "Order Blocks, Fair Value Gaps, złamania struktury, strefy płynności — wykrywane automatycznie i opisane prostym językiem. Plus asystent, który odpowiada, gdy czegoś nie rozumiesz.",
@@ -323,7 +323,7 @@
       },
       "w2": {
         "h": "Rysujesz ręcznie",
-        "p": "Codziennie tracisz czas na oznaczanie swoich stref. MIA robi to na złocie i euro, bez przerwy, z cyklem życia w bonusie.",
+        "p": "Codziennie tracisz czas na oznaczanie swoich stref. MIA robi to na 80 rynkach, bez przerwy, z cyklem życia w bonusie.",
         "lb": "Konsekwencja",
         "items": {
           "0": "Te same reguły stosowane w ten sam sposób, zawsze",

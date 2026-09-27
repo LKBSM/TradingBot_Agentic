@@ -1,7 +1,7 @@
 {
   "home": {
     "hero": {
-      "pill": "Acesso antecipado · o ouro e o euro hoje",
+      "pill": "Acesso antecipado · 80 mercados, 5 unidades de tempo",
       "h1a": "O mercado já escreveu tudo.",
       "h1b": "A MIA lê-o por ti.",
       "lead": "Order Blocks, Fair Value Gaps, quebras de estrutura, bolsas de liquidez — detetados automaticamente e descritos em linguagem clara. E um assistente que responde quando não percebes.",
@@ -323,7 +323,7 @@
       },
       "w2": {
         "h": "Traças à mão",
-        "p": "Passas tempo todos os dias a marcar as tuas zonas. A MIA fá-lo no ouro e no euro, em contínuo, com o ciclo de vida à mistura.",
+        "p": "Passas tempo todos os dias a marcar as tuas zonas. A MIA fá-lo em 80 mercados, em contínuo, com o ciclo de vida à mistura.",
         "lb": "Constância",
         "items": {
           "0": "As mesmas regras aplicadas da mesma forma, sempre",

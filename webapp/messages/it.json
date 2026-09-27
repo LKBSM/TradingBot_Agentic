@@ -1,7 +1,7 @@
 {
   "home": {
     "hero": {
-      "pill": "Accesso anticipato · l'oro e l'euro oggi",
+      "pill": "Accesso anticipato · 80 mercati, 5 unità temporali",
       "h1a": "Il mercato ha già scritto tutto.",
       "h1b": "MIA te lo legge.",
       "lead": "Order Blocks, Fair Value Gaps, rotture di struttura, sacche di liquidità — rilevati automaticamente e descritti in linguaggio chiaro. E un assistente che risponde quando non capisci.",
@@ -323,7 +323,7 @@
       },
       "w2": {
         "h": "Tracci a mano",
-        "p": "Passi tempo ogni giorno a segnare le tue zone. MIA lo fa su oro ed euro, di continuo, con il ciclo di vita in più.",
+        "p": "Passi tempo ogni giorno a segnare le tue zone. MIA lo fa su 80 mercati, di continuo, con il ciclo di vita in più.",
         "lb": "Costanza",
         "items": {
           "0": "Le stesse regole applicate allo stesso modo, sempre",

@@ -1,7 +1,7 @@
 {
   "home": {
     "hero": {
-      "pill": "Early access · gold and the euro today",
+      "pill": "Early access · 80 markets, 5 timeframes",
       "h1a": "The market already wrote it all.",
       "h1b": "MIA reads it to you.",
       "lead": "Order Blocks, Fair Value Gaps, structure breaks, liquidity pockets — detected automatically and described in plain language. Plus an assistant that answers when you don't understand.",
@@ -323,7 +323,7 @@
       },
       "w2": {
         "h": "You draw by hand",
-        "p": "You spend time every day marking your zones. MIA does it on gold and the euro, continuously, with the lifecycle as a bonus.",
+        "p": "You spend time every day marking your zones. MIA does it on 80 markets, continuously, with the lifecycle as a bonus.",
         "lb": "Consistency",
         "items": {
           "0": "The same rules applied the same way, always",
