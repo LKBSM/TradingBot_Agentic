@@ -151,31 +151,61 @@ def _disk_summary() -> str:
     return " | ".join(morceaux)
 
 
-def _largest_files(limit: int = 12) -> list:
-    """Les plus gros fichiers du répertoire de données, du plus lourd au moins.
+def _largest_files(limit: int = 12) -> dict:
+    """Où passe la place du volume — fichiers ET sous-dossiers, récursivement.
 
-    Quand le disque est plein, savoir QUI le remplit est toute la question :
-    une base à purger, un cache régénérable à supprimer, ou un journal WAL qui
-    n'a jamais été consolidé. Le calcul est purement local, sans SQLite — il
-    doit fonctionner précisément quand SQLite, lui, ne fonctionne plus.
+    Première version de cette fonction : elle ne listait que les fichiers posés
+    DIRECTEMENT dans le répertoire, en sautant les sous-dossiers. Résultat :
+    571 Mio recensés alors que le volume en déclarait 9 790 — plus de 9 Go
+    invisibles, et un faux coupable désigné (market_readings.db, 479 Mio).
+    Une mesure qui ignore une partie du terrain ne vaut rien.
+
+    Elle parcourt donc tout l'arbre : le poids cumulé de chaque entrée de
+    premier niveau (dossier compris), les plus gros fichiers où qu'ils soient,
+    et le total réellement recensé — que l'on peut comparer au `df` pour
+    vérifier qu'il ne reste plus de zone d'ombre.
+
+    Sans SQLite, sans sous-processus : cela doit fonctionner précisément quand
+    plus rien d'autre ne fonctionne.
     """
     data_dir = os.environ.get("DATA_DIR", "./data")
+    mio = 1024 * 1024
+    par_entree: dict = {}
+    fichiers: list = []
+    total = 0
+    erreurs = 0
+
     try:
-        entrees = []
-        for nom in os.listdir(data_dir):
-            chemin = os.path.join(data_dir, nom)
-            try:
-                if os.path.isfile(chemin):
-                    entrees.append((os.path.getsize(chemin), nom))
-            except OSError:
-                continue
-        entrees.sort(reverse=True)
-        return [
-            {"fichier": nom, "mio": round(taille / (1024 * 1024), 1)}
-            for taille, nom in entrees[:limit]
-        ]
+        for racine, _dossiers, noms in os.walk(data_dir, onerror=lambda _e: None):
+            for nom in noms:
+                chemin = os.path.join(racine, nom)
+                try:
+                    if os.path.islink(chemin):
+                        continue
+                    taille = os.path.getsize(chemin)
+                except OSError:
+                    erreurs += 1
+                    continue
+                total += taille
+                relatif = os.path.relpath(chemin, data_dir)
+                sommet = relatif.split(os.sep)[0]
+                par_entree[sommet] = par_entree.get(sommet, 0) + taille
+                fichiers.append((taille, relatif))
     except OSError as exc:
-        return [{"erreur": f"{exc.__class__.__name__}: {exc}"}]
+        return {"erreur": f"{exc.__class__.__name__}: {exc}"}
+
+    fichiers.sort(reverse=True)
+    sommets = sorted(par_entree.items(), key=lambda kv: kv[1], reverse=True)
+    return {
+        "total_recense_mio": round(total / mio, 1),
+        "fichiers_illisibles": erreurs,
+        "par_entree": [
+            {"entree": nom, "mio": round(taille / mio, 1)} for nom, taille in sommets[:limit]
+        ],
+        "plus_gros_fichiers": [
+            {"chemin": rel, "mio": round(taille / mio, 1)} for taille, rel in fichiers[:limit]
+        ],
+    }
 
 
 _report_data_dir_state()
