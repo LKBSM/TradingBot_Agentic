@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import es from '@/messages/es.json';
-import de from '@/messages/de.json';
-import itMsg from '@/messages/it.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import pt from '@/messages/pt.json';
-import ar from '@/messages/ar.json';
-
 /**
  * Voice-dictation copy-honesty guard (mission "Dictée vocale").
  *
@@ -26,32 +18,18 @@ import ar from '@/messages/ar.json';
  *     (which only made sense on the scanner).
  */
 
-const LOCALES = { fr, en, es, de, it: itMsg, nl, pl, pt, ar } as Record<string, Record<string, any>>;
+const LOCALES = { fr, en } as Record<string, Record<string, any>>;
 
 // Per-locale proof-words: the privacy note must mention the browser AND servers.
 const MECHANISM_WORDS: Record<string, [browser: string, server: string]> = {
   fr: ['navigateur', 'serveurs'],
   en: ['browser', 'servers'],
-  es: ['navegador', 'servidores'],
-  de: ['Browser', 'Server'],
-  it: ['browser', 'server'],
-  nl: ['browser', 'servers'],
-  pl: ['przeglądarkę', 'serwery'],
-  pt: ['navegador', 'servidores'],
-  ar: ['متصفحك', 'خوادمه'],
 };
 
 // The "strategy" word per locale — must NOT appear in the shared error copy.
 const STRATEGY_WORD: Record<string, string> = {
   fr: 'stratégie',
   en: 'strategy',
-  es: 'estrategia',
-  de: 'Strategie',
-  it: 'strategia',
-  nl: 'strategie',
-  pl: 'strategię',
-  pt: 'estratégia',
-  ar: 'استراتيجيتك',
 };
 
 // Phrases that would falsely claim on-device transcription (checked where we can

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, Globe } from 'lucide-react';
-import { LOCALE_LABELS, SUPPORTED_LOCALES, type Locale } from '@/i18n';
+import { LOCALE_LABELS, SUPPORTED_LOCALES, type Locale, isRtl } from '@/i18n';
 import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
 import { cn } from '@/lib/utils';
 
@@ -54,7 +54,7 @@ export function LocaleToggle() {
               <button
                 type="button"
                 lang={locale}
-                dir={locale === 'ar' ? 'rtl' : 'ltr'}
+                dir={isRtl(locale) ? 'rtl' : 'ltr'}
                 aria-current={isActive ? 'true' : undefined}
                 onClick={() => selectLocale(locale)}
                 className={cn(

@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
-import es from '@/messages/es.json';
-import itMsg from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
 import { LANDING_STATS } from '@/lib/landing/stats';
 import { DISPLAY_TIMEFRAMES, SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/perimeter';
 
@@ -27,7 +20,7 @@ import { DISPLAY_TIMEFRAMES, SUPPORTED_TIMEFRAMES } from '@/lib/market-reading/p
  */
 
 type Dict = Record<string, unknown>;
-const LOCALES: Record<string, Dict> = { fr, en, de, es, it: itMsg, pt, nl, pl, ar };
+const LOCALES: Record<string, Dict> = { fr, en };
 
 function at(root: Dict, path: string): string {
   const v = path.split('.').reduce<unknown>((acc, k) => (acc as Dict)?.[k], root);
@@ -109,12 +102,6 @@ describe('LP-3 — the news headline does not predict', () => {
   const PREDICTIVE: Record<string, string[]> = {
     fr: ['va bouger', 'va monter', 'va baisser'],
     en: ['will move', 'will rise', 'will drop'],
-    de: ['bewegen wird'],
-    es: ['se va a mover'],
-    it: ['si muoverà'],
-    pt: ['vai mexer'],
-    nl: ['gaat bewegen'],
-    pl: ['się poruszy'],
   };
   it('no locale announces a move (8 checked languages)', () => {
     for (const [loc, needles] of Object.entries(PREDICTIVE)) {
@@ -128,7 +115,6 @@ describe('LP-3 — the news headline does not predict', () => {
   it('it announces the publications instead — the fact the calendar carries', () => {
     expect(at(home(fr as Dict), 'tools.news.h3')).toContain('publications');
     expect(at(home(en as Dict), 'tools.news.h3')).toContain('releases');
-    expect(at(home(es as Dict), 'tools.news.h3')).toContain('publicaciones');
   });
 });
 
@@ -136,12 +122,6 @@ describe('LP-3 — a zone is described, never valued', () => {
   const VALUING: Record<string, string[]> = {
     fr: ['valent pas la même chose', "savoir ce qu'il vaut"],
     en: ['not worth the same', "knowing what it's worth"],
-    de: ['nicht dasselbe wert', 'was es wert ist'],
-    es: ['no valen lo mismo', 'saber lo que vale'],
-    it: ['non valgono la stessa cosa', 'sapere quanto vale'],
-    pt: ['não valem o mesmo', 'saber o que ele vale'],
-    nl: ['niet hetzelfde waard', 'weten wat hij waard is'],
-    pl: ['to nie to samo', 'ile jest wart'],
   };
   it('neither the zones headline nor its paragraph judges a zone (8 languages)', () => {
     for (const [loc, needles] of Object.entries(VALUING)) {

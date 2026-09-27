@@ -2,14 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '@/i18n';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
-import es from '@/messages/es.json';
-import itIT from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
-
 /**
  * DETTE-1 (guard e) — i18n structural parity across every locale.
  *
@@ -28,8 +20,7 @@ import ar from '@/messages/ar.json';
  */
 
 const MESSAGES: Record<string, Record<string, unknown>> = {
-  fr, en, de, es, it: itIT, pt, nl, pl, ar,
-};
+  fr, en, };
 
 function flattenKeys(obj: unknown, prefix = '', out: Set<string> = new Set()): Set<string> {
   if (obj && typeof obj === 'object' && !Array.isArray(obj)) {

@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
-import { LOCALE_LABELS, SUPPORTED_LOCALES } from '@/i18n';
+import { LOCALE_LABELS, SUPPORTED_LOCALES, isRtl } from '@/i18n';
 import { useDesign } from '@/lib/theme/useDesign';
 import type { ThemeMeta } from '@/lib/theme/themes';
 import { FormError, FormSuccess } from './fields';
@@ -429,7 +429,7 @@ function LanguageGrid() {
           key={loc}
           type="button"
           lang={loc}
-          dir={loc === 'ar' ? 'rtl' : 'ltr'}
+          dir={isRtl(loc) ? 'rtl' : 'ltr'}
           className={active === loc ? 'fchip on' : 'fchip'}
           aria-pressed={active === loc}
           onClick={() => switchLocale(loc)}

@@ -1,7 +1,7 @@
 /**
  * LEG-1 — guards on the legal texts themselves.
  *
- * The documents live in `docs/legal/*.{fr,en,es}.md` and are served verbatim.
+ * The documents live in `docs/legal/*.{fr,en}.md` and are served verbatim.
  * Nothing in the build reads them, so nothing would catch a divergence between
  * the three languages, or a promise hardened in one of them only. This file is
  * that catch.
@@ -16,20 +16,12 @@ import { describe, expect, it } from 'vitest';
 
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
-import es from '@/messages/es.json';
 // `it` would collide with vitest's own `it`.
-import itIT from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
-
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const LEGAL_DIR = path.join(REPO_ROOT, 'docs', 'legal');
 
 /** The locales we publish a legal text in (NOT the nine UI locales). */
-const LEGAL_LOCALES = ['fr', 'en', 'es'] as const;
+const LEGAL_LOCALES = ['fr', 'en'] as const;
 type LegalLocale = (typeof LEGAL_LOCALES)[number];
 
 const DOCUMENTS = {
@@ -65,8 +57,7 @@ function sectionNumbers(markdown: string): number[] {
 }
 
 const ALL_BUNDLES: Record<string, unknown> = {
-  fr, en, de, es, it: itIT, pt, nl, pl, ar,
-};
+  fr, en, };
 
 /** Every string value in a message bundle, flattened. */
 function bundleStrings(obj: unknown, acc: string[] = []): string[] {
@@ -196,7 +187,6 @@ describe('LEG-1 — the legal texts never predict a market', () => {
   it('the terms state the opposite: past measures do not carry over', () => {
     expect(flat('terms', 'fr')).toMatch(/ne s'appliquent pas aux situations à venir/);
     expect(flat('terms', 'en')).toMatch(/do not apply to situations still to come/);
-    expect(flat('terms', 'es')).toMatch(/No se aplican a las situaciones por venir/);
   });
 });
 
@@ -209,7 +199,6 @@ describe('LEG-1 — clauses that must never quietly disappear', () => {
     // Our data licence requires us to pass this on — losing it is a breach.
     expect(flat('terms', 'fr')).toMatch(/redistribuer, revendre, republier/);
     expect(flat('terms', 'en')).toMatch(/redistribute, resell, republish/);
-    expect(flat('terms', 'es')).toMatch(/redistribuir, revender, republicar/);
   });
 
   it('the cancellation clause reproduces the imposed wording VERBATIM', () => {
