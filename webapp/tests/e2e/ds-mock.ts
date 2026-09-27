@@ -159,8 +159,8 @@ export async function mockAllApis(page: Page): Promise<void> {
   await page.route('**/api/billing/pricing', (r) =>
     r.fulfill(json({
       plans: [
-        { key: 'MONTHLY', price_id: 'price_monthly', amount_usd: 39, currency: 'USD' },
-        { key: 'ANNUAL', price_id: 'price_annual', amount_usd: 348, currency: 'USD' },
+        { key: 'MONTHLY', price_id: 'price_monthly', amount_usd: 39.99, currency: 'USD' },
+        { key: 'ANNUAL', price_id: 'price_annual', amount_usd: 359.88, currency: 'USD' },
       ],
     })),
   );

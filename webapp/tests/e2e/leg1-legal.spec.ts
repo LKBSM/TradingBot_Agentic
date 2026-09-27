@@ -90,8 +90,8 @@ async function mockSubscribed(page: Page) {
     r.fulfill({
       json: {
         plans: [
-          { key: 'MONTHLY', price_id: 'price_m', amount_usd: 39 },
-          { key: 'ANNUAL', price_id: 'price_a', amount_usd: 348 },
+          { key: 'MONTHLY', price_id: 'price_m', amount_usd: 39.99 },
+          { key: 'ANNUAL', price_id: 'price_a', amount_usd: 359.88 },
         ],
       },
     }),
