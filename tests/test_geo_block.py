@@ -233,3 +233,54 @@ class TestCustomResolver:
         assert r.status_code == 451
         r = client.get("/api/v1/private", headers={"CF-IPCountry": "FR"})
         assert r.status_code == 200
+
+
+# ─── GO-LIVE — le marché commercial ne doit JAMAIS être bloqué ────────────
+#
+# Décision fondateur (2026-09-27) : le produit se vend au Canada ET aux
+# États-Unis dès la commercialisation. Le géo-blocage est actif en production
+# (GEO_BLOCK_DISABLED retiré de render.yaml) pour refuser le Royaume-Uni
+# (régime FCA) et le bloc OFAC — mais il ne doit sous AUCUN prétexte fermer la
+# porte à un client canadien ou américain. Ces tests verrouillent exactement
+# cela : ils échouent si quelqu'un ajoute « US » ou « CA » à la liste de refus,
+# ou remet le Québec dans les régions bloquées.
+
+
+class TestCommercialTerritoryAlwaysReachable:
+    """CA + US passent toujours, géo-blocage actif."""
+
+    def test_united_states_can_reach_the_product(self):
+        client = TestClient(_make_app(disabled=False))
+        assert client.get("/api/v1/private", headers={"CF-IPCountry": "US"}).status_code == 200
+
+    def test_canada_can_reach_the_product(self):
+        client = TestClient(_make_app(disabled=False))
+        assert client.get("/api/v1/private", headers={"CF-IPCountry": "CA"}).status_code == 200
+
+    def test_quebec_can_reach_the_product(self):
+        """Le Québec est la juridiction de l'entreprise — le bloquer fut une erreur once."""
+        client = TestClient(_make_app(disabled=False))
+        r = client.get(
+            "/api/v1/private",
+            headers={"CF-IPCountry": "CA", "CloudFront-Viewer-Country-Region": "QC"},
+        )
+        assert r.status_code == 200
+
+    def test_the_commercial_territory_is_not_in_the_deny_list(self):
+        assert "US" not in BLOCKED_COUNTRIES
+        assert "CA" not in BLOCKED_COUNTRIES
+        assert "CA-QC" not in BLOCKED_REGIONS
+        assert "QC" not in BLOCKED_REGIONS
+
+    def test_an_unknown_country_is_served_not_refused(self):
+        """Repli ouvert : sans en-tête de pays, on sert. Un client réel n'est
+        jamais enfermé dehors parce que le CDN n'a pas renseigné son pays."""
+        client = TestClient(_make_app(disabled=False))
+        assert client.get("/api/v1/private").status_code == 200
+
+    def test_the_restricted_jurisdictions_are_still_refused(self):
+        """Contrepartie : ce que le code refuse explicitement reste refusé."""
+        client = TestClient(_make_app(disabled=False))
+        for code in ("GB", "IR", "KP", "RU", "SY", "CU", "BY"):
+            r = client.get("/api/v1/private", headers={"CF-IPCountry": code})
+            assert r.status_code == 451, f"{code} devrait être refusé"
