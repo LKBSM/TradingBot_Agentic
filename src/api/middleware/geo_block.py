@@ -145,6 +145,19 @@ def _country_from_headers(request: Request) -> Optional[str]:
     return None
 
 
+def country_from_request(request: Request) -> Optional[str]:
+    """Public resolver: the viewer's country from CDN headers, or None.
+
+    Exported so surfaces OUTSIDE the deny-list middleware can ask the same
+    question against the same headers — the billing checkout needs the country to
+    keep sales inside the sold territory (terms clause 4), which is an ALLOW-list
+    question, the opposite of this module's deny-list. None means "unknown", and
+    every caller must treat unknown as allowed: no real customer may be locked
+    out because a CDN did not fill a header in.
+    """
+    return _country_from_headers(request)
+
+
 def _region_from_headers(request: Request) -> Optional[str]:
     """Return a region code in ISO-3166-2 form ``CC-RR`` when possible.
 

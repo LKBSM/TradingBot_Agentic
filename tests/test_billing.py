@@ -56,16 +56,44 @@ def test_amounts_come_from_the_single_source():
     assert annual.amount_usd == float(_CONFIG["plans"]["annual"]["amountPerYear"])
 
 
-def test_target_prices_39_and_348():
-    assert get_plan(PLAN_MONTHLY).amount_usd == 39.0
-    assert get_plan(PLAN_ANNUAL).amount_usd == 348.0
+def test_live_prices_are_39_99_and_359_88():
+    """The amounts the LIVE Stripe prices actually charge (go-live 2026-09-27).
+
+    price_1UKOUBFiM5Kf1kQcGwJyVv0W = 3999 cents/month,
+    price_1UKOVNFiM5Kf1kQcizm0JiYB = 35988 cents/year. If this fails, the site
+    quotes a price Stripe does not charge — which is the one billing bug a
+    customer always notices.
+    """
+    assert get_plan(PLAN_MONTHLY).amount_usd == 39.99
+    assert get_plan(PLAN_ANNUAL).amount_usd == 359.88
 
 
-def test_annual_monthly_equivalent_is_exact_29():
+def test_the_legacy_amounts_are_gone():
+    # 39 / 348 were the pre-go-live amounts. Left behind anywhere, they are a
+    # price the customer is shown but not charged.
+    assert get_plan(PLAN_MONTHLY).amount_usd != 39.0
+    assert get_plan(PLAN_ANNUAL).amount_usd != 348.0
+
+
+def test_annual_monthly_equivalent_is_exact_29_99():
     annual = get_plan(PLAN_ANNUAL)
-    # Derived, must be whole and equal to 348/12.
-    assert annual.monthly_equivalent_usd == 29.0
-    assert annual.amount_usd / 12.0 == annual.monthly_equivalent_usd
+    # Derived and EXACT: 35988 cents / 12 = 2999 cents. The page says "soit
+    # 29,99 $ par mois", so it has to be the true quotient, not a rounded one.
+    assert annual.monthly_equivalent_usd == 29.99
+    assert round(annual.amount_usd * 100) % 12 == 0
+    assert round(annual.amount_usd * 100) // 12 == round(annual.monthly_equivalent_usd * 100)
+
+
+def test_amounts_are_formatted_with_two_decimals():
+    from src.billing.pricing import format_amount
+
+    # ":g" used to print "39.99" in French prose — and would print "40" the day
+    # an amount lands on a round number. Two decimals, comma, always.
+    assert format_amount(39.99) == "39,99"
+    assert format_amount(359.88) == "359,88"
+    assert format_amount(29.99) == "29,99"
+    assert format_amount(120.0) == "120,00"
+    assert format_amount(39.99, decimal_separator=".") == "39.99"
 
 
 def test_no_free_plan_in_catalog():
@@ -91,7 +119,7 @@ def test_to_dict_serialisable():
     d = get_plan(PLAN_MONTHLY).to_dict()
     json.dumps(d)
     assert d["key"] == PLAN_MONTHLY
-    assert d["amount_usd"] == 39.0
+    assert d["amount_usd"] == 39.99
     assert d["currency"] == "USD"
 
 
@@ -236,11 +264,70 @@ def test_checkout_400_for_free_plan():
     assert resp.status_code == 400
 
 
-def test_webhook_503_without_stripe():
-    c = TestClient(create_app())
+class _WebhookStripe:
+    """Minimal stripe stand-in: configured, and trusts the body's signature.
+
+    Needed because the legacy endpoint refuses in 410 only AFTER verifying the
+    signature — a deliberate choice on main, so Stripe retries the event rather
+    than dropping it, and the event can be replayed once the URL is repointed.
+    """
+
+    is_configured = True
+
+    def verify_webhook(self, *, body, signature):
+        return json.loads(body or b"{}")
+
+
+def test_legacy_webhook_is_retired_and_answers_410():
+    """The legacy webhook must REFUSE, not absorb.
+
+    It fed ``tier_manager`` — state the account paywall never reads. While it
+    answered 200, Stripe considered delivery successful, never retried, and showed
+    no failure: a real payment was taken and opened NOTHING, with a log line as
+    the only trace. 410 makes it visible where the founder already looks.
+    """
+    c = TestClient(create_app(stripe_client=_WebhookStripe()))
     resp = c.post(
         "/api/v1/billing/webhook",
-        content=b"{}",
-        headers={"Stripe-Signature": "x"},
+        content=json.dumps({
+            "id": "evt_legacy",
+            "type": "customer.subscription.updated",
+            "data": {"object": {
+                "customer": "cus_x", "status": "active",
+                "items": {"data": [{"price": {"id": "price_x"}}]},
+            }},
+        }),
+        headers={"Stripe-Signature": "whatever"},
     )
-    assert resp.status_code == 503
+    assert resp.status_code == 410
+    # The refusal must say where to point the endpoint instead — a 410 with no
+    # destination leaves the founder exactly as stuck as the silent 200 did.
+    assert "/api/billing/webhook" in resp.json()["detail"]
+
+
+def test_legacy_webhook_still_rejects_a_missing_signature_first():
+    # An unsigned request is not "retired", it is unauthenticated: 400 before any
+    # parsing, so the 410 can never be used to probe the endpoint's behaviour.
+    c = TestClient(create_app(stripe_client=_WebhookStripe()))
+    assert c.post("/api/v1/billing/webhook", content=b"{}").status_code == 400
+
+
+def test_the_live_webhook_path_exists_and_is_the_only_receiver():
+    """Guards the confusion itself: the ONE path the account paywall reads.
+
+    Asserted on the ROUTERS, not on ``create_app().routes``: which routers an
+    assembled app ends up mounting depends on what the environment can import, so
+    a route-table check passes locally and fails in CI on a minimal app. The
+    router's own prefix + path is the actual contract Stripe is pointed at — that
+    is what must not move.
+    """
+    from src.api.routes import account_billing, billing
+
+    live = {getattr(r, "path", None) for r in account_billing.router.routes}
+    legacy = {getattr(r, "path", None) for r in billing.router.routes}
+    # prefix="/api/billing" + @router.post("/webhook")
+    assert "/api/billing/webhook" in live
+    # The retired one stays ROUTED — it has to answer 410 rather than 404, so a
+    # misconfigured Stripe endpoint gets told where to go instead of nothing.
+    assert "/api/v1/billing/webhook" in legacy
+    assert "/api/v1/billing/webhook" not in live

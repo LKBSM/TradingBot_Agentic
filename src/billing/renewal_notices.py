@@ -68,12 +68,29 @@ def _send_email(to_email: str, subject: str, body: str) -> bool:
     return True
 
 
+def _renewal_amount() -> str:
+    """The annual amount, as prose, from the single pricing source.
+
+    A notice that announces a charge without saying how much is a poor notice —
+    and the amount is never retyped here: it comes from ``config/pricing.json``
+    via the billing module, the same figure the site and Stripe use.
+    """
+    from src.billing.pricing import PLAN_ANNUAL, format_amount, get_plan
+
+    plan = get_plan(PLAN_ANNUAL)
+    if plan is None:  # pragma: no cover - the annual cadence always exists
+        return ""
+    return f"{format_amount(plan.amount_usd)} {plan.currency}"
+
+
 def _notice_body(period_end: float) -> tuple[str, str]:
     when = time.strftime("%Y-%m-%d", time.gmtime(period_end))
+    amount = _renewal_amount()
+    charge = f" pour {amount}" if amount else ""
     subject = "Renouvellement de votre abonnement M.I.A Markets"
     body = (
         "Votre abonnement annuel M.I.A Markets se renouvellera automatiquement le "
-        f"{when}.\n\n"
+        f"{when}{charge}.\n\n"
         "Votre abonnement est sans engagement : vous pouvez le résilier à tout "
         "moment, en un clic, depuis votre page d'abonnement — aucun prélèvement "
         "ne sera effectué après la résiliation.\n\n"

@@ -13,13 +13,17 @@ sont possibles, toutes SILENCIEUSES jusqu'au premier client :
 3. le webhook vise ``/api/v1/billing/webhook`` (le point d'entrée RETIRÉ) au lieu
    de ``/api/billing/webhook`` → l'argent entre, l'accès reste fermé ;
 4. le webhook n'est pas abonné à tous les événements dont le mur d'accès a
-   besoin → certains paiements n'ouvrent jamais rien.
+   besoin → certains paiements n'ouvrent jamais rien ;
+5. ``config/pricing.json`` lui-même annonce un montant qui n'a pas été décidé →
+   Stripe et le site sont d'accord, sur le mauvais prix.
 
 Ce script lit Stripe et l'environnement, et rend un verdict par ligne. Il
 n'écrit RIEN, ni chez Stripe ni en base. Il n'affiche jamais une clé.
 
 Les montants attendus viennent de ``config/pricing.json`` — la source unique du
-projet — jamais d'une constante écrite ici.
+projet. Les montants de la mise en vente (39,99 USD par mois, 359,88 USD par an)
+sont en plus écrits dans ``GO_LIVE_CENTS`` comme SECOND TÉMOIN : sans cela, un
+fichier de configuration erroné et un Stripe erroné se valideraient l'un l'autre.
 
 Usage
 -----
@@ -51,6 +55,18 @@ if str(_REPO_ROOT) not in sys.path:
 
 from src.billing.pricing import list_paid_plans  # noqa: E402
 from src.billing.stripe_client import ACCOUNT_SUBSCRIPTION_EVENTS  # noqa: E402
+
+#: Les montants décidés pour la mise en vente, EN CENTS, par clé de cadence.
+#:
+#: Pourquoi une constante ici alors que la source unique est config/pricing.json :
+#: comparer Stripe à config/pricing.json ne prouve que leur ACCORD. Si le fichier
+#: de configuration était faux, les deux seraient faux ensemble et le script
+#: dirait « tout passe ». Ces valeurs sont donc un SECOND TÉMOIN indépendant — la
+#: décision commerciale du 2026-09-27, écrite une fois de plus, exprès. Elles ne
+#: servent jamais à calculer un prix : uniquement à vérifier la configuration.
+#:   MONTHLY  39,99 USD par mois
+#:   ANNUAL  359,88 USD par an, soit 29,99 USD par mois (facturés en une fois)
+GO_LIVE_CENTS = {"MONTHLY": 3999, "ANNUAL": 35988}
 
 #: Le SEUL chemin que le mur d'accès alimente (src/api/routes/account_billing.py).
 CORRECT_WEBHOOK_PATH = "/api/billing/webhook"
@@ -100,6 +116,50 @@ def check_env(allow_test: bool) -> Optional[str]:
     return key
 
 
+def check_catalog() -> None:
+    """config/pricing.json annonce-t-il bien les montants décidés, au cent près ?
+
+    Se lance avant tout appel à Stripe : si la source unique est fausse, tout le
+    reste vérifierait la cohérence d'une erreur.
+    """
+    for plan in list_paid_plans():
+        expected = GO_LIVE_CENTS.get(plan.key)
+        if expected is None:
+            record(WARN, f"Cadence {plan.key} inconnue du préflight — montant non vérifié.")
+            continue
+        actual = round(plan.amount_usd * 100)
+        if actual != expected:
+            record(
+                FAIL,
+                f"config/pricing.json annonce {actual} cents pour {plan.key}, "
+                f"alors que la décision de mise en vente est {expected} cents "
+                f"({expected / 100:.2f} {plan.currency}). Le site afficherait un "
+                f"prix qui n'a pas été décidé.",
+            )
+        else:
+            record(
+                PASS,
+                f"config/pricing.json annonce bien {expected / 100:.2f} "
+                f"{plan.currency} pour {plan.key}.",
+            )
+
+        if plan.cadence == "annual":
+            # 35988 / 12 = 2999 : le « soit N par mois » affiché doit être exact,
+            # pas un arrondi présenté comme exact.
+            if actual % 12 != 0:
+                record(
+                    FAIL,
+                    f"{actual} cents ne se divise pas par 12 — l'équivalent mensuel "
+                    f"affiché serait un arrondi, présenté comme exact.",
+                )
+            else:
+                record(
+                    PASS,
+                    f"Équivalent mensuel exact : {actual // 12 / 100:.2f} "
+                    f"{plan.currency} par mois.",
+                )
+
+
 def check_prices(stripe: Any, key_is_live: bool) -> None:
     """Chaque prix Stripe doit correspondre à config/pricing.json, au cent près."""
     for plan in list_paid_plans():
@@ -107,7 +167,7 @@ def check_prices(stripe: Any, key_is_live: bool) -> None:
         # et lu par src/billing/pricing.py : STRIPE_PRICE_MONTHLY / _ANNUAL.
         env_name = f"STRIPE_PRICE_{plan.key}"
         price_id = os.environ.get(env_name, "").strip()
-        label = f"{plan.key} ({plan.amount_usd:g} {plan.currency})"
+        label = f"{plan.key} ({plan.amount_usd:.2f} {plan.currency})"
 
         if not price_id:
             record(FAIL, f"{env_name} absente — le plan {label} ne peut pas être vendu.")
@@ -138,7 +198,7 @@ def check_prices(stripe: Any, key_is_live: bool) -> None:
                 f"annonce {expected_cents} cents ({label}). Le site mentirait sur son prix.",
             )
         else:
-            record(PASS, f"{env_name} facture bien {expected_cents / 100:g} {plan.currency} — {label}.")
+            record(PASS, f"{env_name} facture bien {expected_cents / 100:.2f} {plan.currency} — {label}.")
 
         actual_currency = (price.get("currency") or "").upper()
         if actual_currency != plan.currency.upper():
@@ -241,6 +301,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     stripe.api_key = key
     key_is_live = key.startswith("sk_live_")
 
+    print("-" * 74)
+    check_catalog()
     print("-" * 74)
     check_prices(stripe, key_is_live)
     print("-" * 74)

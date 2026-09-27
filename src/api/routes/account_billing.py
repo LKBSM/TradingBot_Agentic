@@ -36,13 +36,14 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from src.api.account_store import AccountStore
+from src.api.middleware.geo_block import country_from_request
 from src.api.public_urls import app_public_url
 from src.api.session_auth import require_account
 from src.api.subscription_gate import account_has_access
 from src.billing import refund_guarantee
 from src.billing.pricing import PLAN_ANNUAL, list_paid_plans
 from src.billing.refund_guarantee import GUARANTEE_DAYS
-from src.billing.stripe_client import parse_account_event
+from src.billing.stripe_client import BILLING_ALLOWED_COUNTRIES, parse_account_event
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +271,77 @@ def _evaluate_guarantee(
     return decision, (invoice if decision.eligible else None)
 
 
+def _billing_territory_enforced() -> bool:
+    """Whether a checkout from outside CA/US is refused (default: yes).
+
+    ``BILLING_TERRITORY_ENFORCED=0`` is the escape hatch for the day the founder
+    opens a new territory in Stripe before the terms catch up — it is NOT meant to
+    be left off.
+    """
+    return os.environ.get("BILLING_TERRITORY_ENFORCED", "1") != "0"
+
+
+def _guard_billing_territory(request: Request) -> None:
+    """Refuse to open Checkout from outside the sold territory (CA + US).
+
+    Terms clause 4 sells the service in Canada and the United States only, so a
+    subscription taken anywhere else is one we have no terms for. The geo-block
+    middleware cannot answer this even now that it runs in production: it is a
+    DENY-list (the United Kingdom's FCA regime plus the OFAC bloc), so France,
+    Germany, Japan and most of the world reach the site perfectly legitimately —
+    they just may not be SOLD to. That is an allow-list question, and it belongs
+    here, at the one place money starts moving.
+
+    UNKNOWN COUNTRY IS ALLOWED, deliberately. Render does not guarantee a geo
+    header, and refusing everyone whose country we cannot read would shut the
+    door on real customers to enforce a rule we could not even evaluate. The
+    billing address Stripe collects is the second, authoritative check
+    (``_check_billing_country``) — this one only turns away the clearly-outside.
+
+    KNOWN COST: this reads an IP, not a residence. A Canadian customer subscribing
+    while on holiday in France is refused, and told to write in. That is the price
+    of an IP-based gate; if it bites real customers, set
+    ``BILLING_TERRITORY_ENFORCED=0`` and rely on the billing-address check alone,
+    which is the one thing that actually reflects where someone lives.
+    """
+    if not _billing_territory_enforced():
+        return
+    country = country_from_request(request)
+    if country and country not in BILLING_ALLOWED_COUNTRIES:
+        logger.warning("checkout refused for country=%s (outside CA/US)", country)
+        raise HTTPException(
+            status_code=451,
+            detail=(
+                "L'abonnement n'est offert qu'au Canada et aux États-Unis. "
+                "Écris à contact@mia.markets si tu penses que c'est une erreur."
+            ),
+        )
+
+
+def _check_billing_country(payload: Dict[str, Any], account_id: int) -> None:
+    """Log loudly when a completed checkout carries an out-of-territory address.
+
+    This runs AFTER the money moved, so it does not revoke anything: refusing
+    access to someone who has just paid would be the worse failure. It exists so
+    the case is visible instead of silent — the founder can then refund and close
+    the account, which is a decision, not something a webhook should take.
+    """
+    details = (payload.get("data", {}).get("object", {}) or {}).get("customer_details") or {}
+    country = ((details.get("address") or {}).get("country") or "").upper()
+    if not country:
+        logger.warning(
+            "checkout completed for account=%s with NO billing country — "
+            "billing_address_collection may have been turned off",
+            account_id,
+        )
+    elif country not in BILLING_ALLOWED_COUNTRIES:
+        logger.error(
+            "checkout completed for account=%s with billing country %s, OUTSIDE the "
+            "sold territory (CA/US, terms clause 4) — review and refund",
+            account_id, country,
+        )
+
+
 def _resolve_price_id(body: CheckoutBody) -> str:
     configured = _configured_plans()
     if not configured:
@@ -314,6 +386,7 @@ async def checkout(
     creates one (carrying ``account_id`` in metadata) and binds it. The hosted
     Checkout page collects payment — no card data passes through here.
     """
+    _guard_billing_territory(request)
     store = _store(request)
     stripe = _stripe(request)
     price_id = _resolve_price_id(body)
@@ -621,6 +694,7 @@ async def webhook(
         # Bind customer↔account; the subscription.* events carry the full state.
         if event.customer_id:
             store.link_stripe_customer(account_id, event.customer_id)
+        _check_billing_country(verified, account_id)
     else:
         store.upsert_subscription(
             account_id,

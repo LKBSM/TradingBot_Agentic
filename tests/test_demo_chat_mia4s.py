@@ -170,9 +170,13 @@ def test_system_prompt_keeps_the_production_rules_and_adds_the_demo_scope() -> N
 def test_product_knowledge_quotes_the_real_price_and_faq() -> None:
     knowledge = load_product_knowledge()
     # Straight from config/pricing.json via the billing module — never retyped.
-    assert "39 USD par mois" in knowledge
-    assert "348 USD par an" in knowledge
-    assert "29 USD par mois" in knowledge
+    # Live amounts, French comma — ":g" used to print "39.99" inside French prose.
+    assert "39,99 USD par mois" in knowledge
+    assert "359,88 USD par an" in knowledge
+    assert "29,99 USD par mois" in knowledge
+    # No pre-go-live amount survives in what the agent is told.
+    assert "39 USD" not in knowledge
+    assert "348 USD" not in knowledge
     # Straight from the site's own FAQ and terms.
     assert "Est-ce que MIA dit quand acheter ou vendre ?" in knowledge
     # LEG-1 reworded clause 1 of the terms: the French « conseiller en

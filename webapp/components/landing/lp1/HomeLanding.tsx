@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import styles from './lp1.module.css';
 import { DemoTabs } from './DemoTabs';
@@ -12,6 +12,7 @@ import { MiaSection } from './MiaSection';
 import { ReadingCarousel } from './ReadingCarousel';
 import { CandleSvg } from './CandleSvg';
 import { PRICING } from '@/lib/pricing.generated';
+import { formatAmount } from '@/lib/pricing';
 
 function Check() {
   return <span className={styles.ck} aria-hidden="true">✓</span>;
@@ -45,6 +46,7 @@ function VisFrame({ title, children }: { title: string; children: ReactNode }) {
 
 export function HomeLanding() {
   const t = useTranslations('home');
+  const locale = useLocale();
   const lh = useLocalizedHref();
   const rich = (k: string): ReactNode => t.rich(k, { b: (c) => <b>{c}</b> });
   const [openFaq, setOpenFaq] = useState<number>(0);
@@ -253,8 +255,8 @@ export function HomeLanding() {
             <span className={styles.pcLbl}>{t('pricing.paid.label')}</span>
             <h4>{t('pricing.paid.name')}</h4>
             <div className={styles.pcSub}>{t('pricing.paid.sub')}</div>
-            <div className={styles.amt}><span className={styles.amtV}>{PRICING.monthly} $</span><span className={styles.amtU}>US / {t('pricing.paid.perMonth')}</span></div>
-            <div className={styles.bill}>{t('pricing.paid.bill', { total: String(PRICING.annualPerYear), perMonth: String(PRICING.annualPerMonth) })}</div>
+            <div className={styles.amt}><span className={styles.amtV}>{formatAmount(PRICING.monthly, locale)} $</span><span className={styles.amtU}>US / {t('pricing.paid.perMonth')}</span></div>
+            <div className={styles.bill}>{t('pricing.paid.bill', { total: formatAmount(PRICING.annualPerYear, locale), perMonth: formatAmount(PRICING.annualPerMonth, locale) })}</div>
             <div className={styles.pfeat}>
               {['1', '2', '3', '4', '5', '6'].map((i) => (<div key={i} className={styles.pf}><Check />{t.rich(`pricing.paid.f${i}`, { b: (c) => <b>{c}</b> })}</div>))}
             </div>

@@ -1,7 +1,10 @@
 // AUTO-GENERATED from config/pricing.json by scripts/gen_pricing.mjs.
 // DO NOT EDIT BY HAND. Run `node scripts/gen_pricing.mjs` after editing the JSON.
 // This is the ONLY place amounts reach the frontend — no price is hard-coded in
-// any component. `annualPerMonth` is derived (annualPerYear / 12).
+// any component. `annualPerMonth` is derived (annualPerYear / 12, to the cent).
+// Amounts carry cents: never render one raw (`{PRICING.monthly}` would print an
+// English dot in every locale) — pass it through `formatAmount` from
+// `@/lib/pricing`, which shows exactly two decimals with the locale separator.
 export interface PricingModel {
   /** ISO 4217 currency code — USD everywhere, including Canadian customers. */
   currency: string;
@@ -15,7 +18,7 @@ export interface PricingModel {
 
 export const PRICING: PricingModel = {
   currency: "USD",
-  monthly: 39,
-  annualPerYear: 348,
-  annualPerMonth: 29,
+  monthly: 39.99,
+  annualPerYear: 359.88,
+  annualPerMonth: 29.99,
 } as const;

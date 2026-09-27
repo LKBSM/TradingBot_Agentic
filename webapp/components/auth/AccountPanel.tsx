@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
 import { LOCALE_LABELS, SUPPORTED_LOCALES, isRtl } from '@/i18n';
+import { STRIPE_PORTAL_LOGIN_URL } from '@/lib/billing/portal';
 import { useDesign } from '@/lib/theme/useDesign';
 import type { ThemeMeta } from '@/lib/theme/themes';
 import { FormError, FormSuccess } from './fields';
@@ -330,6 +331,36 @@ export function AccountPanel() {
             <span>{t('planValue')}</span>
           </div>
           <span className="planbadge">{t('earlyAccessBadge')}</span>
+        </div>
+
+        {/* Manage the subscription in Stripe. Two doors, both visible without
+            hunting: our own /abonnement page, and the Stripe portal login page
+            — the latter works even when our backend or the portal session call
+            does not, so cancelling is never blocked by our uptime. */}
+        <div className="setrow">
+          <div className="sk">
+            <b>{t('manageRow')}</b>
+            <span>{t('manageValue')}</span>
+          </div>
+          <Link href={lh('/abonnement')} className="btn">
+            {t('manageCta')}
+          </Link>
+        </div>
+
+        <div className="setrow">
+          <div className="sk">
+            <b>{t('portalRow')}</b>
+            <span>{t('portalValue')}</span>
+          </div>
+          <a
+            href={STRIPE_PORTAL_LOGIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn"
+            data-testid="stripe-portal-link"
+          >
+            {t('portalCta')}
+          </a>
         </div>
       </div>
 

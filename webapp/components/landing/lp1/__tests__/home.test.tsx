@@ -142,9 +142,26 @@ describe('LP-1 home — mandatory mentions', () => {
   it('never shows a price without its currency', () => {
     render(<HomeLanding />);
     const txt = document.body.textContent ?? '';
-    expect(txt).toContain('39 $');
-    expect(txt).toContain('348 $ US');
-    expect(txt).toContain('29 $ US');
+    // Live amounts, French separator (the provider renders in fr here).
+    expect(txt).toContain('39,99 $');
+    expect(txt).toContain('359,88 $ US');
+    expect(txt).toContain('29,99 $ US');
+  });
+
+  it('shows the amounts with a French decimal comma, never a JS dot', () => {
+    // A raw {PRICING.monthly} would print "39.99" in every locale. The comma is
+    // what proves the amount went through the locale formatter.
+    render(<HomeLanding />);
+    const txt = document.body.textContent ?? '';
+    expect(txt).not.toContain('39.99');
+    expect(txt).not.toContain('359.88');
+  });
+
+  it('shows the amounts with a dot in English', () => {
+    render(<HomeLanding />, 'en');
+    const txt = document.body.textContent ?? '';
+    expect(txt).toContain('39.99');
+    expect(txt).toContain('359.88');
   });
 
   it('carries the required legal mentions (fr)', () => {
@@ -285,13 +302,13 @@ describe('LP-1 home — the M.I.A tab talks to the real agent', () => {
   });
 
   it('a freely typed question reaches the agent (the starters are not a menu)', async () => {
-    mockAnswer({ content: 'L’abonnement est à 39 USD par mois.', messages_left: 4 });
+    mockAnswer({ content: 'L’abonnement est à 39,99 USD par mois.', messages_left: 4 });
     openMia();
     fireEvent.change(screen.getByLabelText('Pose ta question…'), {
       target: { value: 'Combien coûte l’abonnement ?' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Envoyer' }));
-    expect(await screen.findByText('L’abonnement est à 39 USD par mois.')).toBeInTheDocument();
+    expect(await screen.findByText('L’abonnement est à 39,99 USD par mois.')).toBeInTheDocument();
   });
 
   it('a validated view action really moves the chart layers', async () => {

@@ -15,7 +15,7 @@ import {
 /** The published legal documents, read from the repo (webapp/tests/e2e → root). */
 const LEGAL_DIR = path.resolve(__dirname, '..', '..', '..', 'docs', 'legal');
 /** Kept in step with `LAST_UPDATED` in src/api/routes/legal.py. */
-const LEGAL_VERSION = '2026-09-14';
+const LEGAL_VERSION = '2026-09-27';
 
 /**
  * DS-1 — serves EVERY /api/* endpoint the product pages hit, from the frozen
@@ -159,8 +159,8 @@ export async function mockAllApis(page: Page): Promise<void> {
   await page.route('**/api/billing/pricing', (r) =>
     r.fulfill(json({
       plans: [
-        { key: 'MONTHLY', price_id: 'price_monthly', amount_usd: 39, currency: 'USD' },
-        { key: 'ANNUAL', price_id: 'price_annual', amount_usd: 348, currency: 'USD' },
+        { key: 'MONTHLY', price_id: 'price_monthly', amount_usd: 39.99, currency: 'USD' },
+        { key: 'ANNUAL', price_id: 'price_annual', amount_usd: 359.88, currency: 'USD' },
       ],
     })),
   );

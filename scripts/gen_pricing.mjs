@@ -19,22 +19,30 @@ function render() {
   const monthly = raw.plans.monthly.amount;
   const annualPerYear = raw.plans.annual.amountPerYear;
 
-  // annualPerMonth is DERIVED — never authored. It must be a whole number so
-  // the displayed "soit N $ par mois" is exact (no rounding lie).
-  if (annualPerYear % 12 !== 0) {
+  // annualPerMonth is DERIVED — never authored. Amounts carry cents since the
+  // 2026-09-27 go-live, so the check is done in CENTS (integers): the annual
+  // total's cents must divide by 12 exactly, otherwise the displayed "soit N,NN
+  // $ par mois" would be a rounded figure presented as an exact one.
+  const annualCents = Math.round(annualPerYear * 100);
+  if (annualCents % 12 !== 0) {
     console.error(
-      `annualPerYear (${annualPerYear}) is not divisible by 12 — the monthly ` +
-        `equivalent would not be a whole number. Adjust config/pricing.json.`,
+      `annualPerYear (${annualPerYear}) is not divisible by 12 to the cent ` +
+        `(${annualCents} cents / 12 = ${annualCents / 12}) — the monthly ` +
+        `equivalent could not be shown exactly. Adjust config/pricing.json.`,
     );
     process.exit(1);
   }
-  const annualPerMonth = annualPerYear / 12;
+  // Rebuilt from the integer cents so no binary-float residue reaches the UI.
+  const annualPerMonth = annualCents / 12 / 100;
 
   return (
     `// AUTO-GENERATED from config/pricing.json by scripts/gen_pricing.mjs.\n` +
     `// DO NOT EDIT BY HAND. Run \`node scripts/gen_pricing.mjs\` after editing the JSON.\n` +
     `// This is the ONLY place amounts reach the frontend — no price is hard-coded in\n` +
-    `// any component. \`annualPerMonth\` is derived (annualPerYear / 12).\n` +
+    `// any component. \`annualPerMonth\` is derived (annualPerYear / 12, to the cent).\n` +
+    `// Amounts carry cents: never render one raw (\`{PRICING.monthly}\` would print an\n` +
+    `// English dot in every locale) — pass it through \`formatAmount\` from\n` +
+    `// \`@/lib/pricing\`, which shows exactly two decimals with the locale separator.\n` +
     `export interface PricingModel {\n` +
     `  /** ISO 4217 currency code — USD everywhere, including Canadian customers. */\n` +
     `  currency: string;\n` +

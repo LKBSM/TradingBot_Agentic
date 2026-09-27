@@ -47,8 +47,10 @@ const NO_ACCESS = {
 
 test.describe('B — sign-up page sells (with Google door)', () => {
   for (const { locale, path, price } of [
-    { locale: 'fr', path: '/inscription', price: /39\s*\$\s*US\s*\/\s*mois/i },
-    { locale: 'en', path: '/en/inscription', price: /39\s*USD\s*\/\s*month/i },
+    // Amounts carry cents since the 2026-09-27 go-live, and the separator is the
+    // locale's own: "39,99 $ US / mois" in fr, "39.99 USD / month" in en.
+    { locale: 'fr', path: '/inscription', price: /39[.,]99\s*\$\s*US\s*\/\s*mois/i },
+    { locale: 'en', path: '/en/inscription', price: /39[.,]99\s*USD\s*\/\s*month/i },
   ]) {
     test(`${locale}: shows price with currency, the Google door, no free/trial`, async ({ page }) => {
       await page.route('**/api/auth/google/config', (r: Route) => r.fulfill(json({ enabled: true })));

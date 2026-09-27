@@ -183,8 +183,9 @@ for (const loc of LOCALES) {
         // illustration mention present at least once
         await expect(page.getByText(loc.illus).first()).toBeVisible();
         // pricing shows currency everywhere
-        await expect(page.getByText('39 $').first()).toBeVisible();
-        await expect(page.getByText(/348 \$ US/).first()).toBeVisible();
+        // Amounts carry cents and use the locale separator (39,99 in fr / 39.99 in en).
+        await expect(page.getByText(/39[.,]99\s*\$/).first()).toBeVisible();
+        await expect(page.getByText(/359[.,]88\s*\$ US/).first()).toBeVisible();
       });
 
       test('reading-space carousel: keyboard + dots navigate panels', async ({ page }) => {

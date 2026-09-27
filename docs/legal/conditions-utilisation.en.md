@@ -1,6 +1,6 @@
 # M.I.A Markets — Terms of Use
 
-_Version 2026-09-14 · Last updated: 14 September 2026_
+_Version 2026-09-27 · Last updated: 27 September 2026_
 
 > English version. This is a faithful translation of the French text, which is
 > the one that prevails: in case of divergence, the French version applies.
@@ -77,7 +77,8 @@ we are required to pass it on, and a breach of it exposes us directly.
 
 ## 7. Price and billing
 
-The subscription costs **US$39 per month**, or **US$348 per year**. Amounts are
+The subscription costs **US$39.99 per month**, or **US$359.88 per year** (i.e.
+US$29.99 per month, charged in a single payment). Amounts are
 expressed in **United States dollars (USD)** for every customer, including
 customers in Canada.
 

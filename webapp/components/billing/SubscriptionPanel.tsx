@@ -22,6 +22,7 @@ import {
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { PRICING } from '@/lib/pricing.generated';
+import { annualSavingPerYear, formatAmount } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { CheckField, FormError, FormSuccess } from '@/components/auth/fields';
 
@@ -294,8 +295,10 @@ export function SubscriptionPanel() {
   const periodEnd = formatDate(sub?.current_period_end ?? null, locale);
   const currency = t('currency');
   const planKey = plans.find((p) => p.price_id === sub?.price_id)?.key ?? null;
-  const nextAmount =
+  // Amounts carry cents — formatted with the viewer's separator, never raw.
+  const nextAmountValue =
     planKey === 'MONTHLY' ? PRICING.monthly : planKey === 'ANNUAL' ? PRICING.annualPerYear : null;
+  const nextAmount = nextAmountValue === null ? null : formatAmount(nextAmountValue, locale);
 
   // Owner has unconditional access — no plans, no paywall.
   if (isOwner) {
@@ -401,7 +404,7 @@ export function SubscriptionPanel() {
   // No "no subscription" status card — paying is the only door in.
   const reactivating = state === 'expired' || state === 'suspended';
   const ctaLabel = reactivating ? t('reactivate') : t('subscribe');
-  const savePerYear = PRICING.monthly * 12 - PRICING.annualPerYear;
+  const savePerYear = annualSavingPerYear();
 
   const mentions = [t('legalRenew'), t('legalTool'), t('legalRisk'), t('legalAge')];
 
@@ -435,7 +438,7 @@ export function SubscriptionPanel() {
           {plans.some((p) => p.key === 'MONTHLY') && (
             <PlanCard
               name={t('monthlyName')}
-              amount={PRICING.monthly}
+              amount={formatAmount(PRICING.monthly, locale)}
               currency={currency}
               perMonth={t('perMonth')}
               cta={ctaLabel}
@@ -449,12 +452,19 @@ export function SubscriptionPanel() {
           {plans.some((p) => p.key === 'ANNUAL') && (
             <PlanCard
               name={t('annualName')}
-              amount={PRICING.annualPerMonth}
+              amount={formatAmount(PRICING.annualPerMonth, locale)}
               currency={currency}
               perMonth={t('perMonth')}
-              note={t('annualBilledNote', { total: PRICING.annualPerYear, currency })}
+              note={t('annualBilledNote', {
+                total: formatAmount(PRICING.annualPerYear, locale),
+                currency,
+              })}
               badge={t('bestValue')}
-              save={savePerYear > 0 ? t('savePerYear', { amount: savePerYear, currency }) : undefined}
+              save={
+                savePerYear > 0
+                  ? t('savePerYear', { amount: formatAmount(savePerYear, locale), currency })
+                  : undefined
+              }
               highlighted
               cta={ctaLabel}
               busy={busy === 'ANNUAL'}
@@ -550,7 +560,8 @@ function PlanCard({
   onClick,
 }: {
   name: string;
-  amount: number;
+  /** Already formatted for the locale (two decimals, locale separator). */
+  amount: string;
   currency: string;
   perMonth: string;
   note?: string;

@@ -417,3 +417,256 @@ class TestRefundDispute:
             "data": {"object": {"customer": "cus_dp"}},
         })
         assert account_store.get_subscription(acct["id"])["status"] == "suspended"
+
+
+# =============================================================================
+# PAY-4 — what the hosted Checkout page must ask for, and the sold territory
+# =============================================================================
+
+class TestCheckoutHardening:
+    """Everything below had to be true BEFORE the first real charge.
+
+    Each assertion stands for a way the checkout could have taken real money
+    while leaving us unable to honour our own terms.
+    """
+
+    def test_session_params_carry_address_renewal_and_no_promo(self, monkeypatch):
+        """The params handed to Stripe, asserted on the REAL client.
+
+        ``FakeStripeClient`` only records kwargs, so it can never prove what the
+        real wrapper sends. This drives ``StripeClient.create_checkout_session``
+        against a fake SDK and inspects the actual payload.
+        """
+        from src.billing.stripe_client import StripeClient
+
+        monkeypatch.setenv("STRIPE_PRICE_MONTHLY", "price_monthly_test")
+        captured = {}
+
+        class _Session:
+            @staticmethod
+            def create(**kwargs):
+                captured.update(kwargs)
+                return {"id": "cs_1", "url": "https://checkout.test/cs_1"}
+
+        class _FakeSdk:
+            checkout = type("_C", (), {"Session": _Session})
+
+        c = StripeClient(api_key="sk_test_x", webhook_secret="whsec_x")
+        monkeypatch.setattr(c, "_require", lambda: _FakeSdk)
+        c.create_checkout_session(
+            price_id="price_monthly_test",
+            success_url="https://x/ok",
+            cancel_url="https://x/no",
+            customer="cus_1",
+            account_id=7,
+        )
+
+        # Country + state/province, always (Quebec's LPC applies on the address).
+        assert captured["billing_address_collection"] == "required"
+        # ...and the address is written back onto the customer, otherwise Stripe
+        # DISCARDS it for an existing customer and we kept nothing.
+        assert captured["customer_update"] == {"address": "auto"}
+        # Automatic renewal AND the amount, in words, above the pay button.
+        message = captured["custom_text"]["submit"]["message"]
+        assert "39,99 USD" in message
+        assert "renouvellement automatique" in message
+        assert "Résiliable à tout moment" in message
+        # PRIX-1 invariants survive the hardening.
+        assert captured["allow_promotion_codes"] is False
+        assert "automatic_tax" not in captured
+        # No trial was asked for, so none is configured.
+        assert "trial_period_days" not in captured.get("subscription_data", {})
+
+    def test_tos_consent_is_opt_in_only(self, monkeypatch):
+        """Stripe REJECTS consent_collection unless a terms URL is configured in
+        the dashboard, so asking for it unconditionally would break every
+        checkout. It is off by default and our own LEG-1 checkbox is the record.
+        """
+        from src.billing.stripe_client import StripeClient
+
+        captured = {}
+
+        class _Session:
+            @staticmethod
+            def create(**kwargs):
+                captured.update(kwargs)
+                return {"id": "cs_1", "url": "u"}
+
+        class _FakeSdk:
+            checkout = type("_C", (), {"Session": _Session})
+
+        c = StripeClient(api_key="sk_test_x", webhook_secret="whsec_x")
+        monkeypatch.setattr(c, "_require", lambda: _FakeSdk)
+        c.create_checkout_session(
+            price_id="p", success_url="https://x/ok", cancel_url="https://x/no",
+        )
+        assert "consent_collection" not in captured
+
+        captured.clear()
+        c.create_checkout_session(
+            price_id="p", success_url="https://x/ok", cancel_url="https://x/no",
+            require_tos_consent=True,
+        )
+        assert captured["consent_collection"] == {"terms_of_service": "required"}
+
+    def test_annual_notice_states_the_single_charge_and_the_monthly_equivalent(
+        self, monkeypatch
+    ):
+        from src.billing.stripe_client import renewal_notice
+
+        monkeypatch.setenv("STRIPE_PRICE_ANNUAL", "price_annual_test")
+        msg = renewal_notice("price_annual_test")
+        assert msg is not None
+        assert "359,88 USD" in msg          # what is actually charged
+        assert "une seule fois" in msg      # charged once, not monthly
+        assert "29,99 USD" in msg           # the per-month equivalent
+        assert "chaque" in msg              # ...then it renews
+
+    def test_an_unknown_price_gets_no_notice_rather_than_a_wrong_one(self, monkeypatch):
+        from src.billing.stripe_client import renewal_notice
+
+        monkeypatch.delenv("STRIPE_PRICE_MONTHLY", raising=False)
+        monkeypatch.delenv("STRIPE_PRICE_ANNUAL", raising=False)
+        assert renewal_notice("price_who_knows") is None
+
+
+class TestSoldTerritory:
+    """Terms clause 4 sells the service in Canada and the United States only."""
+
+    def test_canada_can_check_out(self, client):
+        _register(client)
+        resp = client.post(
+            "/api/billing/checkout",
+            json={"plan_key": "MONTHLY"},
+            headers={"CF-IPCountry": "CA"},
+        )
+        assert resp.status_code == 200, resp.text
+
+    def test_united_states_can_check_out(self, client):
+        _register(client)
+        resp = client.post(
+            "/api/billing/checkout",
+            json={"plan_key": "MONTHLY"},
+            headers={"CF-IPCountry": "US"},
+        )
+        assert resp.status_code == 200, resp.text
+
+    def test_outside_the_territory_is_refused(self, client):
+        _register(client)
+        resp = client.post(
+            "/api/billing/checkout",
+            json={"plan_key": "MONTHLY"},
+            headers={"CF-IPCountry": "FR"},
+        )
+        assert resp.status_code == 451
+        assert "Canada" in resp.json()["detail"]
+
+    def test_an_unknown_country_is_allowed(self, client):
+        """Deliberate: no geo header must never mean no sale.
+
+        Render does not guarantee a country header. Refusing everyone we cannot
+        place would lock real customers out to enforce a rule we could not even
+        evaluate. The billing address Stripe collects is the authoritative check.
+        """
+        _register(client)
+        resp = client.post("/api/billing/checkout", json={"plan_key": "MONTHLY"})
+        assert resp.status_code == 200, resp.text
+
+    def test_the_gate_can_be_lifted_by_env(self, client, monkeypatch):
+        monkeypatch.setenv("BILLING_TERRITORY_ENFORCED", "0")
+        _register(client)
+        resp = client.post(
+            "/api/billing/checkout",
+            json={"plan_key": "MONTHLY"},
+            headers={"CF-IPCountry": "FR"},
+        )
+        assert resp.status_code == 200, resp.text
+
+    def test_an_out_of_territory_billing_address_is_logged_not_revoked(
+        self, client, account_store, caplog
+    ):
+        """Someone who has already paid keeps their access; we just get to see it.
+
+        Cutting a paying customer off from inside a webhook would be the worse
+        failure. Refunding and closing the account is a decision for a person.
+        """
+        import logging
+
+        acct = _register(client)
+        with caplog.at_level(logging.ERROR):
+            resp = _post_webhook(client, {
+                "id": "evt_geo_1",
+                "type": "checkout.session.completed",
+                "created": 100,
+                "data": {"object": {
+                    "customer": "cus_geo",
+                    "metadata": {"account_id": str(acct["id"])},
+                    "customer_details": {"address": {"country": "FR"}},
+                }},
+            })
+        assert resp.status_code == 200
+        assert "OUTSIDE the sold territory" in caplog.text
+        # The customer link still happened — nothing was revoked.
+        assert account_store.get_subscription(acct["id"])["stripe_customer_id"] == "cus_geo"
+
+    def test_a_canadian_billing_address_raises_nothing(self, client, caplog):
+        import logging
+
+        acct = _register(client)
+        with caplog.at_level(logging.WARNING):
+            _post_webhook(client, {
+                "id": "evt_geo_2",
+                "type": "checkout.session.completed",
+                "created": 100,
+                "data": {"object": {
+                    "customer": "cus_geo_ca",
+                    "metadata": {"account_id": str(acct["id"])},
+                    "customer_details": {"address": {"country": "CA"}},
+                }},
+            })
+        assert "OUTSIDE the sold territory" not in caplog.text
+
+    def test_a_missing_billing_address_is_flagged(self, client, caplog):
+        """No address means billing_address_collection got turned off somewhere."""
+        import logging
+
+        acct = _register(client)
+        with caplog.at_level(logging.WARNING):
+            _post_webhook(client, {
+                "id": "evt_geo_3",
+                "type": "checkout.session.completed",
+                "created": 100,
+                "data": {"object": {
+                    "customer": "cus_geo_none",
+                    "metadata": {"account_id": str(acct["id"])},
+                }},
+            })
+        assert "NO billing country" in caplog.text
+
+
+# =============================================================================
+# PAY-4 — the nine events the paywall needs, frozen
+# =============================================================================
+
+def test_the_paywall_subscribes_to_exactly_these_nine_events():
+    """Any one missing means some real payments never open anything.
+
+    Frozen as a literal set: adding an event is a deliberate act (and the Stripe
+    endpoint must be updated to match), and REMOVING one silently breaks a path
+    nobody tests by hand — a refund that never suspends, a failed renewal that
+    never downgrades.
+    """
+    from src.billing.stripe_client import ACCOUNT_SUBSCRIPTION_EVENTS
+
+    assert ACCOUNT_SUBSCRIPTION_EVENTS == frozenset({
+        "checkout.session.completed",
+        "customer.subscription.created",
+        "customer.subscription.updated",
+        "customer.subscription.deleted",
+        "invoice.paid",
+        "invoice.payment_succeeded",
+        "invoice.payment_failed",
+        "charge.refunded",
+        "charge.dispute.created",
+    })
+    assert len(ACCOUNT_SUBSCRIPTION_EVENTS) == 9

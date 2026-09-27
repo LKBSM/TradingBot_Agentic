@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Check } from 'lucide-react';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { AuthBrandHeader } from '@/components/auth/AuthBrandHeader';
 import { PRICING } from '@/lib/pricing.generated';
+import { formatAmount } from '@/lib/pricing';
 
 export async function generateMetadata({
   params,
@@ -22,6 +23,7 @@ export async function generateMetadata({
 
 export default function RegisterPage() {
   const t = useTranslations('pages');
+  const locale = useLocale();
   const currency = useTranslations('billing')('currency');
 
   const values = [
@@ -76,14 +78,14 @@ export default function RegisterPage() {
             </h2>
             <p className="text-base font-semibold text-foreground">
               {t('inscription.sell.priceMonthly', {
-                amount: PRICING.monthly,
+                amount: formatAmount(PRICING.monthly, locale),
                 currency,
               })}
             </p>
             <p className="text-sm text-muted-foreground">
               {t('inscription.sell.priceAnnual', {
-                total: PRICING.annualPerYear,
-                perMonth: PRICING.annualPerMonth,
+                total: formatAmount(PRICING.annualPerYear, locale),
+                perMonth: formatAmount(PRICING.annualPerMonth, locale),
                 currency,
               })}
             </p>
