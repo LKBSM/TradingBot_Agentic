@@ -313,7 +313,21 @@ def test_legacy_webhook_still_rejects_a_missing_signature_first():
 
 
 def test_the_live_webhook_path_exists_and_is_the_only_receiver():
-    """Guards the confusion itself: the ONE path the account paywall reads."""
-    routes = {getattr(r, "path", None) for r in create_app().routes}
-    assert "/api/billing/webhook" in routes
-    assert "/api/v1/billing/webhook" in routes  # still routed — to a 410
+    """Guards the confusion itself: the ONE path the account paywall reads.
+
+    Asserted on the ROUTERS, not on ``create_app().routes``: which routers an
+    assembled app ends up mounting depends on what the environment can import, so
+    a route-table check passes locally and fails in CI on a minimal app. The
+    router's own prefix + path is the actual contract Stripe is pointed at — that
+    is what must not move.
+    """
+    from src.api.routes import account_billing, billing
+
+    live = {getattr(r, "path", None) for r in account_billing.router.routes}
+    legacy = {getattr(r, "path", None) for r in billing.router.routes}
+    # prefix="/api/billing" + @router.post("/webhook")
+    assert "/api/billing/webhook" in live
+    # The retired one stays ROUTED — it has to answer 410 rather than 404, so a
+    # misconfigured Stripe endpoint gets told where to go instead of nothing.
+    assert "/api/v1/billing/webhook" in legacy
+    assert "/api/v1/billing/webhook" not in live
