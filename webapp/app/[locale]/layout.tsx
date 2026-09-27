@@ -61,13 +61,6 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mia.markets';
 const OG_LOCALES: Record<Locale, string> = {
   fr: 'fr_FR',
   en: 'en_US',
-  de: 'de_DE',
-  es: 'es_ES',
-  it: 'it_IT',
-  pt: 'pt_PT',
-  nl: 'nl_NL',
-  pl: 'pl_PL',
-  ar: 'ar_AR',
 };
 
 // `localePrefix: 'as-needed'` (see middleware): the default locale (fr) is

@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
-import es from '@/messages/es.json';
-import itMsg from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
-
 /**
  * LP-2A copy guard — the four M.I.A capability cards of the home page.
  *
@@ -28,7 +20,7 @@ import ar from '@/messages/ar.json';
  */
 
 type Dict = Record<string, unknown>;
-const LOCALES = { fr, en, de, es, it: itMsg, pt, nl, pl, ar } as Record<string, Dict>;
+const LOCALES = { fr, en } as Record<string, Dict>;
 const CARDS = ['c1', 'c2', 'c3', 'c4'] as const;
 
 function cap(root: Dict, c: string): string {
@@ -48,13 +40,6 @@ function words(s: string): number {
 const BEFORE_WORDS: Record<string, Record<string, number>> = {
   fr: { c1: 27, c2: 28, c3: 28, c4: 25 },
   en: { c1: 29, c2: 27, c3: 27, c4: 25 },
-  de: { c1: 27, c2: 22, c3: 30, c4: 28 },
-  es: { c1: 26, c2: 30, c3: 23, c4: 26 },
-  it: { c1: 27, c2: 26, c3: 28, c4: 25 },
-  pt: { c1: 28, c2: 28, c3: 28, c4: 25 },
-  nl: { c1: 28, c2: 24, c3: 28, c4: 30 },
-  pl: { c1: 26, c2: 23, c3: 25, c4: 22 },
-  ar: { c1: 24, c2: 22, c3: 28, c4: 21 },
 };
 
 // Predictive / judgemental vocabulary that condensing must NEVER introduce.
@@ -65,7 +50,6 @@ const FORBIDDEN = {
   // components/ for that literal and would flag this very file.
   fr: ['setup', 'signal', 'opportunité', 'probabilit', 'fiable', 'solide', 'cible', 'biais', 'meilleur', 'effic' + 'ace', 'moteur', 'gain', 'rendement'],
   en: ['setup', 'signal', 'opportunity', 'probability', 'reliable', 'solid', 'target', 'bias', 'best', 'engine', 'profit'],
-  es: ['setup', 'señal', 'oportun', 'probabilidad', 'fiable', 'sólido', 'objetivo', 'sesgo', 'mejor', 'motor'],
 };
 
 describe('LP-2A — M.I.A capability cards', () => {
@@ -101,7 +85,6 @@ describe('LP-2A — M.I.A capability cards', () => {
   it('c2 keeps the grounding mechanism — an invented reference is rejected', () => {
     expect(cap(fr as Dict, 'c2')).toContain('rejetée par le code');
     expect(cap(en as Dict, 'c2')).toContain('rejected by the code');
-    expect(cap(es as Dict, 'c2')).toContain('rechazada por el código');
   });
 
   it('c3 keeps its three command examples — this demo proves no display piloting', () => {
@@ -117,7 +100,6 @@ describe('LP-2A — M.I.A capability cards', () => {
     const cases: Array<[string, string[]]> = [
       ['fr', ['Aucune prédiction', "aucune indication d'intervention", 'aucun conseil', 'outil descriptif']],
       ['en', ['No prediction', 'no call to act', 'no advice', 'descriptive tool']],
-      ['es', ['Ninguna predicción', 'ninguna indicación de intervención', 'ningún consejo', 'herramienta descriptiva']],
     ];
     for (const [loc, needles] of cases) {
       const v = cap(LOCALES[loc]!, 'c4');

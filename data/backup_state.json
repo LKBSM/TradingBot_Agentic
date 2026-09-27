@@ -1,0 +1,18 @@
+{
+  "destination": "local:C:\\Users\\bessa\\AppData\\Local\\Temp\\claude\\C--MyPythonProjects-TradingBOT-Agentic\\e5887a66-b5ee-4475-93ac-5f9a606dea3a\\scratchpad\\bkp-test",
+  "last_archive": "mia-backup-20260927T212000Z.tar.gz",
+  "last_attempt_utc": "2026-09-27T21:20:00.700265+00:00",
+  "last_databases": [
+    "accounts.db",
+    "calendar_cache.db",
+    "candles.db",
+    "narrative_cache.db",
+    "signals.db",
+    "structure.db"
+  ],
+  "last_duration_s": 0.14,
+  "last_error": null,
+  "last_size_bytes": 8680,
+  "last_source_bytes": 237568,
+  "last_success_utc": "2026-09-27T21:20:00.700265+00:00"
+}

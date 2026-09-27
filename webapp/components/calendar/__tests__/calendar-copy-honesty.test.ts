@@ -3,14 +3,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
-import es from '@/messages/es.json';
-import itLocale from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
-
 /**
  * NW-1 copy-honesty guard (mission §0). The calendar announces MOMENTS, never
  * DIRECTIONS. This scans EVERY string in the `calendar` namespace (fr + en) and
@@ -142,8 +134,8 @@ describe('NW-1 calendar copy honesty', () => {
     expect(enNono.noUnscheduled.toLowerCase()).toContain('unscheduled');
   });
 
-  it('NW-1c: the calendar namespace is natively translated in all 9 locales (no EN fallback)', () => {
-    const locales: Record<string, unknown> = { de, es, it: itLocale, pt, nl, pl, ar };
+  it('NW-1c: the calendar namespace is natively translated in every served locale', () => {
+    const locales: Record<string, unknown> = { fr };
     const enCal = (en as { calendar: { title: string; intro: { lead: string }; detail: { actualPending: string } } }).calendar;
     for (const [name, msgs] of Object.entries(locales)) {
       const cal = (msgs as { calendar: { title: string; intro: { lead: string }; detail: { actualPending: string } } }).calendar;

@@ -2,14 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES } from '@/i18n';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import de from '@/messages/de.json';
-import es from '@/messages/es.json';
-import itIT from '@/messages/it.json';
-import pt from '@/messages/pt.json';
-import nl from '@/messages/nl.json';
-import pl from '@/messages/pl.json';
-import ar from '@/messages/ar.json';
-
 /**
  * PAY-2 (mission §3.A) — NO free tier, NO free trial, in any visible string.
  *
@@ -28,8 +20,7 @@ import ar from '@/messages/ar.json';
  */
 
 const MESSAGES: Record<string, Record<string, unknown>> = {
-  fr, en, de, es, it: itIT, pt, nl, pl, ar,
-};
+  fr, en, };
 
 // Namespaces that speak to the visitor about what they get and what it costs.
 const OFFER_NAMESPACES = ['home', 'nav', 'pricing'] as const;

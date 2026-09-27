@@ -5,8 +5,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fr from '@/messages/fr.json';
 import en from '@/messages/en.json';
-import es from '@/messages/es.json';
-
 /**
  * LEG-1 — consent before payment.
  *
@@ -70,9 +68,9 @@ vi.mock('next/navigation', () => ({
 
 import { SubscriptionPanel } from '../SubscriptionPanel';
 
-const MESSAGES = { fr, en, es } as const;
+const MESSAGES = { fr, en } as const;
 type Loc = keyof typeof MESSAGES;
-const LOCALES = ['fr', 'en', 'es'] as const;
+const LOCALES = ['fr', 'en'] as const;
 
 function renderIn(locale: Loc) {
   return render(<SubscriptionPanel />, {

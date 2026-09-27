@@ -1,28 +1,22 @@
 import { getRequestConfig } from 'next-intl/server';
 
-// Curated launch set (décision 2026-07-07): the 8 highest-coverage European
-// languages + Arabic. FR stays the default/source locale. Adding a language
-// later is a pure additive step: append the code here and drop a
-// `messages/<code>.json` alongside the others.
-export const SUPPORTED_LOCALES = [
-  'fr',
-  'en',
-  'de',
-  'es',
-  'it',
-  'pt',
-  'nl',
-  'pl',
-  'ar',
-] as const;
+// Périmètre de lancement (décision fondateur, 2026-09-27) : FRANÇAIS et
+// ANGLAIS uniquement. Les sept autres langues (de, es, it, pt, nl, pl, ar)
+// étaient traduites, mais elles multipliaient par neuf la surface à relire et
+// à garder honnête à chaque changement de texte — pour un marché cible qui est
+// le Canada et les États-Unis. Elles reviendront plus tard.
+//
+// FR reste la locale par défaut et la langue source. Rajouter une langue est un
+// geste purement additif : ajouter son code ici et déposer le
+// `messages/<code>.json` correspondant.
+export const SUPPORTED_LOCALES = ['fr', 'en'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'fr';
 
-// Right-to-left scripts. Arabic is the only RTL locale in the launch set; the
-// layout flips `dir` and swaps the sans stack to an Arabic-capable font for
-// these. Keep this list authoritative so both the layout and any future
-// direction-aware component read the same source of truth.
-export const RTL_LOCALES: readonly Locale[] = ['ar'];
+// Écritures de droite à gauche. L'arabe était la seule du lot et il est retiré,
+// donc la liste est vide — mais la mécanique reste en place : le jour où une
+// langue RTL revient, il suffit de l'ajouter ici et la mise en page suivra.
+export const RTL_LOCALES: readonly Locale[] = [];
 
 export function isRtl(locale: string): boolean {
   return RTL_LOCALES.includes(locale as Locale);
@@ -37,13 +31,6 @@ export function isSupportedLocale(value: string): value is Locale {
 export const LOCALE_LABELS: Record<Locale, string> = {
   fr: 'Français',
   en: 'English',
-  de: 'Deutsch',
-  es: 'Español',
-  it: 'Italiano',
-  pt: 'Português',
-  nl: 'Nederlands',
-  pl: 'Polski',
-  ar: 'العربية',
 };
 
 /**
