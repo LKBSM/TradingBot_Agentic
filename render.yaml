@@ -29,10 +29,13 @@ services:
     dockerfilePath: ./infrastructure/Dockerfile.api
     dockerContext: .
     # Render injects $PORT; bind to it instead of the fixed 8000.
-    # ⚠️ `dockerCommand` REMPLACE l'ENTRYPOINT du Dockerfile (Render le dit
-    # explicitement dans ses réglages). Le script d'entrée doit donc être appelé
-    # ICI, à la main : sans ça il serait purement ignoré et le disque monté
-    # resterait non écrivable — la cause de la suspension du 2026-09-14.
+
+    # ⚠️ `dockerCommand` REMPLACE l'ENTRYPOINT du Dockerfile (Render l'écrit noir
+    # sur blanc dans ses réglages). Le script d'entrée doit donc être appelé ICI,
+    # explicitement : déclaré en ENTRYPOINT il serait purement ignoré, le disque
+    # monté resterait non écrivable, et le service replanterait au démarrage —
+    # la cause de la suspension du 2026-09-14.
+
     dockerCommand: /app/infrastructure/docker-entrypoint.sh uvicorn src.api.asgi:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     disk:
@@ -168,6 +171,19 @@ services:
         sync: false
       - key: BACKUP_S3_REGION         # R2 ignores the region; "auto" is its convention
         value: auto
+      # INCIDENT DU 2026-09-14 → 09-27 : ce capteur d'audit a rempli le disque
+      # et tenu le produit hors ligne 13 jours. Il écrit la réponse brute du
+      # fournisseur À CHAQUE génération de lecture — et comme chaque ligne
+      # réécrit tout le tableau de bougies (jusqu'à 70 132 barres), les fichiers
+      # quotidiens atteignaient 90 à 134 Mio. Mesuré : 9 452 Mio sur 9 810, soit
+      # 94 % du volume, jusqu'au « disk I/O error » au démarrage.
+      # C'est un outil de débogage, pas une fonction produit : éteint ici.
+      # Le remettre à 1 ponctuellement pour un audit reste possible — la
+      # rétention (7 jours) est désormais appliquée au démarrage.
+      - key: PROVIDER_SNAPSHOT_ENABLED
+        value: "0"
+      - key: PROVIDER_SNAPSHOT_RETENTION_DAYS
+        value: "7"
       - key: VOL_MODE
         value: har
       # SYMBOLS a été RETIRÉ (2026-09-27) : c'était de la configuration morte.
