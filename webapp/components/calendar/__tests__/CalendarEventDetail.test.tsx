@@ -161,7 +161,7 @@ describe('NW-3 CalendarEventDetail', () => {
     const { container } = renderDetail('bls:us_cpi:2026-07-28');
     expect(container.querySelector('h1')?.textContent).toBe('IPC');
     const text = container.textContent ?? '';
-    expect(text).toContain('rattaché à Or, EUR/USD');
+    expect(text).toContain('rattaché à Or (XAU/USD), EUR/USD');
     expect(text).not.toContain('affecte');
     expect(container.querySelectorAll('.cal-impact')).toHaveLength(0);
   });

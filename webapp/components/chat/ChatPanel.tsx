@@ -25,6 +25,7 @@ import {
   formatTimeframe,
 } from '@/lib/market-reading/formatters';
 import type { ChatbotQuestion } from '@/types/chatbot';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 
 /**
  * Slide-over chat panel — desktop ≥ 768px keeps the underlying card visible
@@ -39,6 +40,7 @@ import type { ChatbotQuestion } from '@/types/chatbot';
  */
 export function ChatPanel() {
   const t = useTranslations('chat');
+  const instrumentLabel = useInstrumentLabel();
   const {
     isOpen,
     activeSignal,
@@ -99,7 +101,7 @@ export function ChatPanel() {
               >
                 {activeSignal
                   ? t('panelContext', {
-                      instrument: formatInstrument(activeSignal.instrument),
+                      instrument: instrumentLabel(activeSignal.instrument),
                       timeframe: formatTimeframe(activeSignal.timeframe),
                     })
                   : t('panelNoContext')}

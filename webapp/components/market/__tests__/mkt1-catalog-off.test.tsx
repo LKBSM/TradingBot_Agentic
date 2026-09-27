@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
 import { MarketSelector } from '../MarketSelector';
 import { useMarketReading } from '@/lib/market-reading/hooks';
+import frMessages from '@/messages/fr.json';
 import { MARKET_SPECS } from '@/lib/markets';
 import { CATALOG_UX_TEST_ENABLED } from '@/lib/market-catalog';
 import { resolveComboFromQuery } from '@/lib/conditions/app-link';
@@ -61,7 +62,9 @@ describe('MKT-1 — with no env var set, the UX-test catalogue does not exist', 
     );
     // ONE pass rather than a DOM scan per market — DATA-4 took the registry to 80.
     const rendered = container.textContent ?? '';
-    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(spec.label));
+    const uiLabels = (frMessages as { calendar: { market: Record<string, string> } }).calendar.market;
+    // L'interface rend le libellé traduit, pas celui du registre.
+    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(uiLabels[spec.id] ?? spec.label));
     expect(missing.map((m) => m.id)).toEqual([]);
     // A market that exists ONLY in the test catalogue must be nowhere to be seen.
     // Bitcoin and silver became followed markets, so the example is now an index.

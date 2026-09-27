@@ -66,7 +66,9 @@ describe('MKT-1 — catalogue on: the mode is visible and the scale is grouped',
     expect(screen.getByText('Suivis par le moteur')).toBeInTheDocument();
     // ONE pass: at 80 followed markets, a DOM scan each turned this into an 8 s test.
     const rendered = container.textContent ?? '';
-    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(spec.label));
+    const uiLabels = (messages as { calendar: { market: Record<string, string> } }).calendar.market;
+    // L'interface rend le libellé traduit, pas celui du registre.
+    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(uiLabels[spec.id] ?? spec.label));
     expect(missing.map((m) => m.id)).toEqual([]);
   });
 

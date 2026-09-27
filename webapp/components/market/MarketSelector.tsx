@@ -22,6 +22,7 @@ import {
 } from '@/lib/market-catalog';
 import { M1_ENABLED } from '@/lib/market-reading/perimeter';
 import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 import { usePinnedMarkets } from '@/lib/market-reading/market-pins';
 import { SearchField } from '@/components/shell/primitives';
 import type { Combo } from '@/lib/market-reading/store';
@@ -117,9 +118,15 @@ function comboForMarket(marketId: string, currentTf: string | undefined): Combo 
 }
 
 /** Label for any id, real or catalogue-only. */
-function displayLabel(id: string): string {
+function displayLabel(id: string, localised: (x: string) => string): string {
+  // `localised` vient de useInstrumentLabel() : il rend le nom dans la langue
+  // de la page. Il est passé en paramètre parce que cette fonction vit au
+  // niveau module — un crochet React n'y aurait pas sa place. Les marchés du
+  // catalogue de démonstration gardent leur libellé de catalogue : ils ne sont
+  // pas dans le registre, donc pas traduits.
   const real = formatInstrument(id);
-  return real === id ? catalogLabel(id) : real;
+  if (real === id) return catalogLabel(id);
+  return localised(id);
 }
 
 /** Glyph for any id, real or catalogue-only. */
@@ -376,6 +383,7 @@ function ColumnSelector({
 
   // MKT-1 — catalogue hits count as results too, so the real section does not
   // claim "aucun marché ne correspond" while matching categories render below.
+  const instrumentLabel = useInstrumentLabel();
   const catalogByGroup = useCatalogGroups(query);
   const catalogHits = catalogByGroup.reduce((n, g) => n + g.entries.length, 0);
   const hasAnyResults = hasResults || catalogHits > 0;
@@ -553,8 +561,9 @@ function MarketRow({
   onTogglePin(): void;
 }) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const isActive = activeMarket === marketId;
-  const label = displayLabel(marketId);
+  const label = displayLabel(marketId, instrumentLabel);
   const pinLabel = pinned
     ? t('sidebar.unpinAria', { combo: label })
     : t('sidebar.pinAria', { combo: label });
@@ -718,6 +727,7 @@ function BarSelector({
   className?: string;
 }) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const { pinned, isPinned, toggle } = usePinnedMarkets();
@@ -777,7 +787,7 @@ function BarSelector({
           <span className="grid h-5 w-5 place-items-center rounded bg-muted font-mono text-[10px] font-semibold text-muted-foreground" aria-hidden>
             {displayGlyph(activeMarket)}
           </span>
-          <span>{displayLabel(activeMarket)}</span>
+          <span>{displayLabel(activeMarket, instrumentLabel)}</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
         </button>
 
@@ -873,7 +883,8 @@ function BarRow({
   onTogglePin(): void;
 }) {
   const t = useTranslations('app');
-  const label = displayLabel(id);
+  const instrumentLabel = useInstrumentLabel();
+  const label = displayLabel(id, instrumentLabel);
   return (
     <div
       className={cn(

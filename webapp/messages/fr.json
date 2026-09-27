@@ -2867,7 +2867,7 @@
       "eight_per_year": "8 fois par an"
     },
     "market": {
-      "XAUUSD": "Or",
+      "XAUUSD": "Or (XAU/USD)",
       "EURUSD": "EUR/USD",
       "GBPUSD": "GBP/USD",
       "USDJPY": "USD/JPY",
@@ -2896,9 +2896,9 @@
       "NZDJPY": "NZD/JPY",
       "NZDCHF": "NZD/CHF",
       "NZDCAD": "NZD/CAD",
-      "XAGUSD": "Argent",
-      "XPTUSD": "Platine",
-      "XPDUSD": "Palladium",
+      "XAGUSD": "Argent (XAG/USD)",
+      "XPTUSD": "Platine (XPT/USD)",
+      "XPDUSD": "Palladium (XPD/USD)",
       "XAUEUR": "Or (XAU/EUR)",
       "XAGEUR": "Argent (XAG/EUR)",
       "XAUGBP": "Or (XAU/GBP)",
