@@ -309,7 +309,8 @@ def build_scope_block(
             "fonctionnalité, ni engagement, ni date de disponibilité.",
             "- ATTENTION — ce bloc contient des CITATIONS (FAQ, conditions d'utilisation) "
             "qui emploient des mots que TES PROPRES RÈGLES t'interdisent d'écrire "
-            "(acheter, vendre, trader, risqué, garantie…). Tu ne les recopies donc JAMAIS "
+            "(acheter, vendre, trader, risqué, garantie, recommander…). Tu ne les recopies "
+            "donc JAMAIS "
             "mot pour mot : tu en donnes le sens avec tes mots à toi, sans ce vocabulaire, "
             "et tu renvoies vers la page pour le texte exact (/abonnement, /conditions). "
             "C'est la page qui affiche ces textes, pas toi. Exemple : à « est-ce que MIA "
