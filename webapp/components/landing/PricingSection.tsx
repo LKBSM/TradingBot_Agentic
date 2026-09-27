@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { localizeHref } from '@/lib/i18n/href';
 import { PRICING } from '@/lib/pricing.generated';
 import { formatAmount } from '@/lib/pricing';
 
@@ -205,6 +207,16 @@ export function PricingSection() {
             >
               {t('subscribeButton')}
             </Button>
+
+            {/* LEG-2 — how to leave, next to the button that makes you pay. The
+                conditions for getting out belong where the decision is made,
+                not three clicks away in the footer. */}
+            <Link
+              href={localizeHref('/conditions#remboursement', locale)}
+              className="text-center text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {t('refundLink')}
+            </Link>
           </CardContent>
         </Card>
 

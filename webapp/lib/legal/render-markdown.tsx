@@ -9,12 +9,17 @@ import * as React from 'react';
  * `dangerouslySetInnerHTML`, so React escapes all text (no XSS surface even
  * though the source is trusted/server-owned).
  *
+ * Headings carry an `id` so a clause can be linked from outside the document —
+ * see `legalHeadingAnchor`.
+ *
  * It is intentionally separate from the chat renderer (`lib/chat/markdown.tsx`),
  * which has no heading support — legal docs are heading-heavy.
  */
 
 const INLINE_RE = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*|_[^_\n]+_)/g;
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
+/** An explicit anchor ending a heading: `## 8. Résiliation… {#remboursement}`. */
+const HEADING_ANCHOR_RE = /\s*\{#([A-Za-z][\w-]*)\}\s*$/;
 const BULLET_RE = /^\s*[-*•]\s+(.*)$/;
 const BLOCKQUOTE_RE = /^\s*>\s?(.*)$/;
 /** An indented line under a bullet: its continuation, not a new block. */
@@ -45,6 +50,31 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
     }
   });
   return nodes;
+}
+
+/**
+ * The id a heading is reachable by, plus the text left to render.
+ *
+ * An EXPLICIT `{#ancre}` wins, and is stripped from the text so the braces never
+ * reach the page. It is the only kind of anchor that survives translation: the
+ * French, English and Spanish headings of the same clause differ word for word,
+ * and a link handed to a customer — `/conditions#remboursement`, in the footer
+ * and next to the payment button — has to land on the same clause in all three.
+ * A heading without one still gets an id derived from its text, which is enough
+ * to link a section internally but moves the day its wording changes.
+ */
+export function legalHeadingAnchor(raw: string): { text: string; id: string } {
+  const explicit = HEADING_ANCHOR_RE.exec(raw);
+  const text = explicit ? raw.replace(HEADING_ANCHOR_RE, '') : raw;
+  if (explicit?.[1]) return { text, id: explicit[1] };
+  const id = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // accents: « Résiliation » → « Resiliation »
+    .replace(/[*_`]/g, '') // inline markers are not part of the name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return { text, id };
 }
 
 const HEADING_CLASS: Record<number, string> = {
@@ -127,11 +157,17 @@ export function renderLegalMarkdown(input: string): React.ReactNode {
     if (heading) {
       flushAll();
       const level = heading[1]!.length;
-      const text = heading[2]!;
+      const { text, id } = legalHeadingAnchor(heading[2]!);
       const cls = HEADING_CLASS[level] ?? HEADING_CLASS[6];
       const Tag = `h${Math.min(level, 6)}` as keyof React.JSX.IntrinsicElements;
       blocks.push(
-        <Tag key={`h-${blockId++}`} className={`${cls} text-foreground`}>
+        // `scroll-mt-*`: a heading reached by its anchor must not land flush
+        // against the top edge of the viewport with its first line clipped.
+        <Tag
+          key={`h-${blockId++}`}
+          id={id || undefined}
+          className={`${cls} scroll-mt-24 text-foreground`}
+        >
           {renderInline(text, `h-${blockId}`)}
         </Tag>,
       );

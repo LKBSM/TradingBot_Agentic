@@ -88,7 +88,16 @@ describe('claims cleanup — liens du footer', () => {
     return false;
   }
 
-  /** id="…" déclarés dans les sections de la landing et les pages. */
+  /**
+   * Ancres atteignables : les `id="…"` déclarés dans les sections de la landing
+   * et les pages, PLUS les `{#ancre}` des textes légaux.
+   *
+   * LEG-2 — une clause des conditions est atteinte par une ancre qui n'existe
+   * dans aucun .tsx : elle est déclarée dans `docs/legal/*.md` et posée à
+   * l'exécution par `renderLegalMarkdown`. La chercher à la source, c'est
+   * vérifier la vraie cible ; l'ignorer, ce serait ne plus rien vérifier pour
+   * `/conditions#remboursement`.
+   */
   function collectAnchorIds(): Set<string> {
     const ids = new Set<string>();
     const sources = [
@@ -98,6 +107,16 @@ describe('claims cleanup — liens du footer', () => {
     for (const file of sources) {
       for (const m of readFileSync(file, 'utf-8').matchAll(/id="([\w-]+)"/g)) {
         if (m[1]) ids.add(m[1]);
+      }
+    }
+    const legalDir = path.join(WEBAPP_ROOT, '..', 'docs', 'legal');
+    if (existsSync(legalDir)) {
+      for (const entry of readdirSync(legalDir)) {
+        if (!entry.endsWith('.md')) continue;
+        const body = readFileSync(path.join(legalDir, entry), 'utf-8');
+        for (const m of body.matchAll(/^#{1,6}\s+.*\{#([A-Za-z][\w-]*)\}\s*$/gm)) {
+          if (m[1]) ids.add(m[1]);
+        }
       }
     }
     return ids;

@@ -17,6 +17,11 @@ import { BRAND_NAME, BRAND_BASELINE } from '@/lib/brand';
  */
 export const LEGAL_LINKS = [
   { href: '/conditions', key: 'terms' },
+  // LEG-2 — the cancellation/refund clause, linked on its own: it is what a
+  // customer looks for, and hunting for clause 8 inside the terms is not finding
+  // it. The anchor is declared in the markdown (`{#remboursement}`) and is the
+  // SAME in fr/en/es, so this one href works in every locale.
+  { href: '/conditions#remboursement', key: 'refund' },
   { href: '/confidentialite', key: 'privacy' },
   { href: 'mailto:contact@mia.markets', key: 'contact' },
 ] as const;

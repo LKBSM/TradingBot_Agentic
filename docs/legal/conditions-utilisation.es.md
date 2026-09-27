@@ -98,7 +98,7 @@ correo electrónico **30 días antes de cada renovación**.
 Si cambiamos el precio, te avisamos por correo electrónico antes de que el nuevo
 precio se te aplique, y puedes cancelar antes de esa fecha.
 
-## 8. Cancelación y reembolso
+## 8. Cancelación y reembolso {#remboursement}
 
 Puedes cancelar en cualquier momento, con la misma sencillez con la que te
 suscribiste, desde tu área de cliente. En el plan mensual, el acceso permanece
@@ -107,6 +107,72 @@ plan anual, ofrecemos una garantía de 14 días desde la fecha del pago. Si resi
 en Quebec, los derechos que te otorga la Ley de protección del consumidor (*Loi
 sur la protection du consommateur*) se aplican íntegramente y prevalecen sobre lo
 anterior.
+
+### 8.1 Cancelar tu suscripción
+
+La cancelación se hace desde tu área de cliente, con el botón **«Gestionar mi
+suscripción»**, que abre el portal de facturación alojado por Stripe. No hace
+falta ningún intercambio con nosotros.
+
+Surte efecto **al final del periodo ya pagado**: conservas el acceso hasta esa
+fecha y después no se cobra ningún importe más. Tu área de cliente indica
+entonces la fecha de fin de acceso y la ausencia de renovación. Mientras la
+suscripción está activa, indica también el importe y la fecha del próximo cobro
+(cláusula 7).
+
+### 8.2 La garantía de 14 días, en el plan anual
+
+En el plan anual dispones de **14 días desde el pago** para pedir el reembolso
+íntegro de ese pago. Mientras la ventana está abierta, la solicitud se hace **con
+un clic** desde tu área de cliente, que te indica la fecha límite; se tramita de
+inmediato, sin justificación alguna.
+
+Cada pago anual abre su propia ventana de 14 días, renovaciones incluidas.
+
+El reembolso pone fin **de inmediato** al acceso a las funciones de pago.
+
+### 8.3 En el plan mensual
+
+El plan mensual no está cubierto por esta garantía: conservas el acceso hasta el
+final del mes ya pagado, y la cancelación impide el cobro siguiente. Es la
+contrapartida de un compromiso de un mes, cancelable en cualquier momento.
+
+### 8.4 Si resides en Quebec
+
+La *Loi sur la protection du consommateur* prevalece sobre los párrafos
+anteriores. Te permite, en particular, poner fin a tu suscripción en cualquier
+momento, incluso a mitad de un plan anual. En ese caso te reembolsamos la
+**parte no utilizada** del plan, calculada a prorrata de los meses restantes,
+menos lo que la ley nos autoriza a retener. Escríbenos: ese reembolso se hace a
+mano, no está automatizado en el área de cliente.
+
+### 8.5 Pedir un reembolso
+
+- Dentro de la ventana de 14 días del plan anual: con un clic desde tu área de
+  cliente (8.2).
+- En todos los demás casos: escribe a **contact@mia.markets** desde la dirección
+  de correo asociada a tu cuenta, indicando la fecha del pago en cuestión.
+  Respondemos **en un plazo de 2 días laborables**.
+
+Un error de facturación por nuestra parte se corrige y se reembolsa sea cual sea
+el plan: no es un gesto comercial, es un importe que no nos correspondía.
+
+Un reembolso concedido se abona en el **medio de pago de origen**, en un plazo de
+**15 días**. Según tu banco, pueden pasar unos días más antes de que el importe
+aparezca en tu extracto.
+
+### 8.6 Reclamación ante tu banco
+
+Escríbenos antes de reclamar un pago ante tu banco: una cuestión de facturación
+se resuelve normalmente más rápido por correo electrónico. Mientras una
+reclamación está abierta, el acceso a la cuenta queda **suspendido** hasta que se
+resuelva; es una consecuencia técnica de la reclamación, no una sanción.
+
+### 8.7 Cambio de precio
+
+Un cambio de precio nunca se aplica a un periodo ya pagado. Te avisamos por
+correo electrónico antes de que surta efecto, y puedes cancelar antes de esa
+fecha, sin coste (cláusula 7).
 
 ## 9. Disponibilidad y exactitud
 

@@ -57,6 +57,32 @@ export function LegalDocument({ doc }: { doc: LegalDocKind }) {
     };
   }, [doc, locale]);
 
+  // LEG-2 — land on the clause a deep link asks for. The document is fetched
+  // AFTER hydration, so by the time `#remboursement` has a target the browser has
+  // long since given up on the hash: nothing scrolls unless we do it ourselves.
+  // This is what makes the footer link and the one next to the payment button
+  // arrive at « Résiliation et remboursement » instead of at the top of the page.
+  React.useEffect(() => {
+    if (markdown === null) return;
+    const jump = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      if (!id) return;
+      const target = document.getElementById(id);
+      // `scrollIntoView` is missing in jsdom — guarded so tests exercise the
+      // lookup rather than crash on the scroll.
+      if (typeof target?.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    // Next frame: the blocks have to be in the DOM before we can find one.
+    const raf = requestAnimationFrame(jump);
+    window.addEventListener('hashchange', jump);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('hashchange', jump);
+    };
+  }, [markdown]);
+
   if (hasError) {
     return (
       <p

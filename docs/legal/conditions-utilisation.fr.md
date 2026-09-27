@@ -98,7 +98,7 @@ t'envoyons un avis par courriel **30 jours avant chaque renouvellement**.
 Si nous modifions le prix, nous te prévenons par courriel avant que le nouveau
 prix ne s'applique à toi, et tu peux résilier avant cette date.
 
-## 8. Résiliation et remboursement
+## 8. Résiliation et remboursement {#remboursement}
 
 Tu peux résilier à tout moment, aussi simplement que tu t'es abonné, depuis ton
 espace client. Au mensuel, l'accès reste ouvert jusqu'à la fin de la période
@@ -106,6 +106,75 @@ payée ; il n'y a pas de remboursement au prorata. À l'annuel, nous offrons une
 garantie de 14 jours à compter du paiement. Si tu résides au Québec, les droits
 que t'accorde la Loi sur la protection du consommateur s'appliquent
 intégralement et priment sur ce qui précède.
+
+### 8.1 Résilier ton abonnement
+
+La résiliation se fait depuis ton espace client, par le bouton **« Gérer mon
+abonnement »**, qui ouvre le portail de facturation hébergé par Stripe. Aucun
+échange avec nous n'est nécessaire.
+
+Elle prend effet **à la fin de la période déjà payée** : tu gardes l'accès
+jusqu'à cette date, et aucun autre montant n'est prélevé ensuite. Ton espace
+client indique alors la date de fin d'accès et l'absence de renouvellement.
+Tant que l'abonnement est actif, il indique aussi le montant et la date du
+prochain prélèvement (clause 7).
+
+### 8.2 La garantie de 14 jours, à l'annuel
+
+À l'annuel, tu disposes de **14 jours à compter du paiement** pour demander le
+remboursement intégral de ce paiement. Tant que la fenêtre est ouverte, la
+demande se fait **en un clic** depuis ton espace client, qui t'indique la date
+limite ; elle est traitée immédiatement, sans justification à fournir.
+
+Chaque paiement annuel ouvre sa propre fenêtre de 14 jours, renouvellement
+compris.
+
+Le remboursement met fin **immédiatement** à l'accès aux fonctions payantes.
+
+### 8.3 Au mensuel
+
+Le mensuel n'est pas couvert par cette garantie : tu gardes l'accès jusqu'à la
+fin du mois déjà payé, et la résiliation empêche le prélèvement suivant. C'est
+la contrepartie d'un engagement d'un mois, résiliable en tout temps.
+
+### 8.4 Si tu résides au Québec
+
+La *Loi sur la protection du consommateur* prime sur les paragraphes qui
+précèdent. Elle te permet notamment de mettre fin à ton abonnement en tout
+temps, y compris en cours de forfait annuel. Dans ce cas, nous te remboursons la
+**portion non utilisée** du forfait, calculée au prorata des mois restants,
+déduction faite de ce que la loi nous autorise à retenir. Écris-nous : ce
+remboursement-là se fait à la main, il n'est pas automatisé dans l'espace
+client.
+
+### 8.5 Demander un remboursement
+
+- Dans la fenêtre de 14 jours à l'annuel : en un clic depuis ton espace client
+  (8.2).
+- Dans tous les autres cas : écris à **contact@mia.markets** depuis l'adresse
+  courriel associée à ton compte, en indiquant la date du paiement concerné.
+  Nous répondons **sous 2 jours ouvrables**.
+
+Une erreur de facturation de notre part est corrigée et remboursée, quelle que
+soit la formule : ce n'est pas un geste commercial, c'est une somme qui ne nous
+était pas due.
+
+Un remboursement accordé est versé sur le **moyen de paiement d'origine**, sous
+**15 jours**. Selon ta banque, quelques jours de plus peuvent s'écouler avant
+que le montant apparaisse sur ton relevé.
+
+### 8.6 Contestation auprès de ta banque
+
+Écris-nous avant de contester un paiement auprès de ta banque : une question de
+facturation se règle en général plus vite par courriel. Tant qu'une contestation
+est ouverte, l'accès au compte est **suspendu** jusqu'à ce qu'elle soit tranchée
+— c'est une conséquence technique de la contestation, pas une sanction.
+
+### 8.7 Changement de prix
+
+Un changement de prix ne s'applique jamais à une période déjà payée. Nous te
+prévenons par courriel avant qu'il ne prenne effet, et tu peux résilier avant
+cette date, sans frais (clause 7).
 
 ## 9. Disponibilité et exactitude
 

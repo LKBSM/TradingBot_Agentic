@@ -476,6 +476,17 @@ export function SubscriptionPanel() {
         </div>
       )}
 
+      {/* LEG-2 — the way out, stated next to the buttons that take the money:
+          how to cancel, and the 14-day guarantee on the annual plan. */}
+      <p className="text-xs text-muted-foreground">
+        <Link
+          href={lh('/conditions#remboursement')}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          {t('refundPolicyLink')}
+        </Link>
+      </p>
+
       {/* LEG-1 — consent gate. The two plan CTAs above stay inactive until this
           box is ticked; the reason is written out rather than left to a greyed
           button, and both documents open in a new tab so ticking is not lost. */}

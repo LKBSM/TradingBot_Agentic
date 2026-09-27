@@ -43,6 +43,13 @@ router = APIRouter(tags=["legal"])
 # A stated price is a term of the contract, so the stamp is bumped: every account
 # re-consents rather than being held to a document whose price moved under it.
 #
+# 2026-09-27 (LEG-2): clause 8 spelled out — how cancelling works, the 14-day
+# annual guarantee and what opens it, the monthly cadence, Quebec, how to ask, a
+# bank dispute, a price change. The dictated sentence still opens the clause word
+# for word; everything added below only details it, and details nothing the code
+# does not honour (``src/billing/refund_guarantee.py``). Same stamp as PAY-4
+# above: one document, one date, one re-consent.
+#
 # 2026-09-14 (LEG-1): territory opened to the United States (clause 4) — the
 # text, GeoBlockMiddleware and insight_v2's contract were aligned together.
 #
