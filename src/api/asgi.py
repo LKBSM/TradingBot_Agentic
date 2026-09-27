@@ -19,6 +19,7 @@ API keys are visible to the lifespan bootstrap.
 from __future__ import annotations
 
 import os
+import traceback
 
 from dotenv import load_dotenv
 
@@ -156,14 +157,59 @@ from src.api.app import create_app  # noqa: E402 — must follow load_dotenv
 
 # Module-level ASGI app uvicorn can import directly. No subsystem injection:
 # everything the V2 product needs is built by the lifespan from env.
+def _degraded_app(exc: BaseException, diagnostic: str):
+    """Une application minimale qui SERT le diagnostic au lieu de mourir.
+
+    Pourquoi ce filet existe
+    ------------------------
+    Quand le démarrage échoue, le processus sortait en erreur, Render ne voyait
+    aucun port s'ouvrir, relançait, et finissait par SUSPENDRE le service — ce
+    qui a tenu le produit hors ligne 13 jours. Pire : sans port ouvert, plus
+    aucun moyen d'interroger la machine, et les journaux de l'hébergeur se sont
+    révélés illisibles (liste virtualisée, recherche inopérante). On se
+    retrouvait aveugle exactement au moment où il fallait voir.
+
+    Une application qui démarre en disant « je suis cassée, voici pourquoi »
+    vaut mieux qu'une application qui meurt en silence. Elle ouvre un port
+    (donc plus de boucle de plantage ni de suspension), et elle rend le
+    diagnostic lisible d'un simple appel HTTP.
+
+    Elle ne sert AUCUNE donnée de marché : toute autre route répond 503. Aucun
+    risque de laisser croire que le produit fonctionne.
+    """
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
+
+    detail = {
+        "status": "degraded",
+        "reason": "startup_failed",
+        "error": f"{type(exc).__name__}: {exc}",
+        "disk": diagnostic,
+    }
+    print(f"[boot] MODE DÉGRADÉ — {detail['error']} | {diagnostic}", flush=True)
+
+    degraded = FastAPI(title="M.I.A Markets (mode dégradé)")
+
+    @degraded.get("/health")
+    def _health():  # noqa: ANN202
+        # 200 volontaire : le contrôle de santé de l'hébergeur doit passer pour
+        # que le service RESTE debout et reste interrogeable. La charge utile,
+        # elle, ne ment pas — « degraded » y est en toutes lettres.
+        return detail
+
+    @degraded.api_route("/{_path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    def _everything_else(_path: str):  # noqa: ANN202
+        return JSONResponse(status_code=503, content=detail)
+
+    return degraded
+
+
 try:
     app = create_app()
-except Exception as _exc:  # noqa: BLE001 — on re-lève, enrichi
-    # Ne masque rien : la cause d'origine reste chaînée (`from`). On ajoute
-    # seulement l'état du disque à la dernière ligne, celle qu'on lit toujours.
-    raise RuntimeError(
-        f"Démarrage impossible. État du disque au moment de l'échec → {_disk_summary()}"
-    ) from _exc
+except Exception as _exc:  # noqa: BLE001 — on dégrade au lieu de mourir
+    # La trace complète part quand même dans les journaux : on ne masque rien.
+    traceback.print_exc()
+    app = _degraded_app(_exc, _disk_summary())
 
 
 __all__ = ["app"]
