@@ -208,7 +208,36 @@ def _largest_files(limit: int = 12) -> dict:
     }
 
 
+def _reclaim_disk() -> None:
+    """Libérer la place des instantanés périmés AVANT d'ouvrir la moindre base.
+
+    L'ordre compte. Le disque était plein à 99,8 % et SQLite mourait sur son
+    tout premier ``PRAGMA``, faute de pouvoir écrire un journal. Supprimer des
+    FICHIERS, en revanche, ne demande aucune place : c'est la seule opération
+    qui fonctionne encore à zéro octet libre. Elle doit donc passer en premier,
+    sinon la purge elle-même serait impossible.
+
+    Best-effort : récupérer de la place ne doit jamais devenir une nouvelle
+    cause de panne au démarrage.
+    """
+    try:
+        from src.intelligence.provider_snapshot import prune_snapshots
+
+        rapport = prune_snapshots()
+        if rapport.get("supprimes"):
+            print(
+                f"[disk] purge des instantanés — {rapport['supprimes']} fichier(s) supprimé(s), "
+                f"{rapport['mio_liberes']} Mio libérés, {rapport['conserves']} conservé(s)",
+                flush=True,
+            )
+        else:
+            print(f"[disk] purge des instantanés — rien à supprimer ({rapport})", flush=True)
+    except Exception as exc:  # noqa: BLE001 — jamais bloquant
+        print(f"[disk] purge des instantanés impossible : {exc}", flush=True)
+
+
 _report_data_dir_state()
+_reclaim_disk()
 
 from src.api.app import create_app  # noqa: E402 — must follow load_dotenv
 
