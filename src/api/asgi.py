@@ -28,6 +28,89 @@ from dotenv import load_dotenv
 # shell authoritative over the file.
 load_dotenv(override=False)
 
+def _report_data_dir_state() -> None:
+    """Dire, AVANT toute ouverture SQLite, dans quel état est le disque.
+
+    Le service est resté 13 jours hors ligne sur un
+    ``sqlite3.OperationalError: disk I/O error`` levé à la première écriture,
+    sans qu'aucun chiffre ne permette de trancher entre « disque plein »,
+    « disque en lecture seule » et « mauvaise propriété ». Les métriques de
+    l'hébergeur ne servent à rien ici : le conteneur meurt avant d'en produire,
+    et un script d'entrée peut être court-circuité par la commande de démarrage.
+
+    Ce contrôle-ci vit DANS l'application : rien dans la chaîne de démarrage ne
+    peut l'empêcher de s'exécuter. Il écrit sur stdout (et pas via ``logging``,
+    non encore configuré à cet instant), et n'échoue JAMAIS — diagnostiquer ne
+    doit pas devenir une nouvelle cause de panne.
+    """
+    import shutil
+    import tempfile
+
+    data_dir = os.environ.get("DATA_DIR", "./data")
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+    except OSError as exc:
+        print(f"[disk] création de {data_dir} impossible : {exc}", flush=True)
+
+    try:
+        st = os.stat(data_dir)
+        # getuid/getgid n'existent pas sous Windows : le diagnostic doit rester
+        # inoffensif partout, y compris en développement local.
+        uid = getattr(os, "getuid", lambda: -1)()
+        gid = getattr(os, "getgid", lambda: -1)()
+        print(
+            f"[disk] {data_dir} — uid_processus={uid} gid={gid} "
+            f"propriétaire={st.st_uid}:{st.st_gid} mode={oct(st.st_mode & 0o777)}",
+            flush=True,
+        )
+    except OSError as exc:
+        print(f"[disk] stat({data_dir}) impossible : {exc}", flush=True)
+
+    try:
+        usage = shutil.disk_usage(data_dir)
+        gio = 1024 ** 3
+        pct = 100.0 * usage.used / usage.total if usage.total else 0.0
+        print(
+            f"[disk] espace — total={usage.total / gio:.2f} Gio "
+            f"utilisé={usage.used / gio:.2f} Gio "
+            f"libre={usage.free / gio:.2f} Gio ({pct:.1f} % occupé)",
+            flush=True,
+        )
+        if usage.free < 64 * 1024 * 1024:
+            print("[disk] ALERTE : moins de 64 Mio libres — SQLite ne pourra pas écrire.", flush=True)
+    except OSError as exc:
+        print(f"[disk] mesure de l'espace impossible : {exc}", flush=True)
+
+    try:
+        with tempfile.NamedTemporaryFile(dir=data_dir, prefix=".write-probe-"):
+            pass
+        print(f"[disk] écriture dans {data_dir} : OK", flush=True)
+    except OSError as exc:
+        print(
+            f"[disk] ÉCRITURE IMPOSSIBLE dans {data_dir} : {exc} "
+            "— c'est la cause du plantage SQLite qui suit.",
+            flush=True,
+        )
+
+    # Les fichiers les plus gros : si le disque est plein, ils disent QUI le remplit.
+    try:
+        tailles = []
+        for nom in os.listdir(data_dir):
+            chemin = os.path.join(data_dir, nom)
+            if os.path.isfile(chemin):
+                tailles.append((os.path.getsize(chemin), nom))
+        tailles.sort(reverse=True)
+        if tailles:
+            apercu = ", ".join(f"{n}={t / (1024 ** 2):.0f} Mio" for t, n in tailles[:8])
+            print(f"[disk] plus gros fichiers — {apercu}", flush=True)
+        else:
+            print(f"[disk] {data_dir} est vide", flush=True)
+    except OSError as exc:
+        print(f"[disk] listage de {data_dir} impossible : {exc}", flush=True)
+
+
+_report_data_dir_state()
+
 from src.api.app import create_app  # noqa: E402 — must follow load_dotenv
 
 # Module-level ASGI app uvicorn can import directly. No subsystem injection:
