@@ -35,8 +35,11 @@ def _make_app(*, bridge, tmp_path) -> FastAPI:
 
 
 def test_unsupported_instrument_is_400(tmp_path):
+    # L'id doit etre VRAIMENT inconnu : DATA-4 a fait de BTCUSD un marche suivi,
+    # et demander un marche valide ouvre un flux SSE que le client attend
+    # indefiniment — le test ne tombait pas, il gelait.
     client = TestClient(_make_app(bridge=_FakeBridge(), tmp_path=tmp_path))
-    resp = client.get("/api/live-price", params={"instrument": "BTCUSD"})
+    resp = client.get("/api/live-price", params={"instrument": "NOTAMARKET"})
     assert resp.status_code == 400
 
 

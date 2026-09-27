@@ -96,7 +96,10 @@ def test_depth_is_config_driven_not_constant(monkeypatch, tmp_path):
 # Perimeter + M1 gate
 # --------------------------------------------------------------------------- #
 def test_supported_perimeter(_default_env):
-    assert set(lb.supported_instruments()) == {"XAUUSD", "EURUSD"}
+    """Le perimetre est le REGISTRE (MKT-1), jamais une liste recopiee ici."""
+    from src.intelligence import market_registry
+
+    assert set(lb.supported_instruments()) == set(market_registry.all_ids())
     assert lb.supported_timeframes() == ("M1", "M5", "M15", "H1", "H4", "D1")
 
 
@@ -106,7 +109,7 @@ def test_m1_off_by_default(_default_env):
     assert lb.enabled_timeframes() == ("M5", "M15", "H1", "H4", "D1")
     combos = lb.enabled_combos()
     assert ("XAUUSD", "M1") not in combos
-    assert len(combos) == 10  # 2 instruments × 5 enabled timeframes
+    assert len(combos) == len(lb.supported_instruments()) * 5  # 5 unites ouvertes
 
 
 def test_m1_gate_enables(monkeypatch):
@@ -117,14 +120,14 @@ def test_m1_gate_enables(monkeypatch):
     assert lb.enabled_timeframes()[0] == "M1"
     combos = lb.enabled_combos()
     assert ("XAUUSD", "M1") in combos and ("EURUSD", "M1") in combos
-    assert len(combos) == 12  # 2 × 6
+    assert len(combos) == len(lb.supported_instruments()) * 6  # les 6 unites
 
 
 def test_live_warm_excludes_m5_by_default(_default_env):
     """M5 is too costly to poll natively on the free plan → not live-warmed."""
     warm = lb.live_warm_combos()
     assert all(tf != "M5" for (_i, tf) in warm)
-    assert len(warm) == 8  # 2 instruments × {M15,H1,H4,D1}
+    assert len(warm) == len(lb.supported_instruments()) * 4  # {M15,H1,H4,D1}
     assert ("XAUUSD", "M15") in warm and ("EURUSD", "D1") in warm
 
 
@@ -134,7 +137,8 @@ def test_live_warm_includes_m5_when_flagged(monkeypatch):
     monkeypatch.setenv("LB1_WARM_M5", "1")
     lb.reset_cache()
     warm = lb.live_warm_combos()
-    assert ("XAUUSD", "M5") in warm and len(warm) == 10
+    assert ("XAUUSD", "M5") in warm
+    assert len(warm) == len(lb.supported_instruments()) * 5
 
 
 def test_live_warm_instruments_allowlist_shrinks_perimeter(_default_env, monkeypatch):
@@ -155,10 +159,13 @@ def test_live_warm_timeframes_allowlist_shrinks_perimeter(_default_env, monkeypa
 
 def test_enabled_combos_are_instrument_major_and_ordered(_default_env):
     combos = lb.enabled_combos()
-    # All XAUUSD combos precede all EURUSD combos; timeframe order preserved.
+    # Instrument-major : toutes les combos d'un marche se suivent, dans l'ordre
+    # des unites, et l'ordre des marches est celui du registre.
     xau = [tf for (inst, tf) in combos if inst == "XAUUSD"]
     assert xau == ["M5", "M15", "H1", "H4", "D1"]
-    assert combos[0][0] == "XAUUSD" and combos[-1][0] == "EURUSD"
+    order = [inst for inst, _tf in combos]
+    assert order == sorted(order, key=lambda i: lb.supported_instruments().index(i))
+    assert combos[0][0] == lb.supported_instruments()[0]
 
 
 # --------------------------------------------------------------------------- #

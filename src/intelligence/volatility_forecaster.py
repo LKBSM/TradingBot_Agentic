@@ -35,9 +35,87 @@ logger = logging.getLogger(__name__)
 # INSTRUMENT REGISTRY — Per-instrument presets
 # =============================================================================
 
+#: Class-level defaults for a market that has no hand-tuned preset (DATA-4).
+#:
+#: The hand-tuned presets below were validated on a replay for THAT instrument —
+#: their SL/TP multipliers are a backtest result, not a convention. A market added
+#: to the registry has no such replay, so it gets its asset class's defaults:
+#: conservative, conventional, and explicitly NOT claimed to be optimised. They
+#: exist so a supported market always has a usable forecasting config; tune one
+#: per market only once a replay justifies it.
+_CLASS_DEFAULTS: Dict[str, Dict[str, Any]] = {
+    "fx": {
+        "bars_per_day": 96,          # M15 over a 24 h currency day
+        "sl_atr_mult": 1.5,
+        "tp_atr_mult": 3.0,
+        "session_hours": {
+            "asian": (0, 7), "london": (7, 12), "ny_overlap": (12, 16),
+            "ny_afternoon": (16, 21), "after_hours": (21, 24),
+        },
+    },
+    "metal": {
+        "bars_per_day": 96,
+        "sl_atr_mult": 2.0,
+        "tp_atr_mult": 4.0,
+        "session_hours": {
+            "asian": (0, 8), "london": (8, 13), "ny_overlap": (13, 17),
+            "ny_afternoon": (17, 21), "after_hours": (21, 24),
+        },
+    },
+    "crypto": {
+        "bars_per_day": 96,
+        "sl_atr_mult": 2.0,
+        "tp_atr_mult": 4.0,
+        "session_hours": {
+            "asian": (0, 8), "london": (8, 13), "ny_overlap": (13, 17),
+            "ny_afternoon": (17, 21), "after_hours": (21, 24),
+        },
+    },
+    "index": {
+        "bars_per_day": 28,          # ~6 h 30 of session at M15
+        "sl_atr_mult": 1.5,
+        "tp_atr_mult": 3.0,
+        "session_hours": {
+            "pre_market": (0, 13), "open": (13, 15), "midday": (15, 18),
+            "close": (18, 21), "after_hours": (21, 24),
+        },
+    },
+}
+
+
+def _default_config_for(market_id: str) -> Optional["InstrumentConfig"]:
+    """Build a class-default config for a registry market, or None if unknown.
+
+    Reads the asset class and price precision from the market registry (MKT-1),
+    so adding a market stays ONE entry there instead of a second hand-written
+    preset here that would drift out of date.
+    """
+    try:
+        from src.intelligence import market_registry
+
+        spec = market_registry.spec(market_id)
+    except Exception:  # noqa: BLE001 — a market outside the registry has no default
+        return None
+    defaults = _CLASS_DEFAULTS.get(spec.type)
+    if defaults is None:
+        return None
+    return InstrumentConfig(
+        symbol=spec.id,
+        timeframe="M15",
+        price_decimals=spec.price_decimals,
+        **defaults,
+    )
+
+
 def get_instrument_registry() -> Dict[str, "InstrumentConfig"]:
-    """Return the default instrument registry with presets for common instruments."""
-    return {
+    """Presets per instrument: the hand-tuned ones, plus a class default for
+    every other market in the registry.
+
+    The invariant the tests pin is ``registry ⊆ presets``: a supported market must
+    never be left without a forecasting config. Deriving the remainder from the
+    asset class is what keeps that true as markets are added.
+    """
+    presets: Dict[str, "InstrumentConfig"] = {
         "XAUUSD": InstrumentConfig(
             symbol="XAUUSD",
             timeframe="M15",
@@ -151,6 +229,19 @@ def get_instrument_registry() -> Dict[str, "InstrumentConfig"]:
             price_decimals=3,
         ),
     }
+    # Every other registry market gets its class default. Hand-tuned wins.
+    try:
+        from src.intelligence import market_registry
+
+        for market_id in market_registry.all_ids():
+            if market_id in presets:
+                continue
+            default = _default_config_for(market_id)
+            if default is not None:
+                presets[market_id] = default
+    except Exception:  # noqa: BLE001 — no registry: the hand-tuned presets stand alone
+        logger.debug("market registry unavailable; using hand-tuned presets only")
+    return presets
 
 
 # =============================================================================

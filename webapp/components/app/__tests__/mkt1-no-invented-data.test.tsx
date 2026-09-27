@@ -12,6 +12,11 @@ import messages from '@/messages/fr.json';
  * "there is no response": the hooks refuse a catalogue market BEFORE fetching.
  * These tests assert both halves — no request leaves, and the placeholder that
  * shows says the market is not followed.
+ *
+ * The example market must be one the catalogue lists and the REGISTRY does not.
+ * DATA-4 made BTCUSD a followed market, so it no longer exercises anything here;
+ * the indices stayed catalogue-only (their tickers and session hours are a
+ * separate piece of work), which is what US500 stands for.
  */
 // The flag is read at module load, so it is stubbed BEFORE the dynamic imports
 // below. Nothing is mocked: this exercises the real gate and the real catalogue.
@@ -49,7 +54,7 @@ afterEach(() => {
 
 describe('MKT-1 — a catalogue market triggers NO request at all', () => {
   it('useMarketReading refuses before fetching, and holds no data', async () => {
-    const { result } = renderHook(() => useMarketReading('BTCUSD', 'M15', { source: 'live' }));
+    const { result } = renderHook(() => useMarketReading('US500', 'M15', { source: 'live' }));
     await waitFor(() => expect(result.current.error).toBeInstanceOf(MarketNotCoveredError));
     expect(result.current.data).toBeNull();
     expect(result.current.isLoading).toBe(false);
@@ -57,21 +62,21 @@ describe('MKT-1 — a catalogue market triggers NO request at all', () => {
   });
 
   it('useCandles draws no series and asks for none', async () => {
-    const { result } = renderHook(() => useCandles('BTCUSD', 'M15', { source: 'live' }));
+    const { result } = renderHook(() => useCandles('US500', 'M15', { source: 'live' }));
     await waitFor(() => expect(result.current.error).toBeInstanceOf(MarketNotCoveredError));
     expect(result.current.candles).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('useLatestPrice invents no price', async () => {
-    const { result } = renderHook(() => useLatestPrice('BTCUSD', { source: 'live' }));
+    const { result } = renderHook(() => useLatestPrice('US500', { source: 'live' }));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.change).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('useMtfTrends reports no alignment rather than a fabricated one', async () => {
-    const { result } = renderHook(() => useMtfTrends('BTCUSD', 'M15', { source: 'live' }));
+    const { result } = renderHook(() => useMtfTrends('US500', 'M15', { source: 'live' }));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.trends).toEqual({});
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -90,49 +95,49 @@ describe('MKT-1 — a catalogue market is a REACHABLE view', () => {
   // honest empty state was never reachable in the product. Selecting a market and
   // refusing its DATA are two different things.
   it('resolves as a valid combo so the view can say the market is not followed', () => {
-    expect(resolveComboFromQuery('BTCUSD', 'M15')).toEqual({
-      instrument: 'BTCUSD',
+    expect(resolveComboFromQuery('US500', 'M15')).toEqual({
+      instrument: 'US500',
       timeframe: 'M15',
     });
   });
 
   it('still rejects a genuinely unknown market, and an unknown timeframe', () => {
     expect(resolveComboFromQuery('NOTAMARKET', 'M15')).toBeNull();
-    expect(resolveComboFromQuery('BTCUSD', 'M7')).toBeNull();
+    expect(resolveComboFromQuery('US500', 'M7')).toBeNull();
   });
 });
 
 describe('MKT-1 — the empty state names the real reason', () => {
   it('says the market is not followed yet, and names it', () => {
-    render(<ReadingErrorState error={new MarketNotCoveredError('BTCUSD')} onRetry={() => {}} />);
+    render(<ReadingErrorState error={new MarketNotCoveredError('US500')} onRetry={() => {}} />);
     expect(screen.getByText('Pas encore disponible sur ce marché')).toBeInTheDocument();
     // The market is named by its human label, not a raw ticker.
-    expect(screen.getByText(/Bitcoin \(BTC\/USD\)/)).toBeInTheDocument();
+    expect(screen.getByText(/S&P 500 \([^)]*\)/)).toBeInTheDocument();
     expect(screen.getByText(/rien n’est simulé en attendant/)).toBeInTheDocument();
   });
 
   it('offers NO retry — retrying could not change coverage', () => {
-    render(<ReadingErrorState error={new MarketNotCoveredError('BTCUSD')} onRetry={() => {}} />);
+    render(<ReadingErrorState error={new MarketNotCoveredError('US500')} onRetry={() => {}} />);
     expect(screen.queryByRole('button', { name: /Réessayer/i })).not.toBeInTheDocument();
   });
 
   it('is NOT the "combinaison non prise en charge" copy — a different fact', () => {
-    render(<ReadingErrorState error={new MarketNotCoveredError('BTCUSD')} onRetry={() => {}} />);
+    render(<ReadingErrorState error={new MarketNotCoveredError('US500')} onRetry={() => {}} />);
     expect(screen.queryByText(/n’est pas prise en charge/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Données indisponibles/)).not.toBeInTheDocument();
   });
 
   it('renders no number at all — no price, no level, no score', () => {
     const { container } = render(
-      <ReadingErrorState error={new MarketNotCoveredError('BTCUSD')} onRetry={() => {}} />,
+      <ReadingErrorState error={new MarketNotCoveredError('US500')} onRetry={() => {}} />,
     );
     // The only digits allowed are the ones inside the market's own name.
-    const text = (container.textContent ?? '').replace(/Bitcoin \(BTC\/USD\)/g, '');
+    const text = (container.textContent ?? '').replace(/S&P 500 \([^)]*\)/g, '');
     expect(text).not.toMatch(/\d/);
   });
 
   it('the chart placeholder says the same thing, with no retry', () => {
-    render(<ChartUnavailable notCoveredMarket="BTCUSD" onRetry={() => {}} />);
+    render(<ChartUnavailable notCoveredMarket="US500" onRetry={() => {}} />);
     expect(screen.getByText('Pas encore disponible sur ce marché')).toBeInTheDocument();
     expect(screen.getByText(/Rien n’est dessiné à la place/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Réessayer/i })).not.toBeInTheDocument();

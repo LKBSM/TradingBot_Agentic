@@ -24,8 +24,28 @@ def _reset():
     tr.reset_cache()
 
 
-def test_v1_perimeter():
-    assert mr.all_ids() == ("XAUUSD", "EURUSD")
+def test_perimeter_starts_with_the_two_founding_markets():
+    """Gold and EUR/USD stay FIRST — the display order is the registry order, and
+    the two markets the product was built on must keep opening the column."""
+    ids = mr.all_ids()
+    assert ids[:2] == ("XAUUSD", "EURUSD")
+    assert len(ids) >= 2
+
+
+def test_every_market_is_declared_once():
+    ids = mr.all_ids()
+    assert len(ids) == len(set(ids)), "un marche est declare deux fois au registre"
+
+
+def test_every_market_carries_a_provider_symbol():
+    """DATA-4: a market the provider cannot resolve is a DEAD market — a page with
+    no data and no useful message. Every entry must name its Twelve Data ticker,
+    or be derivable to one."""
+    from src.intelligence.data_providers.twelve_data_provider import _symbol_map
+
+    mapping = _symbol_map()
+    for market in mr.all_ids():
+        assert mapping.get(market), f"{market} n'a pas de symbole fournisseur"
 
 
 def test_specs_carry_identity_and_precision():
@@ -40,9 +60,9 @@ def test_specs_carry_identity_and_precision():
 
 
 def test_unknown_market_raises():
-    assert not mr.has("BTCUSD")
+    assert not mr.has("NOTAMARKET")
     with pytest.raises(KeyError):
-        mr.spec("BTCUSD")
+        mr.spec("NOTAMARKET")
 
 
 def test_supported_instruments_derives_from_registry():
