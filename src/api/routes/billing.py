@@ -74,7 +74,11 @@ async def stripe_webhook(
     request: Request,
     stripe_signature: Optional[str] = Header(None, alias="Stripe-Signature"),
 ):
-    """Receive Stripe events, verify signature, route to TierManager."""
+    """Point d'entrée RETIRÉ : vérifie la signature, puis refuse en 410.
+
+    Le mur d'accès du produit lit ``AccountStore.subscriptions``, alimenté par
+    ``/api/billing/webhook``. Voir le refus en fin de fonction.
+    """
     stripe = getattr(request.app.state.app_state, "stripe_client", None)
     if stripe is None or not stripe.is_configured:
         raise HTTPException(status_code=503, detail="Billing not configured")
@@ -105,44 +109,29 @@ async def stripe_webhook(
         event.event_type,
     )
 
-    tier_manager = getattr(request.app.state.app_state, "tier_manager", None)
-    if tier_manager is None:
-        logger.warning(
-            "stripe event %s arrived but tier_manager not wired — drop",
-            event.event_type,
-        )
-        return {"received": True, "ignored": True, "reason": "no_tier_manager"}
-
-    # Apply the side effect — every event boils down to "set this customer
-    # to plan X with status Y". Deletion → FREE.
-    new_tier = event.plan_key or "FREE"
-    if event.event_type == "customer.subscription.deleted":
-        new_tier = "FREE"
-    elif event.event_type == "invoice.payment_failed":
-        # Downgrade after grace period — for now flag as PAST_DUE without
-        # immediate downgrade.
-        new_tier = None  # signal "no tier change, just status update"
-
-    try:
-        if new_tier is not None:
-            tier_manager.set_tier_by_stripe_customer(
-                event.customer_id, new_tier, status=event.status or "active"
-            )
-        else:
-            tier_manager.set_status_by_stripe_customer(
-                event.customer_id, "past_due"
-            )
-    except AttributeError:
-        # tier_manager doesn't yet expose the Stripe-keyed setter — log
-        # and move on so we don't 500.
-        logger.warning(
-            "tier_manager has no set_tier_by_stripe_customer — "
-            "event %s dropped silently", event.event_type
-        )
-    except Exception as exc:
-        logger.exception("tier_manager update failed: %s", exc)
-
-    return {"received": True, "event_type": event.event_type, "applied": True}
+    # GO-LIVE — ce point d'entrée REFUSE désormais l'événement au lieu de
+    # l'absorber.
+    #
+    # Avant : il journalisait l'erreur ci-dessus puis renvoyait 200. Stripe
+    # considérait donc la livraison RÉUSSIE, ne réessayait jamais, et n'affichait
+    # aucun échec dans son tableau de bord. Un vrai paiement encaissé n'ouvrait
+    # aucun accès, et le seul indice était une ligne de log que personne ne lit.
+    # C'est la panne la plus coûteuse possible sur un produit payant.
+    #
+    # Renvoyer 410 rend l'erreur VISIBLE là où le fondateur regarde déjà : Stripe
+    # marque le point d'entrée en échec, réessaie, et l'événement n'est pas perdu
+    # — il suffit de reconfigurer l'URL sur /api/billing/webhook et de le rejouer.
+    # Le `tier_manager` legacy n'est plus alimenté : aucune surface du produit ne
+    # lit cet état (le mur d'accès lit AccountStore.subscriptions), et la webapp
+    # n'appelle jamais /api/v1/billing/*.
+    raise HTTPException(
+        status_code=410,
+        detail=(
+            "Legacy endpoint retired. Stripe must target /api/billing/webhook — "
+            "this one does not grant product access. Repoint the webhook URL in "
+            "the Stripe dashboard and replay the event."
+        ),
+    )
 
 
 @router.get("/pricing")

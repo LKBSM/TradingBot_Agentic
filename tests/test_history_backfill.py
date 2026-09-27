@@ -108,20 +108,23 @@ def test_quota_one_request_per_combo(_no_m1, tmp_path):
     results = hb.backfill_all(provider, store, now=now)
 
     combos = lookback_config.enabled_combos()
-    assert len(combos) == 10  # M1 off → 2 × 5
+    markets = len(lookback_config.supported_instruments())
+    assert len(combos) == markets * 5  # M1 off → 5 unites par marche
+    # L'invariant qui compte : UNE requete par combinaison, jamais deux. Les
+    # profondeurs configurees tiennent toutes en une page de 5 000 bougies.
     assert len(provider.calls) == len(combos)
     assert sum(r.calls for r in results) == len(combos)
-    assert len(provider.calls) < 800  # nowhere near the daily cap
 
 
-def test_m1_enabled_adds_two_combos(monkeypatch, tmp_path):
+def test_m1_enabled_adds_one_combo_per_market(monkeypatch, tmp_path):
     monkeypatch.setenv("LB1_ENABLE_M1", "1")
     monkeypatch.delenv("SENTINEL_LOOKBACK_DEPTHS_PATH", raising=False)
     lookback_config.reset_cache()
     now = datetime(2026, 7, 22, 12, 0, tzinfo=UTC)
     provider = FakeProvider(end_ts=now)
     hb.backfill_all(provider, _store(tmp_path), now=now)
-    assert len(provider.calls) == 12  # 2 × 6
+    markets = len(lookback_config.supported_instruments())
+    assert len(provider.calls) == markets * 6  # M1 ouvert -> les 6 unites
 
 
 # --------------------------------------------------------------------------- #

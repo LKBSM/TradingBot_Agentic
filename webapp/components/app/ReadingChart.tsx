@@ -340,6 +340,13 @@ export function ReadingChart({
 }: ReadingChartProps) {
   const t = useTranslations('app');
   const locale = useLocale();
+  // I18N — le graphique est créé une seule fois (effet à dépendances `[]`), mais
+  // ses formateurs d'axe sont rappelés à chaque peinture. Passer par une ref leur
+  // donne TOUJOURS la locale courante, sans recréer le graphique ni élargir le
+  // tableau de dépendances. Avant : « fr-FR » codé en dur → les mois de l'axe
+  // restaient français sur /en et /es.
+  const localeRef = React.useRef(locale);
+  localeRef.current = locale;
   const { resolvedTheme } = useTheme();
   // Reopen time for the session badge sub-line (see marketReopenTs prop).
   const marketReopenLabel = formatNyTimestamp(marketReopenTs, locale);
@@ -565,7 +572,7 @@ export function ReadingChart({
       // timezone so the clock is never ambiguous (a discreet « Heure locale »
       // chip sits at the bottom-left). Candle times are UTC epoch seconds.
       localization: {
-        locale: 'fr-FR',
+        locale: localeRef.current,
         timeFormatter: (t: Time) =>
           formatLocalDayHm(new Date((t as number) * 1000)),
       },
@@ -582,9 +589,9 @@ export function ReadingChart({
           const d = new Date((t as number) * 1000);
           if (tickMarkType === TickMarkType.Year) return String(d.getFullYear());
           if (tickMarkType === TickMarkType.Month)
-            return d.toLocaleDateString('fr-FR', { month: 'short' });
+            return d.toLocaleDateString(localeRef.current, { month: 'short' });
           if (tickMarkType === TickMarkType.DayOfMonth)
-            return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            return d.toLocaleDateString(localeRef.current, { day: '2-digit', month: '2-digit' });
           return formatLocalHm(d);
         },
       },

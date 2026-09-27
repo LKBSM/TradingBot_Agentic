@@ -121,11 +121,22 @@ describe('LP-1 home — honest figures', () => {
     expect(txt).toMatch(new RegExp(`${LANDING_STATS.conditions} conditions factuelles`));
   });
 
-  it('does not advertise the maquette fictions (80 markets / 480 combinations)', () => {
+  it('advertises the perimeter it really serves, never a rounder one', () => {
     render(<HomeLanding />);
     const txt = document.body.textContent ?? '';
+    // DATA-4 (2026-09-27) — « 80 marchés » était une FICTION de maquette tant que
+    // le produit en servait deux ; c'est devenu la vérité. Ce test interdisait le
+    // CHIFFRE ; il doit interdire le MENSONGE. Donc : tout nombre de marchés
+    // annoncé sur la page doit être exactement celui du registre. 480 reste une
+    // invention — le vrai produit fait 80 × 5 = 400 combinaisons.
     expect(txt).not.toMatch(/480/);
-    expect(txt).not.toMatch(/80\s*\+?\s*march/i);
+    const claims = txt.match(/(\d+)\s*\+?\s*march/gi) ?? [];
+    for (const claim of claims) {
+      const n = Number(claim.match(/\d+/)![0]);
+      expect(n, `l'accueil annonce « ${claim} » alors que le registre sert ${LANDING_STATS.markets} marchés`).toBe(
+        LANDING_STATS.markets,
+      );
+    }
   });
 });
 

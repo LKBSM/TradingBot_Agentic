@@ -192,12 +192,26 @@ describe('coerceViewAction', () => {
       action: 'set_instrument_timeframe',
       params: { instrument: 'EURUSD', timeframe: 'H4' },
     });
+    // DATA-4 : « BTCUSD » servait ici d'instrument INCONNU — il est devenu un
+    // marché réel du registre (80 marchés), donc le validateur l'accepte à juste
+    // titre. Ce que ce test doit garder, c'est le refus d'un code qui n'existe
+    // pas : on en prend un volontairement absent du registre.
+    expect(
+      coerceViewAction(
+        { action: 'set_instrument_timeframe', params: { instrument: 'ZZZQQQ', timeframe: 'H4' } },
+        ZONES,
+      ),
+    ).toBeNull();
+    // Et un marché réel du registre élargi passe bien.
     expect(
       coerceViewAction(
         { action: 'set_instrument_timeframe', params: { instrument: 'BTCUSD', timeframe: 'H4' } },
         ZONES,
       ),
-    ).toBeNull();
+    ).toEqual({
+      action: 'set_instrument_timeframe',
+      params: { instrument: 'BTCUSD', timeframe: 'H4' },
+    });
   });
 
   it('accepts no-param framing actions', () => {

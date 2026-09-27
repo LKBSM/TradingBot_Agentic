@@ -19,14 +19,55 @@ beforeEach(() => {
   window.localStorage.clear();
 });
 
+/** The pin toggle of ONE market, by its exact label. */
+function pinButton(label: string) {
+  return screen.getByLabelText(new RegExp(`^Épingler ${escapeRe(label)}$`, 'i'));
+}
+
+/**
+ * Pin every market the selector renders. DATA-4 took the registry from 2 markets
+ * to 80, so a test about "all pinned" can no longer name them one by one — it has
+ * to derive the set, or it silently stops testing what it claims to.
+ */
+function pinEveryMarket() {
+  for (const spec of MARKET_SPECS) {
+    const btn = screen.queryByLabelText(new RegExp(`^Épingler ${escapeRe(spec.label)}$`, 'i'));
+    if (btn) fireEvent.click(btn);
+  }
+}
+
+/**
+ * Market labels rendered more than once — the anti-duplication guard, counted in
+ * a SINGLE pass. One `getAllByText` per market is 80 DOM scans and turns the
+ * guard into a 30 s test without covering anything more.
+ */
+function duplicatedLabels({ allowTwice = [] as string[] } = {}) {
+  const text = document.body.textContent ?? '';
+  return MARKET_SPECS.filter((spec) => {
+    const occurrences = text.split(spec.label).length - 1;
+    const allowed = allowTwice.includes(spec.id) ? 2 : 1;
+    return occurrences !== allowed;
+  }).map((spec) => `${spec.id} x${text.split(spec.label).length - 1}`);
+}
+
+function escapeRe(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 describe('MarketSelector — registry is the single source (panel)', () => {
   it('lists exactly the registry markets, no phantom', () => {
-    render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
-    for (const spec of MARKET_SPECS) {
-      expect(screen.getAllByText(spec.label).length).toBeGreaterThan(0);
-    }
-    // A market absent from the registry must never appear.
-    expect(screen.queryByText(/Bitcoin/i)).toBeNull();
+    const { container } = render(
+      <MarketSelector variant="panel" active={active} onSelect={() => {}} />,
+    );
+    // ONE pass over the rendered text rather than one DOM scan per market: at 80
+    // markets the per-market query turned this into a 6 s test for no extra
+    // coverage.
+    const rendered = container.textContent ?? '';
+    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(spec.label));
+    expect(missing.map((s) => s.id)).toEqual([]);
+    // A market absent from the registry must never appear. DATA-4 made BTC a
+    // followed market, so the example is now an index — catalogue-only by design.
+    expect(rendered).not.toMatch(/S&P 500/i);
   });
 
   it('search with no match shows an explicit message, never a silent fallback', () => {
@@ -54,7 +95,7 @@ describe('MarketSelector — registry is the single source (panel)', () => {
   it('pin a market → it surfaces in the "Épinglés" section and persists', () => {
     const { unmount } = render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
     // Pin EURUSD via its pin toggle.
-    const pinBtn = screen.getByLabelText(/Épingler Euro \/ Dollar/i);
+    const pinBtn = pinButton('Euro / Dollar (EUR/USD)');
     fireEvent.click(pinBtn);
     expect(window.localStorage.getItem('mia.pinnedMarkets.v1')).toContain('EURUSD');
     unmount();
@@ -66,19 +107,20 @@ describe('MarketSelector — registry is the single source (panel)', () => {
     expect(screen.getAllByText('Non synchronisé').length).toBeGreaterThan(0);
   });
 
+  // Pinning every market means one re-render of an 80-row list per click, so this
+  // one is legitimately slow — it exercises the whole catalogue on purpose.
   it('every market pinned → « Marchés » does not repeat them (APP-1 défaut B)', () => {
     render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
-    // Pin both of the two markets. Once all are pinned, the « Marchés » section
-    // has nothing NEW to show and must not repeat the pinned list.
-    fireEvent.click(screen.getByLabelText(/Épingler Euro/i));
-    fireEvent.click(screen.getByLabelText(/Épingler Or/i));
+    // Pin EVERY market. Once all are pinned, the « Marchés » section has nothing
+    // NEW to show and must not repeat the pinned list. Derived from the registry
+    // so this keeps holding as markets are added (DATA-4 took it from 2 to 80).
+    pinEveryMarket();
     // Each market now appears EXACTLY once (in « Épinglés »), never duplicated.
-    expect(screen.getAllByText('Or (XAU/USD)')).toHaveLength(1);
-    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    expect(duplicatedLabels()).toEqual([]);
     // « Épinglés » stays; the redundant « Marchés » heading is gone.
     expect(screen.getByText('Épinglés')).toBeTruthy();
     expect(screen.queryByText('Marchés')).toBeNull();
-  });
+  }, 60000);
 });
 
 describe('MarketSelector — timeframe control', () => {
@@ -115,7 +157,7 @@ describe('MarketSelector — bar (header) variant', () => {
     // EURUSD (not the active market, so the closed trigger never counts).
     expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
 
-    fireEvent.click(screen.getByLabelText(/Épingler Euro \/ Dollar/i));
+    fireEvent.click(pinButton('Euro / Dollar (EUR/USD)'));
 
     // It moved INTO « Épinglés » — it did not get added on top of the full list.
     expect(screen.getByText('Épinglés')).toBeTruthy();
@@ -132,7 +174,7 @@ describe('MarketSelector — bar (header) variant', () => {
 
     // Pin straight from the filtered result — the path that made the duplicate
     // appear under the user's eyes, the search field being right above it.
-    fireEvent.click(screen.getByLabelText(/Épingler Euro \/ Dollar/i));
+    fireEvent.click(pinButton('Euro / Dollar (EUR/USD)'));
 
     expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
   });
@@ -140,13 +182,12 @@ describe('MarketSelector — bar (header) variant', () => {
   it('VZ-5 — every market pinned → the bar form repeats nothing either', () => {
     render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /Marchés/i }));
-    fireEvent.click(screen.getByLabelText(/Épingler Euro/i));
-    fireEvent.click(screen.getByLabelText(/Épingler Or/i));
+    pinEveryMarket();
 
-    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
-    // « Or (XAU/USD) » is also the closed trigger's label → dropdown row + trigger.
-    expect(screen.getAllByText('Or (XAU/USD)')).toHaveLength(2);
-  });
+    // The ACTIVE market's label is also the trigger's, so it legitimately shows
+    // twice; every other market must appear exactly once.
+    expect(duplicatedLabels({ allowTwice: [active.instrument] })).toEqual([]);
+  }, 60000);
 
   it('VZ-5 — a search matching nothing still states it explicitly', () => {
     render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);

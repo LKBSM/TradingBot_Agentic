@@ -4,14 +4,20 @@ Produces the ``signal_summary`` that is injected into the chatbot system prompt
 by default (so most questions are answered without any tool call) and is also
 exposed as the ``get_signal_summary`` tool.
 
-It condenses the tracked combinations (XAUUSD/EURUSD × the enabled LB-1
-timeframes) into a small dict. The result is cached for ``CACHE_TTL_SECONDS``
-(60s) thread-safely: within a short user session the summary is stable (a new
-candle close is the only thing that would change it), so we avoid re-running the
-assembler once per combo per message.
+It condenses the tracked combinations into a small dict, cached for
+``CACHE_TTL_SECONDS`` (60s) thread-safely: within a short user session the summary
+is stable (a new candle close is the only thing that would change it), so we avoid
+re-running the assembler once per combo per message.
 
-Degradation is per-combination: if one combination fails to generate, the other
-five still populate the summary.
+**It is deliberately BOUNDED** (DATA-4). This block is injected into every M.I.A
+system prompt, so its size is paid on every message — and it used to be the whole
+perimeter, which was fine at 2 markets (10 combinations) and absurd at 80 (400).
+The cap keeps the inline summary to the markets that open the column; everything
+else is one ``get_market_reading`` tool call away, which is exactly what the tool
+is for. Raise ``SENTINEL_SUMMARY_MAX_COMBOS`` only with the token cost in mind.
+
+Degradation is per-combination: if one fails to generate, the others still
+populate the summary.
 """
 
 from __future__ import annotations
@@ -21,6 +27,8 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional, Sequence
 
+import os
+
 from src.intelligence.lookback_config import enabled_timeframes, supported_instruments
 
 logger = logging.getLogger(__name__)
@@ -28,6 +36,19 @@ logger = logging.getLogger(__name__)
 # Single source of truth = the LB-1 perimeter (M1 gated off by default).
 DEFAULT_INSTRUMENTS: tuple[str, ...] = supported_instruments()
 DEFAULT_TIMEFRAMES: tuple[str, ...] = enabled_timeframes()
+
+#: Maximum combinations inlined in the system prompt. 12 keeps the historical
+#: two-market perimeter (2 x 5 = 10) untouched while bounding an 80-market one.
+_MAX_COMBOS_ENV = "SENTINEL_SUMMARY_MAX_COMBOS"
+DEFAULT_MAX_COMBOS = 12
+
+
+def _max_combos() -> int:
+    try:
+        value = int(os.environ.get(_MAX_COMBOS_ENV, DEFAULT_MAX_COMBOS))
+    except (TypeError, ValueError):
+        return DEFAULT_MAX_COMBOS
+    return value if value > 0 else DEFAULT_MAX_COMBOS
 
 
 class SignalSummaryProvider:
@@ -41,9 +62,20 @@ class SignalSummaryProvider:
         instruments: Sequence[str] = DEFAULT_INSTRUMENTS,
         timeframes: Sequence[str] = DEFAULT_TIMEFRAMES,
         clock: Optional[Callable[[], datetime]] = None,
+        max_combinations: Optional[int] = None,
     ) -> None:
         self._assembler = assembler
-        self._combinations = [(i, t) for i in instruments for t in timeframes]
+        # Market-major, registry order: the markets that open the column are the
+        # ones that stay inline when the cap bites.
+        combos = [(i, t) for i in instruments for t in timeframes]
+        cap = max_combinations if max_combinations is not None else _max_combos()
+        if len(combos) > cap:
+            logger.info(
+                "signal_summary: %d combinations capped to %d for the prompt "
+                "(the rest stay reachable through get_market_reading)",
+                len(combos), cap,
+            )
+        self._combinations = combos[:cap]
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._cache: Optional[dict[str, Any]] = None
         self._cache_ts: Optional[datetime] = None

@@ -175,7 +175,18 @@ def test_product_knowledge_quotes_the_real_price_and_faq() -> None:
     assert "29 USD par mois" in knowledge
     # Straight from the site's own FAQ and terms.
     assert "Est-ce que MIA dit quand acheter ou vendre ?" in knowledge
-    assert "n'est pas" in knowledge and "conseiller en investissements financiers" in knowledge
+    # LEG-1 reworded clause 1 of the terms: the French « conseiller en
+    # investissements financiers » (an AMF term) gave way to the enumeration the
+    # Canadian framing uses. What the guard is really about is unchanged — the
+    # terms' refusal of advice must reach the agent — so it pins the enumeration
+    # itself rather than one country's label for the job.
+    for claim in (
+        "aucun signal de trading",
+        "aucune recommandation",
+        "aucun conseil en investissement",
+        "aucune intervention",
+    ):
+        assert claim in knowledge, claim
     # And from the central glossary (the ⓘ tooltips' source).
     assert "Order Block" in knowledge
 
@@ -217,8 +228,13 @@ def test_knowledge_block_quotes_are_covered_by_an_anti_recitation_rule() -> None
     # (« risqués » est l'accord pluriel de « risqué », ajouté au jeu de jetons par
     # MIA-5 : c'est le même mot, dans la même citation déjà acceptée — pas une
     # nouvelle source de vocabulaire.)
+    # (« recommande » entre par la clause 1 des conditions réécrites par LEG-1 :
+    # « Le service décrit ce qu'il observe. Il ne recommande rien. » C'est une
+    # phrase que les conditions DOIVENT dire, au même titre que l'avertissement
+    # sur le risque — on l'accepte donc dans le bloc et on la couvre par la
+    # règle de non-récitation, qui la nomme désormais explicitement.)
     assert present <= {
-        "acheter", "vendre", "trader", "risqué", "risqués", "garantie",
+        "acheter", "vendre", "trader", "risqué", "risqués", "garantie", "recommande",
     }, sorted(present)
 
 

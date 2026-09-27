@@ -91,7 +91,7 @@ def test_endpoint_rejects_unsupported_instrument(tmp_path):
     app = _make_app(tmp_path=tmp_path)
     client = TestClient(app)
 
-    resp = client.get("/api/market-reading", params={"instrument": "BTCUSD", "timeframe": "M15"})
+    resp = client.get("/api/market-reading", params={"instrument": "NOTAMARKET", "timeframe": "M15"})
     assert resp.status_code == 400
     assert "Unsupported instrument" in resp.json()["detail"]
 

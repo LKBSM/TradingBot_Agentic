@@ -29,11 +29,13 @@ services:
     dockerfilePath: ./infrastructure/Dockerfile.api
     dockerContext: .
     # Render injects $PORT; bind to it instead of the fixed 8000.
+
     # ⚠️ `dockerCommand` REMPLACE l'ENTRYPOINT du Dockerfile (Render l'écrit noir
     # sur blanc dans ses réglages). Le script d'entrée doit donc être appelé ICI,
     # explicitement : déclaré en ENTRYPOINT il serait purement ignoré, le disque
     # monté resterait non écrivable, et le service replanterait au démarrage —
     # la cause de la suspension du 2026-09-14.
+
     dockerCommand: /app/infrastructure/docker-entrypoint.sh uvicorn src.api.asgi:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     disk:
@@ -57,10 +59,16 @@ services:
         value: production
       - key: BETA_LOCKDOWN
         value: "0"
-      # The host runs in a US region → the geo-block (which denies US) would
-      # 451 the app against itself via the proxy chain.
-      - key: GEO_BLOCK_DISABLED
-        value: "1"
+      # GEO-0 (2026-09-27) — le géo-blocage est RÉACTIVÉ.
+      # L'ancienne justification ("l'hôte est en région US et le géo-blocage
+      # refuse les US, il 451erait l'app contre elle-même") est PÉRIMÉE depuis
+      # LEG-1 (2026-09-14) : les États-Unis ont été retirés de la liste de refus
+      # (src/api/middleware/geo_block.py). Laisser la coupure en place revenait à
+      # servir le Royaume-Uni (régime FCA sur la promotion financière) et le bloc
+      # OFAC (CU, IR, KP, RU, SY, BY), que le code refuse explicitement.
+      # NB : la liste reste une liste de REFUS. Restreindre réellement le service
+      # à CA+US (clause 4 des conditions) demande une liste d'AUTORISATION —
+      # c'est la mission GEO-1, distincte de cette réactivation.
       - key: SENTINEL_TESTING_MODE
         value: "0"
       - key: SUBSCRIPTION_GATE_ENFORCED
@@ -178,12 +186,38 @@ services:
         value: "7"
       - key: VOL_MODE
         value: har
-      - key: SYMBOLS
-        value: XAUUSD
+      # SYMBOLS a été RETIRÉ (2026-09-27) : c'était de la configuration morte.
+      # Seuls src/intelligence/main.py (le scanner legacy, jamais démarré ici) et
+      # SecureConfig.from_env() la lisent — l'API n'importe de ce module que
+      # `sanitize_string`. Le périmètre réel vient de config/markets.json via le
+      # registre. La laisser à "XAUUSD" laissait croire que la production ne
+      # couvrait que l'or, alors qu'elle sert désormais 80 marchés.
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: TWELVE_DATA_API_KEY
         sync: false
+      # ── Quota Twelve Data — À POSER, sinon les 80 marchés ne suivent pas ─────
+      # Le limiteur (twelve_data_provider.py) prend ses DÉFAUTS sur l'offre
+      # GRATUITE : 8 crédits/min et 800/jour. Tant que ces deux variables ne sont
+      # pas posées, la production se bride au tarif gratuit MÊME avec un
+      # abonnement payant — l'argent versé à Twelve Data ne change rien.
+      #
+      # Plan actif : GROW, 55 crédits/min (confirmé par le fondateur, 2026-09-27).
+      # Dimensionnement mesuré par l'audit DATA-3 (tools/data_budget/
+      # simulate_credits.py, scénario S2 « étalement seul ») :
+      #   100 marchés × 5 unités → pointe 31 crédits/min (56 % du plafond),
+      #   ~12 700 crédits/jour. À 80 marchés : ~25/min, ~10 000/jour.
+      # L'étalement (SENTINEL_SPREAD_*) est ce qui rend ce chiffre tenable : sans
+      # lui la même charge pointe à 500 crédits/min, 9× le plafond.
+      - key: TWELVE_DATA_PER_MINUTE
+        value: "55"
+      # Garde-fou JOURNALIER volontairement nôtre, pas une limite du fournisseur :
+      # il coupe si la consommation dérape (boucle, retrying, backfill imprévu)
+      # avant que la facture ne le fasse. 20 000 laisse 2× la marge du régime
+      # permanent mesuré (~10 000/jour à 80 marchés). À relever si un amorçage
+      # d'historique complet est lancé — il consomme à part.
+      - key: TWELVE_DATA_PER_DAY
+        value: "20000"
       # Calendar published-value keys (free registration). Set the VALUES in the
       # Render dashboard; absent a key its source stays honestly ``unfetched``.
       - key: BLS_API_KEY          # NFP / CPI / PPI — data.bls.gov/registrationEngine

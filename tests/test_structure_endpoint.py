@@ -55,7 +55,9 @@ def test_coverage_lists_all_enabled_combos(tmp_path):
     client = TestClient(_make_app(tmp_path))
     body = client.get("/api/coverage").json()
     combos = body["combos"]
-    assert len(combos) == len(lookback_config.enabled_combos()) == 10
+    # Le point verrouille : la couverture liste EXACTEMENT le perimetre active,
+    # quel qu'il soit (2 marches hier, 80 depuis DATA-4).
+    assert len(combos) == len(lookback_config.enabled_combos())
     xau_m15 = next(c for c in combos if c["instrument"] == "XAUUSD" and c["timeframe"] == "M15")
     assert xau_m15["candle_count"] == 50
     assert xau_m15["history_since"] is not None

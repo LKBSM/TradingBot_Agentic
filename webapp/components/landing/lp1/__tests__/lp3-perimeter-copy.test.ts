@@ -55,7 +55,12 @@ describe('LP-3 — the perimeter figures are derived, not written down', () => {
     expect([...DISPLAY_TIMEFRAMES]).toEqual(['M5', 'M15', 'H1', 'H4', 'D1']);
     expect(LANDING_STATS.timeframes).toBe(5);
     expect(LANDING_STATS.combinations).toBe(LANDING_STATS.markets * LANDING_STATS.timeframes);
-    expect(LANDING_STATS.combinations).toBe(10);
+    // DATA-4 (2026-09-27) — le registre passe de 2 à 80 marchés : 80 × 5 = 400.
+    // Le chiffre reste épinglé ici volontairement, parce que c'est ce que
+    // l'accueil PROMET au client. S'il bouge sans que la copie suive, ce test
+    // tombe le premier — c'est exactement la dérive qu'il a déjà attrapée.
+    expect(LANDING_STATS.markets).toBe(80);
+    expect(LANDING_STATS.combinations).toBe(400);
   });
 });
 
@@ -75,7 +80,10 @@ describe('LP-3 — every perimeter claim matches the derived figures (9 locales)
       for (const path of COMBINATION_CLAIMS) {
         const v = at(home(root), path);
         expect(v, `${loc} ${path}`).toContain(String(LANDING_STATS.combinations));
-        expect(v, `${loc} ${path} still claims 12 combinations`).not.toMatch(/(^|\D)12(\D|$)/);
+        // Le chiffre périmé à interdire est celui du périmètre PRÉCÉDENT : 10
+        // (2 marchés × 5 unités). Avant DATA-4 c'était 12 ; la garde suit le
+        // périmètre, sinon elle protège contre une dérive qui n'existe plus.
+        expect(v, `${loc} ${path} still claims 10 combinations`).not.toMatch(/(^|\D)10(\D|$)/);
       }
     }
   });

@@ -18,7 +18,17 @@ import { ChatProvider } from '@/components/chat/ChatProvider';
 vi.stubEnv('NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST', '1');
 
 const { AppChatSidebar } = await import('@/components/app/AppChatSidebar');
-const { isCatalogOnly } = await import('@/lib/market-catalog');
+const { isCatalogOnly, CATALOG_ONLY_ENTRIES } = await import('@/lib/market-catalog');
+
+/**
+ * DATA-4 — la fixture était « BTCUSD », qui est devenu un marché RÉEL du
+ * registre (80 marchés) : le test se retrouvait à vérifier l'état « non couvert »
+ * sur un marché couvert, et tombait. Elle est maintenant DÉRIVÉE du catalogue de
+ * démonstration, donc elle désigne toujours un marché réellement non suivi —
+ * aujourd'hui un indice, que DATA-4 a volontairement laissé de côté faute
+ * d'horaires de place.
+ */
+const UNCOVERED = CATALOG_ONLY_ENTRIES[0]!;
 
 function renderSidebar(combo: { instrument: string; timeframe: string } | null) {
   return render(
@@ -30,26 +40,28 @@ function renderSidebar(combo: { instrument: string; timeframe: string } | null) 
 
 describe('MKT-1b — M.I.A on an uncovered market', () => {
   it('the fixture really is a catalogue-only market (guards the premise)', () => {
-    expect(isCatalogOnly('BTCUSD')).toBe(true);
+    expect(isCatalogOnly(UNCOVERED.id)).toBe(true);
     expect(isCatalogOnly('XAUUSD')).toBe(false);
   });
 
   it('offers NO starter question — nothing to analyse, nothing to propose', () => {
-    renderSidebar({ instrument: 'BTCUSD', timeframe: 'M15' });
+    renderSidebar({ instrument: UNCOVERED.id, timeframe: 'M15' });
     expect(screen.queryByText(/Décompose la structure actuelle/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Order Blocks actifs/)).not.toBeInTheDocument();
     expect(screen.queryByText(/C'est quoi un CHOCH/)).not.toBeInTheDocument();
   });
 
   it('says why, naming the market by its human label', () => {
-    renderSidebar({ instrument: 'BTCUSD', timeframe: 'M15' });
+    const { container } = renderSidebar({ instrument: UNCOVERED.id, timeframe: 'M15' });
     expect(screen.getByText('Aucune lecture sur ce marché')).toBeInTheDocument();
-    expect(screen.getByText(/Le moteur ne suit pas encore Bitcoin \(BTC\/USD\)/)).toBeInTheDocument();
+    // Pas de RegExp ici : le libellé dérivé contient des parenthèses, qu'il
+    // faudrait échapper. Une comparaison de texte dit la même chose, sans piège.
+    expect(container.textContent).toContain(`Le moteur ne suit pas encore ${UNCOVERED.label}`);
   });
 
   it('names the market in the header by its label, not a raw ticker', () => {
-    const { container } = renderSidebar({ instrument: 'BTCUSD', timeframe: 'M15' });
-    expect(container.textContent).toContain('Bitcoin (BTC/USD)');
+    const { container } = renderSidebar({ instrument: UNCOVERED.id, timeframe: 'M15' });
+    expect(container.textContent).toContain(UNCOVERED.label);
   });
 
   it('a FOLLOWED market keeps its starter questions — the guard is narrow', () => {

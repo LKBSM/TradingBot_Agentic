@@ -1,6 +1,46 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { FIXTURE_XAU_M15 } from '../../lib/market-reading/fixtures';
 import { dismissCookieBanner } from './utils';
+
+/**
+ * DATA-4 (2026-09-27) — tout ce que cette spec affirmait du catalogue était
+ * écrit en dur : « 98 » entrées d'affichage, six groupes peuplés, et BTCUSD pris
+ * comme exemple de marché NON couvert. Le registre est passé de 2 à 80 marchés,
+ * donc 79 entrées du catalogue sont devenues RÉELLES : il n'en reste que 21
+ * (20 indices, écartés faute d'horaires de place, et 1 crypto), quatre groupes
+ * sont vides, et BTCUSD est maintenant un marché suivi — le test de « l'état
+ * vide sur un marché sans donnée » ne testait donc plus rien du tout.
+ *
+ * Tout est désormais DÉRIVÉ des deux fichiers de configuration, comme le fait
+ * déjà la garde vitest équivalente. Le prochain changement de périmètre n'aura
+ * rien à réécrire ici.
+ */
+const REPO_ROOT = resolve(process.cwd(), '..');
+
+interface CatalogEntry {
+  id: string;
+  label: string;
+  group: string;
+}
+
+const CATALOG_ENTRIES: CatalogEntry[] = JSON.parse(
+  readFileSync(resolve(REPO_ROOT, 'config/market_catalog_ux_test.json'), 'utf-8'),
+).markets;
+
+const REAL_IDS = new Set<string>(
+  JSON.parse(readFileSync(resolve(REPO_ROOT, 'config/markets.json'), 'utf-8')).markets.map(
+    (m: { id: string }) => m.id,
+  ),
+);
+
+/** Les entrées d'affichage seulement — celles que le moteur ne suit PAS. */
+const CATALOG_ONLY = CATALOG_ENTRIES.filter((e) => !REAL_IDS.has(e.id));
+/** Seuls les groupes qui ont encore une entrée d'affichage sont rendus. */
+const CATALOG_ONLY_GROUPS = [...new Set(CATALOG_ONLY.map((e) => e.group))];
+/** Un marché réellement non couvert, pour l'état vide honnête. */
+const UNCOVERED = CATALOG_ONLY[0]!;
 
 /**
  * MKT-1 — market-catalogue UX test, live capture at both viewports.
@@ -80,7 +120,7 @@ for (const vp of VIEWPORTS) {
       const banner = col.getByTestId('mkt-uxtest-banner');
       await expect(banner).toBeVisible();
       await expect(banner).toContainText('Mode test UX');
-      await expect(banner).toContainText('98');
+      await expect(banner).toContainText(String(CATALOG_ONLY.length));
       // Real markets stay visibly apart from the display-only ones.
       await expect(col.getByText('Suivis par le moteur')).toBeVisible();
 
@@ -92,15 +132,17 @@ for (const vp of VIEWPORTS) {
       await openApp(page);
 
       const col = selector(page);
-      // Six categories, every one collapsed on arrival.
-      for (const g of ['fx-major', 'fx-minor', 'fx-exotic', 'metal', 'index', 'crypto']) {
+      // Chaque catégorie qui a ENCORE une entrée d'affichage est rendue, et
+      // repliée à l'arrivée. Les groupes vidés par DATA-4 n'apparaissent pas :
+      // c'est le comportement voulu, pas une régression.
+      for (const g of CATALOG_ONLY_GROUPS) {
         await expect(col.getByTestId(`mkt-group-head-${g}`)).toHaveAttribute('aria-expanded', 'false');
       }
 
-      const head = col.getByTestId('mkt-group-head-crypto');
+      const head = col.getByTestId(`mkt-group-head-${UNCOVERED.group}`);
       await head.click();
       await expect(head).toHaveAttribute('aria-expanded', 'true');
-      await expect(col.getByRole('button', { name: 'Bitcoin (BTC/USD)' })).toBeVisible();
+      await expect(col.getByRole('button', { name: UNCOVERED.label })).toBeVisible();
 
       await page.waitForTimeout(400);
       await page.screenshot({ path: `${DIR}/categorie-ouverte-${vp.tag}.png`, fullPage: true });
@@ -111,24 +153,26 @@ for (const vp of VIEWPORTS) {
 
       // Any DATA request for an uncovered market is a failure of the whole
       // mission. Scoped to /api/ on purpose: navigating to
-      // /app?instrument=BTCUSD (and its Next RSC payload) is exactly how the
+      // /app?instrument=<id> (and its Next RSC payload) is exactly how the
       // market gets selected — that URL naming the market is the feature, not
       // a leak. What must never happen is a candle/reading/price call.
       const leaked: string[] = [];
       page.on('request', (req) => {
         const url = req.url();
-        if (url.includes('/api/') && /BTCUSD|XAGUSD|NAS100|USDTRY/.test(url)) leaked.push(url);
+        // Uniquement des ids RÉELLEMENT non couverts : BTCUSD et XAGUSD sont
+        // devenus des marchés suivis, les demander est désormais légitime.
+        if (url.includes('/api/') && new RegExp(UNCOVERED.id).test(url)) leaked.push(url);
       });
 
       await openApp(page);
       const col = selector(page);
-      await col.getByTestId('mkt-group-head-crypto').click();
-      await col.getByRole('button', { name: 'Bitcoin (BTC/USD)' }).click();
+      await col.getByTestId(`mkt-group-head-${UNCOVERED.group}`).click();
+      await col.getByRole('button', { name: UNCOVERED.label }).click();
       // Picking a market writes it into the URL (state → URL, AppWorkspace) and
       // triggers an RSC navigation; on the phone it also switches to the
       // "Lecture" tab. Wait for the URL rather than a fixed delay — a sleep long
       // enough on an idle machine is not long enough on a busy one.
-      await page.waitForURL(/instrument=BTCUSD/, { timeout: 15_000 });
+      await page.waitForURL(new RegExp(`instrument=${UNCOVERED.id}`), { timeout: 15_000 });
 
       await expect(page.getByText('Pas encore disponible sur ce marché')).toBeVisible({
         timeout: 15_000,
