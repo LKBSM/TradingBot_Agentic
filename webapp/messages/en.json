@@ -2878,7 +2878,7 @@
       "eight_per_year": "8 times a year"
     },
     "market": {
-      "XAUUSD": "Gold",
+      "XAUUSD": "Gold (XAU/USD)",
       "EURUSD": "EUR/USD",
       "GBPUSD": "GBP/USD",
       "USDJPY": "USD/JPY",
@@ -2907,9 +2907,9 @@
       "NZDJPY": "NZD/JPY",
       "NZDCHF": "NZD/CHF",
       "NZDCAD": "NZD/CAD",
-      "XAGUSD": "Silver",
-      "XPTUSD": "Platinum",
-      "XPDUSD": "Palladium",
+      "XAGUSD": "Silver (XAG/USD)",
+      "XPTUSD": "Platinum (XPT/USD)",
+      "XPDUSD": "Palladium (XPD/USD)",
       "XAUEUR": "Gold (XAU/EUR)",
       "XAGEUR": "Silver (XAG/EUR)",
       "XAUGBP": "Gold (XAU/GBP)",

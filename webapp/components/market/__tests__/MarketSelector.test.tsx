@@ -2,6 +2,7 @@ import { render as rtlRender, screen, fireEvent, within } from '@testing-library
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextIntlClientProvider } from 'next-intl';
 import { MarketSelector } from '../MarketSelector';
+import frMessages from '@/messages/fr.json';
 import { MARKET_SPECS } from '@/lib/markets';
 import messages from '@/messages/fr.json';
 
@@ -14,6 +15,13 @@ function render(ui: React.ReactElement) {
 }
 
 const active = { instrument: 'XAUUSD', timeframe: 'M15' };
+
+// DATA-4 + i18n : l'interface affiche désormais le libellé TRADUIT
+// (useInstrumentLabel), pas le libellé « FR de base » du registre — « GBP/USD »
+// et non « Livre / Dollar (GBP/USD) ». Les assertions doivent viser ce que
+// l'écran rend vraiment. Repli sur le registre si la clé venait à manquer.
+const UI_LABELS = (frMessages as { calendar: { market: Record<string, string> } }).calendar.market;
+const uiLabel = (spec: { id: string; label: string }): string => UI_LABELS[spec.id] ?? spec.label;
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -31,7 +39,7 @@ function pinButton(label: string) {
  */
 function pinEveryMarket() {
   for (const spec of MARKET_SPECS) {
-    const btn = screen.queryByLabelText(new RegExp(`^Épingler ${escapeRe(spec.label)}$`, 'i'));
+    const btn = screen.queryByLabelText(new RegExp(`^Épingler ${escapeRe(uiLabel(spec))}$`, 'i'));
     if (btn) fireEvent.click(btn);
   }
 }
@@ -44,10 +52,10 @@ function pinEveryMarket() {
 function duplicatedLabels({ allowTwice = [] as string[] } = {}) {
   const text = document.body.textContent ?? '';
   return MARKET_SPECS.filter((spec) => {
-    const occurrences = text.split(spec.label).length - 1;
+    const occurrences = text.split(uiLabel(spec)).length - 1;
     const allowed = allowTwice.includes(spec.id) ? 2 : 1;
     return occurrences !== allowed;
-  }).map((spec) => `${spec.id} x${text.split(spec.label).length - 1}`);
+  }).map((spec) => `${spec.id} x${text.split(uiLabel(spec)).length - 1}`);
 }
 
 function escapeRe(text: string) {
@@ -63,7 +71,13 @@ describe('MarketSelector — registry is the single source (panel)', () => {
     // markets the per-market query turned this into a 6 s test for no extra
     // coverage.
     const rendered = container.textContent ?? '';
-    const missing = MARKET_SPECS.filter((spec) => !rendered.includes(spec.label));
+    // Le libellé affiché vient désormais de l'i18n (useInstrumentLabel), pas du
+    // libellé « FR de base » du registre : « GBP/USD » au lieu de « Livre /
+    // Dollar (GBP/USD) ». On attend donc ce que l'interface rend vraiment, en
+    // retombant sur le registre quand la clé n'existe pas.
+    const missing = MARKET_SPECS.filter(
+      (spec) => !rendered.includes(uiLabel(spec)),
+    );
     expect(missing.map((s) => s.id)).toEqual([]);
     // A market absent from the registry must never appear. DATA-4 made BTC a
     // followed market, so the example is now an index — catalogue-only by design.
@@ -81,21 +95,21 @@ describe('MarketSelector — registry is the single source (panel)', () => {
     render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
     const search = screen.getByLabelText(/Rechercher un marché/i);
     fireEvent.change(search, { target: { value: 'euro' } });
-    expect(screen.getByText('Euro / Dollar (EUR/USD)')).toBeTruthy();
+    expect(screen.getByText('EUR/USD')).toBeTruthy();
     expect(screen.queryByText('Or (XAU/USD)')).toBeNull();
   });
 
   it('selecting a market emits its combo (keeps the current timeframe)', () => {
     const onSelect = vi.fn();
     render(<MarketSelector variant="panel" active={active} onSelect={onSelect} />);
-    fireEvent.click(screen.getByText('Euro / Dollar (EUR/USD)'));
+    fireEvent.click(screen.getByText('EUR/USD'));
     expect(onSelect).toHaveBeenCalledWith({ instrument: 'EURUSD', timeframe: 'M15' });
   });
 
   it('pin a market → it surfaces in the "Épinglés" section and persists', () => {
     const { unmount } = render(<MarketSelector variant="panel" active={active} onSelect={() => {}} />);
     // Pin EURUSD via its pin toggle.
-    const pinBtn = pinButton('Euro / Dollar (EUR/USD)');
+    const pinBtn = pinButton('EUR/USD');
     fireEvent.click(pinBtn);
     expect(window.localStorage.getItem('mia.pinnedMarkets.v1')).toContain('EURUSD');
     unmount();
@@ -143,7 +157,7 @@ describe('MarketSelector — bar (header) variant', () => {
     const search = screen.getByLabelText(/Rechercher un marché/i);
     fireEvent.change(search, { target: { value: 'euro' } });
     const list = screen.getByRole('list');
-    fireEvent.click(within(list).getByText('Euro / Dollar (EUR/USD)'));
+    fireEvent.click(within(list).getByText('EUR/USD'));
     expect(onSelect).toHaveBeenCalledWith({ instrument: 'EURUSD', timeframe: 'M15' });
   });
 
@@ -155,13 +169,13 @@ describe('MarketSelector — bar (header) variant', () => {
     render(<MarketSelector variant="bar" active={active} onSelect={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /Marchés/i }));
     // EURUSD (not the active market, so the closed trigger never counts).
-    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    expect(screen.getAllByText('EUR/USD')).toHaveLength(1);
 
-    fireEvent.click(pinButton('Euro / Dollar (EUR/USD)'));
+    fireEvent.click(pinButton('EUR/USD'));
 
     // It moved INTO « Épinglés » — it did not get added on top of the full list.
     expect(screen.getByText('Épinglés')).toBeTruthy();
-    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    expect(screen.getAllByText('EUR/USD')).toHaveLength(1);
   });
 
   it('VZ-5 — searching then pinning from the result lists the market ONCE', () => {
@@ -170,13 +184,13 @@ describe('MarketSelector — bar (header) variant', () => {
     fireEvent.change(screen.getByLabelText(/Rechercher un marché/i), {
       target: { value: 'euro' },
     });
-    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    expect(screen.getAllByText('EUR/USD')).toHaveLength(1);
 
     // Pin straight from the filtered result — the path that made the duplicate
     // appear under the user's eyes, the search field being right above it.
-    fireEvent.click(pinButton('Euro / Dollar (EUR/USD)'));
+    fireEvent.click(pinButton('EUR/USD'));
 
-    expect(screen.getAllByText('Euro / Dollar (EUR/USD)')).toHaveLength(1);
+    expect(screen.getAllByText('EUR/USD')).toHaveLength(1);
   });
 
   it('VZ-5 — every market pinned → the bar form repeats nothing either', () => {

@@ -24,6 +24,7 @@ import {
 import { formatInstrument, formatTimeframe } from '@/lib/market-reading/formatters';
 import { catalogLabel, isCatalogOnly } from '@/lib/market-catalog';
 import type { Combo } from '@/lib/market-reading/store';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 
 /** Icons for the on-brand starter questions (text is localized in-component). */
 const STARTER_META: ReadonlyArray<{ id: string; icon: React.ReactNode }> = [
@@ -55,6 +56,7 @@ export function AppChatSidebar({
   onSetDisplayMode?: (mode: 'column' | 'bubble') => void;
 }) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const { turns, resetTurns } = useChat();
   const empty = turns.length === 0;
 
@@ -72,7 +74,7 @@ export function AppChatSidebar({
   const notCovered = isCatalogOnly(active?.instrument);
 
   const contextLabel = active
-    ? `· ${notCovered ? catalogLabel(active.instrument) : formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+    ? `· ${notCovered ? catalogLabel(active.instrument) : instrumentLabel(active.instrument)} · ${formatTimeframe(active.timeframe)}`
     : `· ${t('chat.pickComboPrompt')}`;
 
   const headerActions = (

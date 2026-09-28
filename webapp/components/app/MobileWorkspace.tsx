@@ -13,6 +13,7 @@ import {
   formatTimeframe,
 } from '@/lib/market-reading/formatters';
 import type { Combo } from '@/lib/market-reading/store';
+import { useInstrumentLabel } from '@/lib/market-reading/useInstrumentLabel';
 
 type MobileTab = 'markets' | 'reading' | 'chat';
 
@@ -35,6 +36,7 @@ export function MobileWorkspace({
   dataSource,
 }: WorkspaceViewProps) {
   const t = useTranslations('app');
+  const instrumentLabel = useInstrumentLabel();
   const [tab, setTab] = React.useState<MobileTab>('markets');
 
   function handleSelect(combo: Combo) {
@@ -43,7 +45,7 @@ export function MobileWorkspace({
   }
 
   const headerLabel = active
-    ? `${formatInstrument(active.instrument)} · ${formatTimeframe(active.timeframe)}`
+    ? `${instrumentLabel(active.instrument)} · ${formatTimeframe(active.timeframe)}`
     : t('mobile.workspaceTitle');
 
   return (
