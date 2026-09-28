@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { FIXTURE_XAU_M15 } from '../../lib/market-reading/fixtures';
 import { dismissCookieBanner } from './utils';
+import frMessages from '../../messages/fr.json';
+import enMessages from '../../messages/en.json';
 
 /**
  * MIA-3 — ONE M.I.A, everywhere, one conversation.
@@ -17,6 +19,13 @@ import { dismissCookieBanner } from './utils';
  *    conversation;
  *  - the conversation is continuous and shared between /app and /zones;
  *  - the bubble↔column choice toggles and the field stays reachable in both.
+ *
+ * DISPOSITION — /app opens in COLUMN, /zones opens in BUBBLE (founder's call:
+ * the docked column narrowed the cards column to 670px, which wrapped the filter
+ * bar and cost /zones half its visible cards — see vz-2-measure.spec.ts). That
+ * changes where M.I.A STARTS, never what it is: MIA-3's contract is one panel
+ * and one conversation everywhere. So the tests below that are about the DOCKED
+ * column open it first, in the one click a user would make.
  */
 
 const STREAM = '**/api/chatbot/stream';
@@ -83,6 +92,32 @@ async function ask(page: Page, text: string) {
   await btn.click();
 }
 
+/** Button labels straight from the message files — never a hand-copied string. */
+const MESSAGES = { fr: frMessages, en: enMessages } as const;
+function chatLabel(locale: 'fr' | 'en', key: 'openPanel' | 'dockToColumn'): string {
+  const label = (MESSAGES[locale] as unknown as { app: { chat: Record<string, string> } }).app.chat[
+    key
+  ];
+  // Fail on the missing key rather than on a mystifying « locator not found »
+  // 30 seconds later, the way ShellRail.test.tsx does.
+  if (!label) throw new Error(`app.chat.${key} absent de messages/${locale}.json`);
+  return label;
+}
+
+/**
+ * Put M.I.A in COLUMN disposition, whatever the space's default is. A no-op
+ * where the column is already docked (/app), one click where it is not
+ * (/zones). The fab is matched by class so the helper stays locale-free; the
+ * dock button is matched by its real translated label.
+ */
+async function dockColumn(page: Page, locale: 'fr' | 'en') {
+  const fab = page.locator('.chat-fab');
+  if (!(await fab.isVisible().catch(() => false))) return;
+  await fab.click();
+  await page.getByRole('button', { name: chatLabel(locale, 'dockToColumn') }).click();
+  await expect(page.locator('.chat-fab')).toBeHidden({ timeout: 10_000 });
+}
+
 async function goto(page: Page, path: string, locale: 'fr' | 'en') {
   test.setTimeout(90_000);
   const prefix = locale === 'en' ? '/en' : '';
@@ -98,6 +133,8 @@ for (const locale of ['fr', 'en'] as const) {
     test(`/zones docks the shared M.I.A column with a zone subject; the question carries the zone orientation`, async ({ page }) => {
       const bodies = await mockAll(page);
       await goto(page, '/zones', locale);
+      // /zones starts in bubble — dock it, which is this test's subject.
+      await dockColumn(page, locale);
 
       // The shared column input is visible (not the old inline stub).
       await expect(chatInput(page)).toBeVisible({ timeout: 60_000 });
@@ -149,6 +186,10 @@ test.describe('MIA-3 · fr · 1280×800 · conversation follows the user', () =>
 
     await page.goto('/zones', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
+    // /zones starts in bubble. Open it the way a user would — asserting on the
+    // off-canvas panel would pass even if the thread were empty on screen,
+    // because Playwright counts an out-of-viewport node as visible.
+    await dockColumn(page, 'fr');
     // The earlier exchange survives the navigation (same shared thread).
     await expect(page.getByText('Question posée sur app')).toBeVisible({ timeout: 60_000 });
   });
@@ -180,6 +221,9 @@ test.describe('MIA-3 · fr · 1440×900 (column)', () => {
   test('/zones and /app both dock the shared column and answer', async ({ page }) => {
     await mockAll(page);
     await goto(page, '/zones', 'fr');
+    // Same disposition default at 1440 as at 1280 — it follows the space, not
+    // the width. Dock it: this test is about the docked column.
+    await dockColumn(page, 'fr');
     await expect(chatInput(page)).toBeVisible({ timeout: 60_000 });
     await ask(page, 'Question à 1440');
     await expect(page.getByText('Réponse M.I.A numéro 1.')).toBeVisible({ timeout: 15_000 });

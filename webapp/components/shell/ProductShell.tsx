@@ -30,34 +30,50 @@ import './pages.css';
  */
 const CHAT_SPACES = new Set(['app', 'zones', 'actualites']);
 
-export function ProductShell({ children }: { children: React.ReactNode }) {
-  // The chat-column visibility is shared across the shell frame (grid + chat
-  // hide button) AND the page content (DesktopReading's reopen affordance), so
-  // the provider wraps both. A component can't consume the context it provides,
-  // hence the inner ShellFrame consumer.
-  return (
-    <ChatColumnProvider>
-      <ShellFrame>{children}</ShellFrame>
-    </ChatColumnProvider>
-  );
-}
-
-function ShellFrame({ children }: { children: React.ReactNode }) {
+/**
+ * Which product route are we on? Strip a leading `/<locale>` (non-default
+ * locales are prefixed) then take the first segment. Product routes are flat
+ * (app / scanner / zones / compte), so the first segment is the space id.
+ */
+function useActiveSpace(): string {
   const pathname = usePathname();
   const locale = useLocale();
-  const lh = useLocalizedHref();
-  const t = useTranslations();
-  const { open: chatOpen } = useChatColumn();
-
-  // Which product route are we on? Strip a leading `/<locale>` (non-default
-  // locales are prefixed) then take the first segment. Product routes are flat
-  // (app / scanner / zones / compte), so the first segment is the space id.
-  const activeSpace = React.useMemo(() => {
+  return React.useMemo(() => {
     let p = pathname;
     if (p === `/${locale}`) p = '/';
     else if (p.startsWith(`/${locale}/`)) p = p.slice(locale.length + 1);
     return p.split('/').filter(Boolean)[0] ?? '';
   }, [pathname, locale]);
+}
+
+export function ProductShell({ children }: { children: React.ReactNode }) {
+  // The chat-column visibility is shared across the shell frame (grid + chat
+  // hide button) AND the page content (DesktopReading's reopen affordance), so
+  // the provider wraps both. A component can't consume the context it provides,
+  // hence the inner ShellFrame consumer.
+  //
+  // The space is resolved HERE, above the provider: the default disposition is
+  // per space (column on /app, bubble on /zones), so the provider has to know
+  // the route before its first paint. ShellFrame takes it as a prop rather than
+  // recomputing it, so the two can never disagree.
+  const activeSpace = useActiveSpace();
+  return (
+    <ChatColumnProvider space={activeSpace}>
+      <ShellFrame activeSpace={activeSpace}>{children}</ShellFrame>
+    </ChatColumnProvider>
+  );
+}
+
+function ShellFrame({
+  activeSpace,
+  children,
+}: {
+  activeSpace: string;
+  children: React.ReactNode;
+}) {
+  const lh = useLocalizedHref();
+  const t = useTranslations();
+  const { open: chatOpen } = useChatColumn();
 
   const isApp = activeSpace === 'app';
   // MIA-3 — M.I.A is one panel docked by the SHELL on every chat space, so /zones

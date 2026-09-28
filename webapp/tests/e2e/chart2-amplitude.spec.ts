@@ -74,11 +74,22 @@ const isMobileProject = (info: TestInfo) => info.project.name.includes('mobile')
  *  each pan crosses the load threshold (fetching older pages) until the true start.
  *  On a narrow plot the spacing floor caps visible bars, so panning — not just
  *  zooming — is what reaches the left edge. */
-async function panToStart(page: Page) {
+async function panToStart(page: Page, until?: () => Promise<boolean>) {
   const region = page.getByRole('application', { name: /Graphique/i });
   await region.focus();
   for (let i = 0; i < 4; i += 1) await page.keyboard.press('-');
-  for (let i = 0; i < 60; i += 1) {
+  // Boucle SUR LA CONDITION, pas sur un compte fixe de pressions.
+  //
+  // 60 suffisaient en 1280×800 mais pas en 390×844 : le plancher d'espacement
+  // des bougies y vaut 2px au lieu de 0,5 (`minBarSpacingFor`), la fenêtre
+  // visible est donc deux fois plus étroite et chaque flèche n'avance que ~30
+  // index au lieu de ~70. Comme un chargement arrière prépend 500 bougies d'un
+  // coup, le budget partait dans le rebond et la boucle s'arrêtait avant le
+  // bord gauche. Plus aucun événement de plage ne survenant ensuite, l'état
+  // restait figé — aucun délai d'attente ne pouvait le rattraper.
+  const MAX = 220;
+  for (let i = 0; i < MAX; i += 1) {
+    if (until && (await until())) return;
     await page.keyboard.press('ArrowLeft');
     await page.waitForTimeout(60);
   }
@@ -153,20 +164,22 @@ for (const vp of VIEWPORTS) {
 
     test('dezoom loads older history, keeps candles, then says « début des données » + « hors fenêtre d\'analyse »', async ({ page }) => {
       await gotoApp(page, vp.w, vp.h);
-      await panToStart(page);
+      const debut = page.getByText(/Début des données disponibles/i);
+      await panToStart(page, () => debut.isVisible());
       // A backward page was fetched on demand (never the whole depth at once).
       expect(beforeRequests).toBeGreaterThan(0);
       // The candles never vanished during the load — the canvas stayed present.
       await expect(page.locator('canvas').first()).toBeVisible();
       // Honest limit notice + out-of-analysis-window notice.
-      await expect(page.getByText(/Début des données disponibles/i)).toBeVisible({ timeout: 10_000 });
+      await expect(debut).toBeVisible({ timeout: 10_000 });
       await expect(page.getByText(/Hors de la fenêtre d'analyse/i)).toBeVisible();
     });
 
     test('a failed history page surfaces a retry affordance, never a silent void', async ({ page }) => {
       await gotoApp(page, vp.w, vp.h);
       failOlder = true;
-      await panToStart(page);
+      const region0 = page.getByRole('application', { name: /Graphique/i });
+      await panToStart(page, () => region0.getByText(/Historique indisponible/i).isVisible());
       // Scope to the chart region — other panels on the desktop page also carry a
       // "Réessayer" (calendar/reading), which would otherwise clash in strict mode.
       const region = page.getByRole('application', { name: /Graphique/i });

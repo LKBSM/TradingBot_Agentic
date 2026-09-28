@@ -181,7 +181,17 @@ test('VZ-5 — pinning from the /zones dropdown lists the market ONCE (commit A)
   const eur = dropdown.getByText(frMessages.calendar.market.EURUSD, { exact: true });
   await expect(eur).toHaveCount(1);
 
-  await dropdown.getByRole('button', { name: /Épingler Euro \/ Dollar/i }).click();
+  // Nom EXACT, lu à la même source que la ligne ci-dessus. Ce motif était resté
+  // sur « Épingler Euro / Dollar » : #240 a basculé les paires de change vers leur
+  // code neutre, donc ce bouton n'existe plus sous ce nom. Et il doit être exact,
+  // pas un préfixe — le registre est passé de 2 à 80 marchés depuis #229, où
+  // plusieurs libellés partagent un même début (violation du mode strict).
+  await dropdown
+    .getByRole('button', {
+      name: `Épingler ${frMessages.calendar.market.EURUSD}`,
+      exact: true,
+    })
+    .click();
 
   // It moved INTO « Épinglés » — it was not added on top of the full list.
   await expect(dropdown.getByText('Épinglés', { exact: true })).toBeVisible();

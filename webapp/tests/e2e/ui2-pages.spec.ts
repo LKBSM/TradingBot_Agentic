@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import frMessages from '@/messages/fr.json';
 
 /**
  * UI-2 desktop pages — per-page smoke (rendered without error + key elements
@@ -43,7 +44,10 @@ test.describe('UI-2 — Connexion (static card + candle canvas)', () => {
 });
 
 test.describe('UI-2 — App shell + docked chat', () => {
-  test('renders the rail and the chat pedagogical disclaimer', async ({ page }) => {
+  test('renders the rail and the chat honesty line', async ({ page }) => {
+    // Le rail est masqué sous 768px et /app n'a pas de `MobileSpaceNav` : ce
+    // cas éprouve le châssis DE BUREAU et doit donc fixer sa fenêtre.
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/app');
 
     // Shell rail (data-independent — part of the product shell).
@@ -51,8 +55,12 @@ test.describe('UI-2 — App shell + docked chat', () => {
       page.getByRole('complementary', { name: /combinaisons disponibles/i }),
     ).toBeVisible();
 
-    // Docked M.I.A chat renders regardless of the reading feed; its honesty
-    // disclaimer must be present.
-    await expect(page.getByText(/pédagogique/i).first()).toBeVisible();
+    // La note d'honnêteté DU CHAT (le titre du test disait « pedagogical » : UI-3
+    // (290b8cf) a retiré cette ligne-là comme doublon de la ligne de conformité
+    // de la coquille, d'où le renommage). On lit le texte à sa source i18n : le
+    // recopier en dur est précisément ce qui a laissé ce test en retard sur UI-3.
+    await expect(
+      page.getByText(frMessages.app.chat.complianceLine, { exact: false }).first(),
+    ).toBeVisible();
   });
 });

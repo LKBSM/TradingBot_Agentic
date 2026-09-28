@@ -81,6 +81,16 @@ async function setup(
     subscription?: Sub | null;
     /** A subscription that changes over successive polls (for the webhook wait). */
     subscriptionSeq?: (Sub | null)[];
+    /**
+     * Modèle d'ÉTAT plutôt que compteur d'appels : l'abonnement n'existe pas
+     * tant que `POST /billing/sync` n'a pas été appelé, puis il est actif pour
+     * toujours. C'est la réalité (c'est la réconciliation/le webhook qui donne
+     * l'accès, jamais le retour de Stripe), et surtout ça ne suppose RIEN du
+     * nombre de rendus : une séquence figée se décale dès qu'une page est
+     * chargée en plus, ou que React monte deux fois sous `next dev`. Même
+     * leçon que perf2-chart-recovery (« un drapeau, pas un compteur »).
+     */
+    activateOnSync?: Sub;
     checkoutUrl?: string;
     verifyOk?: boolean;
   },
@@ -94,7 +104,12 @@ async function setup(
   await page.route('**/api/billing/pricing', (r: Route) => r.fulfill(json(PRICING)));
 
   let seqIdx = 0;
+  let synced = false;
   const subHandler = (r: Route) => {
+    if (opts.activateOnSync) {
+      if (r.request().url().includes('/billing/sync')) synced = true;
+      return r.fulfill(synced ? json(opts.activateOnSync) : json({ detail: 'no sub' }, 401));
+    }
     if (opts.subscriptionSeq) {
       const s = opts.subscriptionSeq[Math.min(seqIdx, opts.subscriptionSeq.length - 1)];
       seqIdx += 1;
@@ -110,6 +125,23 @@ async function setup(
 
   await page.route('**/api/billing/checkout', (r: Route) =>
     r.fulfill(json({ url: opts.checkoutUrl ?? '/abonnement?status=success' })),
+  );
+  // LEG-1 (#224) — le panneau enregistre la version acceptée AVANT de partir vers
+  // Stripe, et REFUSE de lancer le checkout si cet appel échoue (« we would
+  // otherwise take money with no trace of what the customer accepted »). Cette
+  // route n'existait pas quand PAY-2 a écrit ce fichier : non simulée, elle
+  // partait vers un backend absent, échouait, et le parcours s'arrêtait sur
+  // /abonnement — sans jamais atteindre le tunnel que le scénario S1b teste.
+  await page.route('**/api/auth/consents', (r: Route) =>
+    r.fulfill(
+      json({
+        ...ACCOUNT,
+        consents: [
+          { doc: 'terms', version: '2026-09', accepted_at: '2026-09-28T00:00:00Z' },
+          { doc: 'privacy', version: '2026-09', accepted_at: '2026-09-28T00:00:00Z' },
+        ],
+      }),
+    ),
   );
   await page.route('**/api/auth/verify-email/confirm', (r: Route) =>
     r.fulfill(opts.verifyOk === false ? json({ detail: 'bad' }, 400) : json({ ok: true })),
@@ -270,13 +302,33 @@ test('S1b — choosing a plan starts Checkout and returns into the confirm/app f
   await setup(page, {
     access: { authenticated: true, has_access: false, subscription_required: true, ...GATE_ON },
     // pre-checkout load (null) → success-page load (null → confirming) → poll (active → /app).
-    subscriptionSeq: [null, null, sub({ status: 'active', price_id: 'price_m', current_period_end: Date.now() / 1000 + 30 * 24 * 3600, has_access: true })],
+    // S1b charge /abonnement AVANT le checkout, puis y revient : deux chargements
+    // de plus que S5, qui va droit à ?status=success. Une séquence figée arrivait
+    // donc déjà à « actif » au retour, l'écran de confirmation ne s'affichait
+    // jamais, et la redirection vers /app — qui n'est armée QUE si l'accès n'est
+    // pas déjà accordé — ne partait pas. On modélise l'état à la place.
+    activateOnSync: sub({ status: 'active', price_id: 'price_m', current_period_end: Date.now() / 1000 + 30 * 24 * 3600, has_access: true }),
     checkoutUrl: '/abonnement?status=success',
   });
   await page.goto('/abonnement');
   await dismissCookieBanner(page);
   const subscribe = page.getByRole('button', { name: /abonner|subscribe/i }).first();
   await expect(subscribe).toBeVisible({ timeout: 15_000 });
+
+  // LEG-1 (#224) — « consentement avant paiement » — a fermé les CTA de forfait
+  // derrière une case à cocher, APRÈS que PAY-2 ait écrit ce scénario. Le bouton
+  // est donc visible mais INACTIF tant que rien n'est coché : le test cliquait
+  // dans le vide jusqu'à l'expiration du délai. Le produit a raison ; c'est le
+  // test qui ne connaissait pas encore l'étape.
+  //
+  // Le verrou lui-même est prouvé ailleurs (leg1-legal.spec.ts + le test unitaire
+  // leg1-consent-gate) — on ne le redouble pas ici. On le CONSTATE en une ligne,
+  // pour que la case cochée ci-dessous se lise comme une étape du parcours et non
+  // comme un contournement, puis on va au sujet de CE test : le tunnel Checkout.
+  await expect(subscribe).toBeDisabled();
+  await page.getByTestId('consent-checkbox').check();
+  await expect(subscribe).toBeEnabled();
+
   await subscribe.click();
   // Checkout URL (mocked same-origin) returns to the success flow, which then
   // enters the app once the subscription is active.

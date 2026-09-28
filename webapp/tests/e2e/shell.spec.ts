@@ -8,6 +8,13 @@ import { expect, test } from '@playwright/test';
  */
 test.describe('Product shell — /app', () => {
   test('renders the rail and navigates via the ESPACE links', async ({ page }) => {
+    // Le rail est masqué sous 768px (`shell.css` : `display:none`) : il sort
+    // alors de l'arbre d'accessibilité, et sur /app aucune `MobileSpaceNav` ne
+    // le remplace — c'est la conception, pas une régression. Ce cas éprouve le
+    // châssis DE BUREAU, comme l'annonce l'en-tête du fichier et comme le fait
+    // déjà son voisin ci-dessous ; celui-ci avait seulement oublié de fixer la
+    // fenêtre, et échouait donc dans le projet mobile.
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/app');
 
     // The rail is present (its aria-label comes from app.sidebar.navAria).

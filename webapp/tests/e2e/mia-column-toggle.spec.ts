@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { FIXTURE_XAU_M15 } from '../../lib/market-reading/fixtures';
 import { dismissCookieBanner } from './utils';
+import frMessages from '@/messages/fr.json';
 
 /**
  * M.I.A disposition toggle (/app) — the user switches M.I.A between two layouts
@@ -87,7 +88,22 @@ test.describe('M.I.A disposition toggle — desktop 1280×800', () => {
     // note render identically, and the header now offers "dock to column".
     await fab.click();
     await expect(page.getByText('M.I.A Agent', { exact: true })).toBeVisible();
-    await expect(page.getByText(/pédagogique/i).first()).toBeVisible();
+    // UI-3 (290b8cf) a retiré « Analyse pédagogique » du chat : elle doublonnait
+    // la ligne de conformité permanente de la coquille (CLN-1 §5, un seul
+    // avertissement par page). La clé `app.chat.pedagogicalNote` survit sans
+    // être rendue — dette à nettoyer.
+    //
+    // On vise `app.chat.complianceLine`, la note DU CHAT, et pas
+    // `legal.disclaimer.chart`, qui est la ligne de la COQUILLE : celle-là est
+    // sur toutes les pages, donc elle passerait même si le tiroir était vide —
+    // or ce que ce test prouve, c'est que la bulle rouvre le MÊME chat. Un
+    // `/lecture algorithmique/i` ne suffit pas non plus : les deux phrases
+    // contiennent ces mots, `.first()` attrapait l'une ou l'autre au hasard du
+    // DOM. Et on lit le texte à sa source i18n plutôt que de le recopier —
+    // c'est la recopie en dur qui a mis ce test en retard sur UI-3.
+    await expect(
+      page.getByText(frMessages.app.chat.complianceLine, { exact: false }).first(),
+    ).toBeVisible();
     const dockBtn = page.getByRole('button', { name: DOCK });
     await expect(dockBtn).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/c-bubble-open.png` });

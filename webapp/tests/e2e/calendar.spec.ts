@@ -600,7 +600,12 @@ for (const vp of [
     const ok = await gotoPublication(page, 'eurostat:ea_hicp_flash:2026-06-30', hicpEventFixture(), 'ea_hicp_flash', emptyMeasures());
     if (!ok) { test.skip(true, 'gated'); return; }
     // The published curve values are drawn AS PUBLISHED (never fabricated).
-    expect(await page.locator('.pt-val').count()).toBeGreaterThan(0);
+    //
+    // Assertion web-first : `count()` lit le DOM UNE fois et ne réessaie pas, or
+    // la courbe est peinte après le retour de `gotoPublication`. Le test lisait
+    // donc parfois 0 avant le premier rendu — vert en local, rouge en CI selon
+    // la charge. `toBeVisible()` réessaie ; l'affirmation ne change pas.
+    await expect(page.locator('.pt-val').first()).toBeVisible();
   });
 
   test(`${vp.name}: NW-4 publication with an UNCONFIRMED time → flagged`, async ({ page }) => {

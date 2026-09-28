@@ -171,6 +171,13 @@ test.describe('Voice dictation — desktop 1280×800', () => {
   async function openZones(page: Page) {
     await page.goto('/zones?instrument=XAUUSD&timeframe=M15', { waitUntil: 'domcontentloaded' });
     await dismissCookieBanner(page);
+    // /zones opens with M.I.A reduced to the BUBBLE (the docked column cost the
+    // page half its visible cards — see vz-2-measure.spec.ts). The composer is
+    // then off-canvas: Playwright still reports it « visible », but a click on
+    // the mic lands outside the viewport. Open the panel the way a user does.
+    // Matched by class, so this stays locale-free.
+    const fab = page.locator('.chat-fab');
+    if (await fab.isVisible().catch(() => false)) await fab.click();
     await page
       .locator('form:has([data-testid="chat-input"])')
       .first()
