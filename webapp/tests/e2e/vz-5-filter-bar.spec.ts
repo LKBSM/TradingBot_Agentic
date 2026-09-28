@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import frMessages from '@/messages/fr.json';
 import { FIXTURE_XAU_M15 } from '../../lib/market-reading/fixtures';
 import { dismissCookieBanner } from './utils';
 
@@ -175,7 +176,9 @@ test('VZ-5 — pinning from the /zones dropdown lists the market ONCE (commit A)
   await page.locator('[data-testid="mkt-selector-bar"]').getByRole('button', { name: 'Marchés' }).click();
 
   const dropdown = page.locator('[data-testid="mkt-selector-bar"]');
-  const eur = dropdown.getByText('Euro / Dollar (EUR/USD)', { exact: true });
+  // Nom lu à sa source i18n : #240 a basculé les paires de change vers leur
+  // code neutre (« EUR/USD »), ce libellé était codé en dur et périmé.
+  const eur = dropdown.getByText(frMessages.calendar.market.EURUSD, { exact: true });
   await expect(eur).toHaveCount(1);
 
   await dropdown.getByRole('button', { name: /Épingler Euro \/ Dollar/i }).click();
