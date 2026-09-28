@@ -73,6 +73,32 @@ services:
         value: "0"
       - key: SUBSCRIPTION_GATE_ENFORCED
         value: "1"
+      # PAY-4 (2026-09-28) — la barrière de territoire AVANT paiement est COUPÉE.
+      #
+      # Ce que faisait la valeur par défaut ("1") : /api/billing/checkout refusait
+      # en 451 tout pays lu hors CA/US. Le défaut du code reste "1" — c'est ici,
+      # et sciemment, qu'on l'éteint.
+      #
+      # POURQUOI. Elle lit une IP, pas une résidence, et se trompe des deux côtés :
+      #   - un client canadien qui s'abonne depuis ses vacances en France est
+      #     REFUSÉ, au moment précis où il sortait sa carte ;
+      #   - un résident hors territoire dont le trafic sort par une IP américaine
+      #     passe quand même.
+      # Elle écarte donc de vrais clients sans empêcher les ventes hors territoire.
+      # Ce n'était pas théorique : Render est derrière Cloudflare, `CF-IPCountry`
+      # arrive jusqu'à l'origine, la barrière mordait pour de bon.
+      #
+      # CE QUI RESTE. L'adresse de facturation que Stripe collecte
+      # (billing_address_collection="required") est vérifiée après paiement et
+      # journalisée fort si elle sort de CA/US — c'est la seule donnée qui reflète
+      # où quelqu'un habite. Elle ne révoque rien : couper l'accès de quelqu'un qui
+      # vient de payer serait la pire panne ; rembourser est une décision humaine.
+      # Chercher « OUTSIDE the sold territory » dans les journaux.
+      #
+      # Remettre "1" si le profil des clients change et qu'un refus a priori
+      # devient préférable à un remboursement a posteriori.
+      - key: BILLING_TERRITORY_ENFORCED
+        value: "0"
       # Outward-facing base URLs — REQUIRED in production (the app refuses to boot
       # if missing or localhost). Set the VALUES in the dashboard after the first
       # deploy: APP_PUBLIC_URL = the frontend origin (https://mia.markets),
