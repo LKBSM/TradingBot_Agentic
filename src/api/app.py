@@ -709,8 +709,33 @@ def create_app(
     app.include_router(accounts.router)
     app.include_router(google_auth.router)
     app.include_router(access.router)
-    app.include_router(qa.router)
-    app.include_router(enrich.router)
+    # ── Surfaces RAG legacy — retirées de l'exposition par défaut ────────────
+    # `qa` et `enrich` s'appuient sur src/intelligence/rag/prompts.py, qui
+    # ORDONNE au modèle de produire « setup haussier » / « bullish setup » —
+    # exactement le vocabulaire que la ligne inviolable interdit (le produit
+    # décrit une structure, il ne qualifie pas une direction).
+    #
+    # Elles étaient montées en production alors que la webapp ne les appelle
+    # JAMAIS (zéro référence à /api/qa ou /api/enrich dans webapp/). Une surface
+    # HTTP joignable, inutilisée et non conforme : on ne la laisse pas ouverte
+    # en attendant qu'un curieux la trouve.
+    #
+    # `narratives` reste montée : elle relit des narrations STOCKÉES, n'importe
+    # aucun prompt RAG, et porte /api/v1/scanner/status — une route légitime.
+    # (Premier jet de ce correctif : je l'avais retirée aussi. Un test l'a
+    # rattrapé. Couper large aurait cassé le statut du scanner pour rien.)
+    #
+    # LEGACY_RAG_ROUTES=1 les remonte pour un usage de développement. Lecture en
+    # clair plutôt que `env_flag` de bootstrap : app.py est importé par
+    # bootstrap, l'inverse créerait un cycle.
+    if os.environ.get("LEGACY_RAG_ROUTES", "0").strip().lower() in ("1", "true", "yes", "on"):
+        logger.warning(
+            "LEGACY_RAG_ROUTES=1 — /api/v1/qa et /api/v1/enrich exposées. Leurs "
+            "prompts imposent « setup haussier / bullish setup » : ils ne "
+            "respectent PAS la ligne descriptive. À réserver au développement."
+        )
+        app.include_router(qa.router)
+        app.include_router(enrich.router)
     app.include_router(audit.router)
     # webapp BEFORE insight_history: both share the /api/v1/insights prefix and
     # insight_history ends with the dynamic GET /{insight_id} — registered
