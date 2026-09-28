@@ -92,6 +92,16 @@ test_*.py
 
 # --- Docs (kept out of runtime image) ---
 docs/
+# ...EXCEPT the legal documents, which are not documentation: they are DATA the
+# running service serves. `src/api/routes/legal.py` reads docs/legal/*.md to
+# answer /api/v1/terms, /api/v1/legal/conditions and /api/v1/privacy, and
+# `src/intelligence/chatbot/demo_agent.py` quotes the terms into M.I.A's product
+# knowledge. Excluded, those routes answer 503 and the customer cannot read the
+# contract they are asked to accept before paying.
+# A `!` line re-includes a subpath of an excluded directory: unlike .gitignore,
+# .dockerignore matches each full path against every pattern in order and the
+# LAST match wins, so this exception is honoured even though `docs/` precedes it.
+!docs/legal/
 *.md
 !README.md
 
