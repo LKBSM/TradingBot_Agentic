@@ -14,9 +14,12 @@ import {
 import {
   BillingError,
   fetchRefundEligibility,
+  fetchSubscription,
   openPortal,
   type RefundEligibility,
+  type Subscription,
 } from '@/lib/billing/api-client';
+import { deriveState, statusKey } from '@/lib/billing/state';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
@@ -56,7 +59,7 @@ export function AccountPanel() {
   const t = useTranslations('app.account');
   const tAuth = useTranslations('auth');
   const tBilling = useTranslations('billing');
-  const { account, loading, probeFailed, logout, refresh } = useAuth();
+  const { account, loading, probeFailed, isOwner, logout, refresh } = useAuth();
   const router = useRouter();
   const lh = useLocalizedHref();
   const locale = useLocale();
@@ -96,6 +99,32 @@ export function AccountPanel() {
       })
       .catch(() => {
         /* no guarantee row, nothing else changes */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId]);
+
+  // L'ABONNEMENT RÉEL. Cette ligne affichait « Aucune carte requise pendant
+  // l'accès anticipé » — faux depuis PAY-2, où payer est devenu la condition
+  // d'entrée. Sous un intitulé « Plan actuel », une phrase figée est une
+  // affirmation sur ce que le client paie : soit on dit l'état réel, soit on
+  // n'affirme rien. On lit donc l'abonnement, avec les mêmes précautions que la
+  // sonde de garantie ci-dessus — une page qui porte la session, le courriel et
+  // la déconnexion ne doit jamais dépendre d'un appel de facturation.
+  const [subscription, setSubscription] = React.useState<Subscription | null>(null);
+  const [subscriptionKnown, setSubscriptionKnown] = React.useState(false);
+  React.useEffect(() => {
+    if (accountId === null) return;
+    let cancelled = false;
+    fetchSubscription()
+      .then((sub) => {
+        if (cancelled) return;
+        setSubscription(sub);
+        setSubscriptionKnown(true);
+      })
+      .catch(() => {
+        /* état inconnu : la ligne le DIT, elle n'invente pas un plan */
       });
     return () => {
       cancelled = true;
@@ -398,9 +427,19 @@ export function AccountPanel() {
         <div className="setrow">
           <div className="sk">
             <b>{t('planRow')}</b>
-            <span>{t('planValue')}</span>
+            <span data-testid="plan-value">
+              {isOwner
+                ? t('planOwner')
+                : subscriptionKnown
+                  ? t('planSubtitle')
+                  : t('planUnknown')}
+            </span>
           </div>
-          <span className="planbadge">{t('earlyAccessBadge')}</span>
+          {!isOwner && subscriptionKnown && (
+            <span className="planbadge" data-testid="plan-badge">
+              {tBilling(statusKey(deriveState(subscription)))}
+            </span>
+          )}
         </div>
 
         {/* LEG-2 — ONE click to the Stripe portal, not two. Clause 8.1 of the

@@ -36,7 +36,12 @@ const NEW_UI2_KEYS = [
   'app.account.edit', 'app.account.editCancel', 'app.account.passwordRow', 'app.account.passwordMasked',
   'app.account.comingSoon', 'app.account.sessionRow', 'app.account.sessionValue',
   'app.account.sectionAppearance', 'app.account.appearanceBadge', 'app.account.sectionSubscription',
-  'app.account.planRow', 'app.account.planValue', 'app.account.earlyAccessBadge',
+  // `planValue` a été RETIRÉ : il affirmait « Aucune carte requise pendant
+  // l'accès anticipé », faux depuis PAY-2 où payer est la condition d'entrée.
+  // La ligne montre désormais l'état réel de l'abonnement ; les trois clés
+  // qui la composent le remplacent ici.
+  'app.account.planRow', 'app.account.planSubtitle', 'app.account.planUnknown',
+  'app.account.planOwner', 'app.account.earlyAccessBadge',
   'app.account.sectionLegal', 'app.account.docsRow', 'app.account.docsValue', 'app.account.consult',
   'app.account.exportRow', 'app.account.exportValue', 'app.account.export',
   'app.account.deleteRow', 'app.account.deleteValue', 'app.account.delete',
