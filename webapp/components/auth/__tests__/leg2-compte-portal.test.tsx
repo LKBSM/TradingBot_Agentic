@@ -29,6 +29,7 @@ const h = vi.hoisted(() => ({
   refresh: vi.fn(),
   openPortal: vi.fn(),
   refundEligibility: vi.fn(),
+  subscription: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -41,6 +42,7 @@ vi.mock('@/lib/auth/store', () => ({
     account: { id: 1, username: 'me', email: 'me@x.io', role: 'user', consents: [] },
     loading: false,
     probeFailed: false,
+    isOwner: false,
     logout: vi.fn(),
     refresh: vi.fn(),
   }),
@@ -61,6 +63,7 @@ vi.mock('@/lib/billing/api-client', () => ({
   },
   openPortal: () => h.openPortal(),
   fetchRefundEligibility: () => h.refundEligibility(),
+  fetchSubscription: () => h.subscription(),
 }));
 
 import { AccountPanel } from '../AccountPanel';
@@ -92,6 +95,15 @@ beforeEach(() => {
   h.push.mockReset();
   h.openPortal.mockReset();
   h.refundEligibility.mockReset().mockResolvedValue(NO_WINDOW);
+  // Abonnement actif par défaut : la ligne « Plan actuel » de /compte le lit.
+  h.subscription.mockReset().mockResolvedValue({
+    status: 'active',
+    price_id: 'price_m',
+    current_period_end: null,
+    cancel_at_period_end: false,
+    trial_end: null,
+    has_access: true,
+  });
 });
 
 afterEach(() => {

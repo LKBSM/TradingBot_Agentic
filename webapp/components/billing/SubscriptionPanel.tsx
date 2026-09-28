@@ -19,6 +19,7 @@ import {
   type RefundEligibility,
   type Subscription,
 } from '@/lib/billing/api-client';
+import { deriveState, hasAccessState, statusKey, type SubState } from '@/lib/billing/state';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { PRICING } from '@/lib/pricing.generated';
@@ -26,47 +27,17 @@ import { annualSavingPerYear, formatAmount } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { CheckField, FormError, FormSuccess } from '@/components/auth/fields';
 
-const ACTIVE_STATUSES = new Set(['active', 'trialing']);
+
 
 /** Ties the disabled plan CTAs to the sentence saying WHY they are disabled. */
 const CONSENT_REASON_ID = 'consent-required-reason';
 
 /**
- * The app-facing subscription states (PAY-1), derived from the Stripe status +
- * ``cancel_at_period_end``.
+ * La dérivation d'état vit dans `@/lib/billing/state` : `/compte` l'utilise
+ * aussi, et deux copies finiraient par diverger sur ce que le client paie.
  */
-type SubState = 'none' | 'active' | 'canceling' | 'grace' | 'suspended' | 'expired';
-
-function deriveState(sub: Subscription | null): SubState {
-  const status = sub?.status ?? null;
-  if (!status) return 'none';
-  if (ACTIVE_STATUSES.has(status)) {
-    return sub?.cancel_at_period_end ? 'canceling' : 'active';
-  }
-  if (status === 'past_due') return 'grace';
-  if (status === 'suspended') return 'suspended';
-  return 'expired';
-}
-
-/** Whether a derived state currently grants product access (grace still does). */
-function hasAccessState(s: SubState): boolean {
-  return s === 'active' || s === 'canceling' || s === 'grace';
-}
-
 function stateHeading(state: SubState, t: (key: string) => string): string {
-  switch (state) {
-    case 'active':
-    case 'canceling':
-      return t('status.active');
-    case 'grace':
-      return t('status.pastDue');
-    case 'suspended':
-      return t('status.suspended');
-    case 'expired':
-      return t('status.expired');
-    default:
-      return t('status.none');
-  }
+  return t(statusKey(state));
 }
 
 function formatDate(epochSeconds: number | null, locale: string): string | null {

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@/components/test-utils';
 import { describe, expect, it, vi } from 'vitest';
+import fr from '@/messages/fr.json';
 import { ShellRail } from '../ShellRail';
 
 // The rail reads/writes the active combo through the router + URL (single source
@@ -18,9 +19,19 @@ describe('ShellRail', () => {
     expect(
       screen.getByPlaceholderText(/rechercher un marché/i),
     ).toBeInTheDocument();
-    // MARCHÉS — both V1 instruments.
-    expect(screen.getByText('Or (XAU/USD)')).toBeInTheDocument();
-    expect(screen.getByText('Euro / Dollar (EUR/USD)')).toBeInTheDocument();
+    // MARCHÉS — les deux instruments V1.
+    //
+    // Les libellés viennent de `calendar.market.*` depuis #240 (« les noms de
+    // marchés suivent la langue de la page ») : une paire de change s'affiche
+    // sous son code neutre (« EUR/USD »), un métal sous son nom traduit (« Or »
+    // / « Gold »). Ce test codait « Euro / Dollar (EUR/USD) » en dur et est
+    // devenu faux à cette fusion.
+    //
+    // Il lit donc maintenant la MÊME source que le composant. Ce qui est vérifié
+    // ici, c'est que les deux marchés sont listés — pas l'orthographe du jour de
+    // leur nom, qui appartient à la traduction.
+    expect(screen.getByText(fr.calendar.market.XAUUSD)).toBeInTheDocument();
+    expect(screen.getByText(fr.calendar.market.EURUSD)).toBeInTheDocument();
     // UNITÉ DE TEMPS — compact codes.
     expect(screen.getByText('M15')).toBeInTheDocument();
     expect(screen.getByText('H1')).toBeInTheDocument();
