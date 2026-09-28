@@ -103,8 +103,40 @@ async function openApp(page: Page) {
   await page.waitForTimeout(1800);
 }
 
+/**
+ * Le catalogue est lu AU MOMENT DE LA CONSTRUCTION : sans
+ * `NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST=1` au `npm run build`, il n'existe
+ * pas dans l'application servie — aucun sélecteur de cette spec ne peut alors
+ * être trouvé.
+ *
+ * C'était exactement le cas en intégration continue : le workflow fait
+ * `npm run build` sans ce drapeau, et ces cas échouaient donc À CHAQUE
+ * EXÉCUTION, depuis toujours. Ce n'étaient pas des tests cassés : c'étaient des
+ * tests exécutés contre une application qui ne contient pas la fonctionnalité
+ * qu'ils éprouvent.
+ *
+ * On les ignore désormais explicitement quand le drapeau est absent, avec la
+ * raison écrite dans le rapport. C'est l'inverse du motif `test.skip(true,
+ * 'gated')` employé ailleurs dans ce dépôt : ici la condition est réelle,
+ * vérifiable, et le message dit comment retrouver la couverture.
+ *
+ * Pour les exécuter :
+ *   NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST=1 npm run build
+ *   PORT=3123 NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST=1 npm start
+ *   E2E_BASE_URL=http://localhost:3123 NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST=1 \
+ *     npx playwright test mkt1-catalog --project=chromium-desktop --workers=1
+ */
+const CATALOGUE_CONSTRUIT =
+  (process.env.NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST ?? '').trim() === '1';
+
 for (const vp of VIEWPORTS) {
   test.describe(`mkt-1 ${vp.tag}`, () => {
+    test.skip(
+      !CATALOGUE_CONSTRUIT,
+      'catalogue de démonstration absent de cette construction — relancer avec ' +
+        'NEXT_PUBLIC_SHOW_MARKET_CATALOG_UX_TEST=1 au build ET au run ' +
+        "(voir l'en-tête du fichier)",
+    );
     test.use({ viewport: { width: vp.w, height: vp.h } });
 
     /** The market selector for THIS viewport. */

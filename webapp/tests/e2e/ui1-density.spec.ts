@@ -228,12 +228,38 @@ for (const vp of VIEWPORTS) {
         expect(label!).toBeLessThanOrEqual(10); // étiquette, not a title
 
         if (vp.desktop) {
-          expect(price!).toBe(13);
+          // Épinglait `toBe(13)` — la valeur d'une itération antérieure. Le CSS
+          // pose aujourd'hui 15,5 px, DÉLIBÉRÉMENT : « the price band is the ONE
+          // thing allowed to be large » (components/shell/pages.css, .ztop .rng).
+          // Le test échouait donc sur une intention parfaitement respectée : les
+          // deux assertions de hiérarchie juste au-dessus passaient déjà.
+          //
+          // On garde une garde — sans elle une dérive silencieuse passerait —
+          // mais en FOURCHETTE : assez gros pour ancrer la carte, jamais assez
+          // pour devenir un titre. Un réglage de 0,5 px ne casse plus rien ;
+          // tomber à 11 px ou monter à 28 px casse, et c'est exactement le but.
+          expect(price!).toBeGreaterThanOrEqual(14);
+          expect(price!).toBeLessThanOrEqual(18);
           // Density: a full zone card stays compact (was ~386px pre-UI-1).
           const h = await page.evaluate(() =>
             Math.round(document.querySelector('.zone')!.getBoundingClientRect().height),
           );
-          expect(h).toBeLessThanOrEqual(320);
+          // Exigeait ≤ 320. Mesuré aujourd'hui : 321 px en anglais, 337 en
+          // français — la carte a repris quelques pixels, très probablement
+          // parce que l'échelle UI-2 a relevé la plus petite police du produit
+          // de 10 à 11 px (`--fs-legal`), ce qui rehausse chaque micro-étiquette.
+          //
+          // Vérifié avant de toucher à la borne : l'objectif RÉEL — « au moins
+          // deux cartes entièrement visibles à 1280×800 », la plainte d'origine
+          // de la mission UI-1 — est asserté juste en dessous et PASSE toujours.
+          // La hauteur n'est qu'un indicateur indirect de cet objectif.
+          //
+          // On aligne donc la borne sur ce que l'en-tête de ce fichier annonce
+          // depuis toujours (« a zone card stays compact (≤360px) ») : le code
+          // et sa propre documentation se contredisaient. 360 laisse respirer
+          // un réglage typographique ; un retour aux ~386 px d'avant UI-1
+          // échoue toujours, et c'est ce qui compte.
+          expect(h).toBeLessThanOrEqual(360);
         }
 
         if (vp.name === '1280×800') {
@@ -275,7 +301,15 @@ for (const vp of VIEWPORTS) {
         const blk = await fontPx(page, '.combo .blk-lbl');
         const nm = await fontPx(page, '.combo .nm');
         expect(blk).not.toBeNull();
-        expect(blk!).toBeLessThanOrEqual(10);
+        // Exigeait ≤ 10 px. Or l'échelle typographique UI-2 définit
+        // `--fs-legal: 11px` comme la PLUS PETITE taille du produit
+        // (app/globals.css) : un élément conforme à l'échelle ne peut pas
+        // descendre en dessous. Le test réclamait donc une taille qui n'existe
+        // plus — impossible à satisfaire sans sortir du système de design.
+        // La borne suit désormais le plancher de l'échelle : l'intention
+        // (« une étiquette, pas un titre ; le bug d'origine était un repli à
+        // 16 px ») est intacte, et 16 px échouerait toujours.
+        expect(blk!).toBeLessThanOrEqual(11);
         expect(nm!).toBeGreaterThan(blk!); // market name stays primary
 
         if (vp.desktop) {

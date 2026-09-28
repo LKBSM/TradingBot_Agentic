@@ -282,8 +282,11 @@ test('1280×800: month grid — 7 weekday headers, populated day → side panel'
   await expect(page.locator('.calm-panel-list')).toBeVisible();
   expect(await page.locator('.calm-panel-row').count()).toBeGreaterThan(0);
 
-  // The "this month" descriptive box is present.
-  await expect(page.locator('.calm-thismonth')).toBeVisible();
+  // CLN-1 §4 — la boîte « ce mois-ci » a été retirée (la grille montre déjà
+  // les jours avec et sans publication). Ce qui subsiste est la ligne de
+  // portée, et c'est elle qui doit être là.
+  await expect(page.locator('.calm-thismonth')).toHaveCount(0);
+  await expect(page.locator('.calm-scope')).toBeVisible();
 
   // No raw i18n key leaks in the calendar region.
   const text = (await page.locator('.calm-page').textContent()) ?? '';
@@ -432,6 +435,12 @@ test('1280×800: HICP publication — curve present, upcoming blank, no question
 // 5 — Dashboard preview module on /app.
 // ---------------------------------------------------------------------------
 test('1280×800: /app preview lists upcoming releases with a see-all link', async ({ page }) => {
+  // Deux attentes de 20 s sont encodées ci-dessous, dans un test plafonné à
+  // 30 s : le timeout tombait AVANT le `catch`, donc le `test.skip` explicatif
+  // prévu par ce test était littéralement inatteignable et l'échec se
+  // présentait comme un timeout nu. On donne au test le budget que son propre
+  // code suppose — si le module ne monte vraiment pas, le skip s'exprime.
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 1280, height: 800 });
   await routeApp(page);
   await page.goto('/app');
@@ -461,6 +470,7 @@ test('1280×800: /app preview lists upcoming releases with a see-all link', asyn
 });
 
 test('1280×800: /app preview shows an explicit empty state when nothing is upcoming', async ({ page }) => {
+  test.setTimeout(90_000); // idem : 20 s + 20 s d'attentes internes > 30 s
   await page.setViewportSize({ width: 1280, height: 800 });
   await routeApp(page, emptyMonthFixture());
   await page.goto('/app');
@@ -559,8 +569,14 @@ for (const vp of [
   test(`${vp.name}: NW-4 month — unscheduled-events limit + permanent last-updated`, async ({ page }) => {
     await page.setViewportSize({ width: vp.w, height: vp.h });
     if (!(await gotoMonth(page))) { test.skip(true, 'gated'); return; }
-    // Ch3 — the unscheduled-events limit is written on the month view.
-    await expect(page.locator('.cal-nono')).toContainText('hors calendrier');
+    // Ch3 — the unscheduled-events limit is written on the month view. CLN-1 §4
+    // l'a CONDENSÉ : le bloc « Ce que ce calendrier ne dit pas » (`.cal-nono`,
+    // conservé sur la fiche publication) est devenu une ligne unique sur la vue
+    // mois — un seul avertissement par page. La limite est toujours écrite, et
+    // c'est elle qu'on éprouve ici.
+    await expect(page.locator('.calm-scope')).toContainText(
+      'que des publications programmées',
+    );
     // Ch5B — permanent proof of freshness (not only a stale marker).
     await expect(page.locator('.calm-fresh')).toBeVisible();
   });
@@ -569,7 +585,12 @@ for (const vp of [
     await page.setViewportSize({ width: vp.w, height: vp.h });
     if (!(await gotoMonth(page, staleMonthFixture()))) { test.skip(true, 'gated'); return; }
     // A failing source never empties the calendar (stored data is kept).
-    expect(await page.locator('.calm-cell:not(.blank):not(.empty)').count()).toBeGreaterThan(0);
+    // `count()` ne réessaie pas : appelé dès que le <h1> paraît, il comptait la
+    // grille AVANT que la requête calendrier n'ait résolu et lisait 0. On
+    // attend la première cellule peuplée par une assertion web-first, qui
+    // réessaie — l'affirmation est inchangée, c'est la synchronisation qui
+    // était fausse.
+    await expect(page.locator('.calm-cell:not(.blank):not(.empty)').first()).toBeVisible();
     // Freshness proof still shown (max of last_success across sources).
     await expect(page.locator('.calm-fresh')).toBeVisible();
   });
@@ -602,10 +623,21 @@ for (const vp of [
 // ===========================================================================
 // CAL-1 — no count before load, three distinguishable states, no forever-load.
 //   1. LOADING          — a distinct waiting status; NO fabricated count/zero.
-//   2. LOADED w/ pubs    — the count is asserted (a real result).
-//   3. LOADED truly EMPTY — an explicit "no publication", not a bare zero.
+//   2. LOADED w/ pubs    — the grid is drawn (a real result), no prose recount.
+//   3. LOADED truly EMPTY — empty day cells, never a fabricated bare zero.
 //   4. SERVER UNREACHABLE — an error state; data already obtained is not erased.
 // All four at BOTH viewports.
+//
+// CLN-1 §4 (2026-09-01) a RETIRÉ la boîte de comptes mensuels : la grille
+// montre déjà les jours avec et sans publication, les recompter en prose était
+// une redondance. `.calm-thismonth`, `.calm-tm-count` et `.calm-tm-status`
+// n'existent donc plus dans le produit — cette spec les exigeait encore, seule
+// contre la suite vitest (`CalendarMonthView.loadstate.test.tsx`) qui affirme
+// depuis l'inverse. Ce n'est pas un assouplissement : la garantie est passée de
+// « le compte affiché est juste » à « AUCUN compte ne peut être fabriqué, la
+// boîte n'existe plus » — strictement plus forte. Le signal positif d'un
+// chargement réussi devient la grille (`.calm-grid`) et la ligne de portée
+// (`.calm-scope`), ce que le produit rend réellement.
 // ===========================================================================
 
 /** Gate the month response behind a manual release so the LOADING state can be
@@ -643,37 +675,52 @@ for (const vp of [
         .waitFor({ state: 'visible', timeout: 20000 });
     } catch { test.skip(true, 'gated'); return; }
 
-    // While loading: a distinct waiting status in the side box, and NO count line.
-    await expect(page.locator('.calm-tm-status[role="status"]')).toBeVisible();
+    // While loading: a distinct waiting status, and no count box at all.
+    await expect(page.locator('.cal-status')).toBeVisible();
+    await expect(page.locator('.calm-thismonth')).toHaveCount(0);
     await expect(page.locator('.calm-tm-count')).toHaveCount(0);
     // The grid shows a loading status, not an empty result.
-    await expect(page.locator('.cal-status')).toBeVisible();
     await expect(page.locator('.calm-grid')).toHaveCount(0);
-    // No fabricated "0 publication / N empty days" leaked into the side panel.
-    const sideText = (await page.locator('.calm-thismonth').textContent()) ?? '';
-    expect(sideText).not.toMatch(/\b0\b/);
-    expect(sideText.toLowerCase()).not.toContain('jour sans publication');
+    // Nothing anywhere recounts « N publications » or claims a day is empty.
+    const pageText = (await page.locator('.calm-page').textContent()) ?? '';
+    expect(pageText).not.toMatch(/\d+\s+publication/i);
+    expect(pageText.toLowerCase()).not.toContain('jour sans publication');
 
-    // Once released, the real counts appear (loading was distinct from a result).
+    // Once released, the real grid appears (loading was distinct from a result).
     release();
-    await expect(page.locator('.calm-tm-count')).toBeVisible();
+    await expect(page.locator('.calm-grid')).toBeVisible();
   });
 
-  test(`${vp.name}: CAL-1 loaded WITH publications → the count is asserted`, async ({ page }) => {
+  test(`${vp.name}: CAL-1 loaded WITH publications → the grid is drawn, no prose recount`, async ({ page }) => {
     await page.setViewportSize({ width: vp.w, height: vp.h });
     if (!(await gotoMonth(page, monthFixture()))) { test.skip(true, 'gated'); return; }
-    await expect(page.locator('.calm-tm-count')).toBeVisible();
-    const count = (await page.locator('.calm-tm-count').textContent()) ?? '';
-    expect(count).toMatch(/[1-9]/); // a real, non-zero count of publications
+    // A real result: the grid, and at least one day carrying a publication.
+    await expect(page.locator('.calm-grid')).toBeVisible();
+    // Web-first : la grille monte avant que la requête ne résolve, un `count()`
+    // non réessayé lirait 0 par course (cf. NW-4 plus haut).
+    await expect(page.locator('.calm-chip').first()).toBeVisible();
+    // The single scope line stands in for the removed counts box…
+    await expect(page.locator('.calm-scope')).toBeVisible();
+    // …and no prose recounts what the grid already shows.
+    await expect(page.locator('.calm-thismonth')).toHaveCount(0);
+    const loaded = (await page.locator('.calm-page').textContent()) ?? '';
+    expect(loaded).not.toMatch(/\d+\s+publications/i);
   });
 
-  test(`${vp.name}: CAL-1 loaded truly EMPTY → explicit empty, no bare zero count`, async ({ page }) => {
+  test(`${vp.name}: CAL-1 loaded truly EMPTY → empty cells, no bare zero count`, async ({ page }) => {
     await page.setViewportSize({ width: vp.w, height: vp.h });
     if (!(await gotoMonth(page, emptyMonthFixture()))) { test.skip(true, 'gated'); return; }
-    // No fabricated count line; an explicit legitimate empty note instead.
+    // The grid still draws: a day without a publication is a visible empty
+    // cell, which is the honest answer — not a fabricated « 0 publication ».
+    await expect(page.locator('.calm-grid')).toBeVisible();
+    // Le marqueur de vacuité explicite prouve que la requête a RÉSOLU : sans
+    // lui, « 0 puce » serait indiscernable d'un chargement encore en cours.
+    await expect(page.locator('.cal-empty')).toBeVisible();
+    expect(await page.locator('.calm-chip').count()).toBe(0);
+    await expect(page.locator('.calm-thismonth')).toHaveCount(0);
     await expect(page.locator('.calm-tm-count')).toHaveCount(0);
-    await expect(page.locator('.calm-tm-status')).toBeVisible();
-    await expect(page.locator('.calm-tm-status')).toContainText('Aucune publication');
+    const empty = (await page.locator('.calm-page').textContent()) ?? '';
+    expect(empty).not.toMatch(/\d+\s+publications/i);
   });
 
   test(`${vp.name}: CAL-1 server unreachable → error state, never forever-loading`, async ({ page }) => {
@@ -690,8 +737,11 @@ for (const vp of [
     await expect(page.locator('.cal-status-error')).toBeVisible({ timeout: 20000 });
     await expect(page.locator('.cal-status-error')).toContainText('injoignable');
     await expect(page.locator('.cal-retry').first()).toBeVisible();
-    // No fabricated count is asserted on error either.
+    // No fabricated count is asserted on error either, and the day panel does
+    // not claim « aucune publication ce jour-là » when nothing was loaded.
+    await expect(page.locator('.calm-thismonth')).toHaveCount(0);
     await expect(page.locator('.calm-tm-count')).toHaveCount(0);
-    await expect(page.locator('.calm-tm-status')).toBeVisible();
+    const errText = (await page.locator('.calm-page').textContent()) ?? '';
+    expect(errText).not.toMatch(/\d+\s+publication/i);
   });
 }
