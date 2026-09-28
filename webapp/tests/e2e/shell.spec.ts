@@ -8,6 +8,10 @@ import { expect, test } from '@playwright/test';
  */
 test.describe('Product shell — /app', () => {
   test('renders the rail and navigates via the ESPACE links', async ({ page }) => {
+    // Le rail est une surface DESKTOP — le test voisin fixe déjà la fenêtre, pas
+    // celui-ci. Il tournait donc aussi dans le projet iPhone 12, où la coquille
+    // bascule sur le plan mobile et n'expose aucun rail.
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/app');
 
     // The rail is present (its aria-label comes from app.sidebar.navAria).

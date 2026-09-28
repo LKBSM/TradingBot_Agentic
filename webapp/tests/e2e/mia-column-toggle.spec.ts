@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import frMessages from '@/messages/fr.json';
 import { FIXTURE_XAU_M15 } from '../../lib/market-reading/fixtures';
 import { dismissCookieBanner } from './utils';
 
@@ -84,10 +85,17 @@ test.describe('M.I.A disposition toggle — desktop 1280×800', () => {
     await page.screenshot({ path: `${SHOTS}/b-bubble.png` });
 
     // (c) The bubble reopens the SAME chat as a drawer: M.I.A's header + the honesty
-    // note render identically, and the header now offers "dock to column".
+    // mention render identically, and the header now offers "dock to column".
+    //
+    // La mention visée était `/pédagogique/`, que UI-3 (290b8cf, 2026-08-26) a
+    // RETIRÉE du chat : elle doublonnait la ligne de conformité permanente de la
+    // coquille, seule conservée. Le test visait donc le doublon supprimé, pas la
+    // mention qui subsiste. Il lit maintenant celle-ci, à sa source i18n.
     await fab.click();
     await expect(page.getByText('M.I.A Agent', { exact: true })).toBeVisible();
-    await expect(page.getByText(/pédagogique/i).first()).toBeVisible();
+    await expect(
+      page.getByText(frMessages.legal.disclaimer.chart, { exact: false }).first(),
+    ).toBeVisible();
     const dockBtn = page.getByRole('button', { name: DOCK });
     await expect(dockBtn).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/c-bubble-open.png` });
