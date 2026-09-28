@@ -81,25 +81,26 @@ test('measure visible cards + single scroll container @1280x800', async ({ page 
     return { total: cards.length, fullyVisible, scrollers, listScrolls, columns, rowTops };
   });
 
-  // VZ-2 originally pinned « >= 4 cards fully visible ». That number was
-  // measured in a layout that no longer exists, and TWO deliberate, merged
-  // decisions have since spent the vertical budget — neither is a regression:
+  // VZ-2's target — « >= 4 cards fully visible at 1280x800 » — held when it was
+  // written, was lost, and is met again. The history matters, because the fix
+  // was a product decision and not a pixel tweak:
   //
   //   * VZ-3 (#173) grew the proximity gauge from 20px to 60px per card so it
-  //     reads without an explanation. Cost: +42px on EVERY card.
-  //   * MIA-3 (#200) put the M.I.A column on /zones. The cards column dropped
-  //     to 670px, so the « single controls row » (.zbar) can no longer hold its
-  //     880px of controls on one line and wraps. Cost: +46px, once.
+  //     reads without an explanation — +42px on EVERY card. Kept: legibility is
+  //     the point of that mission.
+  //   * MIA-3 (#200) docked the M.I.A column on /zones. The cards column fell to
+  //     670px, which wrapped the « single controls row » onto two lines (+46px)
+  //     and squeezed every card's text. Measured total: 848px for a 800px fold.
+  //   * The founder's call: on /zones M.I.A now starts as the BUBBLE, one click
+  //     from the column. /zones is a list — its job is to show zones.
   //
-  // Measured at 1280x800 today: chrome 181 + row 297 + separator 33 + row 337
-  // = 848 > 800. Even a perfect 93px of chrome would not fit two rows of 337px
-  // cards. Restoring 4 means undoing VZ-3's legibility or MIA-3's column —
-  // a product trade-off, not something a test may decide. So this pins what the
-  // product DOES guarantee, and still fails if any of it breaks.
+  // Measured with the bubble default: cards 499.5px wide (was 330.5px), grid
+  // starts at 135px (was 181px, the bar no longer wraps), 4 cards fully visible.
+  // If the column is ever made the default here again, this fails — by design.
 
-  // 1/ The first row is fully visible — landing on /zones always shows zones.
-  expect(data.fullyVisible).toBeGreaterThanOrEqual(2);
-  // 2/ The second row STARTS above the fold, so the list visibly continues.
+  // 1/ The mission's hard target, restored.
+  expect(data.fullyVisible).toBeGreaterThanOrEqual(4);
+  // 2/ The second row starts above the fold, so the list visibly continues.
   expect(data.rowTops.length).toBeGreaterThanOrEqual(2);
   expect(data.rowTops[1]).toBeLessThan(800);
   // 3/ Single scroll container: the list area introduces no inner scroll of its own.
