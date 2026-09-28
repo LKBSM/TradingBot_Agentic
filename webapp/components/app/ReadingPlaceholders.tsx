@@ -193,7 +193,17 @@ export function ChartUnavailable({
         </p>
       </div>
       {onRetry && !notCoveredMarket && (
-        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+        // `data-testid` parce que « Réessayer » n'est pas unique sur /app : l'aperçu
+        // du calendrier en porte un aussi (`.cal-retry`). Un test qui visait « le
+        // dernier » cliquait donc sur le calendrier dès que la largeur suffisait à
+        // l'afficher — vert en 390, rouge en 1280. Ce marqueur nomme CELUI-CI.
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+          data-testid="chart-retry"
+        >
           <RefreshCw className="h-4 w-4" aria-hidden />
           {t('placeholders.retry')}
         </Button>

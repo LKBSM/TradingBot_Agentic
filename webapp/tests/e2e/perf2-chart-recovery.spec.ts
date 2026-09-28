@@ -122,7 +122,13 @@ for (const vp of VIEWPORTS) {
       await gotoApp(page, vp.width, vp.height);
 
       // Honest placeholder + a retry that does NOT reload the page.
-      const retry = page.getByRole('button', { name: /réessayer/i }).last();
+      //
+      // On vise le bouton DU GRAPHIQUE par son marqueur, pas « le dernier
+      // Réessayer de la page » : à 1280 l'aperçu du calendrier en affiche un
+      // second (`.cal-retry`), et `.last()` cliquait sur celui-là — le graphique
+      // n'était jamais relancé, aucun canvas n'apparaissait. À 390 l'aperçu n'est
+      // pas rendu, d'où un test vert à un viewport et rouge à l'autre.
+      const retry = page.getByTestId('chart-retry');
       await expect(retry).toBeVisible({ timeout: 15_000 });
       chartFails = false; // la source guérit juste avant le clic
       await retry.click();
