@@ -3281,9 +3281,7 @@
         "0": "Un Order Block jamais testé, en tendance haussière, avec l'unité supérieure d'accord",
         "1": "Le prix revient dans un Fair Value Gap déjà testé une fois, après un CHOCH récent",
         "2": "Une poche de liquidité vient d'être prise et le prix est entré dans une zone",
-        "3": "Un OB non testé quand le RSI est en survente",
-        "4": "Dis-moi où va le prix de l'or aujourd'hui",
-        "5": "Marché en expansion, structure haussière, zone vierge au prix"
+        "3": "Dis-moi où va le prix de l'or aujourd'hui"
       }
     },
     "dictation": {
