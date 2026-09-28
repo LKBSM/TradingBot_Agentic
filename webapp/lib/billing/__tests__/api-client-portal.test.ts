@@ -8,8 +8,10 @@ import { BillingError, openPortal } from '../api-client';
  * back the URL Stripe minted, so the click on « Gérer mon abonnement » lands in
  * the portal where cancelling actually happens.
  *
- * The chain: /compte → /abonnement → « Gérer mon abonnement » → this call →
- * POST /api/billing/portal (tests/test_account_billing.py) → Stripe.
+ * The chain: /compte or /abonnement → « Gérer mon abonnement » → this call →
+ * POST /api/billing/portal (tests/test_account_billing.py) → Stripe. Whether the
+ * portal itself allows cancelling is a dashboard setting, checked by
+ * `scripts/stripe_preflight.py` (check_portal).
  */
 
 afterEach(() => {

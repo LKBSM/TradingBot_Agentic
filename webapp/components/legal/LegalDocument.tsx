@@ -74,13 +74,13 @@ export function LegalDocument({ doc }: { doc: LegalDocKind }) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     };
-    // Next frame: the blocks have to be in the DOM before we can find one.
-    const raf = requestAnimationFrame(jump);
+    // An effect runs AFTER the commit, so the clause is already in the DOM here:
+    // the jump is immediate, with no frame to wait for. (It was written through
+    // `requestAnimationFrame` first — a frame that does not reliably come in a
+    // headless environment, and that bought nothing.)
+    jump();
     window.addEventListener('hashchange', jump);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('hashchange', jump);
-    };
+    return () => window.removeEventListener('hashchange', jump);
   }, [markdown]);
 
   if (hasError) {

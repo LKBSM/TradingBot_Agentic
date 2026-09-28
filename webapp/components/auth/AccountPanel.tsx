@@ -11,6 +11,12 @@ import {
   resendVerification,
   updateProfile,
 } from '@/lib/auth/api-client';
+import {
+  BillingError,
+  fetchRefundEligibility,
+  openPortal,
+  type RefundEligibility,
+} from '@/lib/billing/api-client';
 import { useAuth } from '@/lib/auth/store';
 import { useLocalizedHref } from '@/lib/i18n/href';
 import { useLocaleSwitch } from '@/lib/i18n/use-locale-switch';
@@ -19,6 +25,20 @@ import { STRIPE_PORTAL_LOGIN_URL } from '@/lib/billing/portal';
 import { useDesign } from '@/lib/theme/useDesign';
 import type { ThemeMeta } from '@/lib/theme/themes';
 import { FormError, FormSuccess } from './fields';
+
+/** The guarantee deadline, in the reader's locale; '' when there is none. */
+function formatDeadline(epochSeconds: number | null, locale: string): string {
+  if (!epochSeconds) return '';
+  try {
+    return new Date(epochSeconds * 1000).toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Authenticated "Réglages" panel (UI-2) — restyled to the terminal reference:
@@ -35,9 +55,11 @@ import { FormError, FormSuccess } from './fields';
 export function AccountPanel() {
   const t = useTranslations('app.account');
   const tAuth = useTranslations('auth');
+  const tBilling = useTranslations('billing');
   const { account, loading, probeFailed, logout, refresh } = useAuth();
   const router = useRouter();
   const lh = useLocalizedHref();
+  const locale = useLocale();
 
   const [editingEmail, setEditingEmail] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -49,6 +71,54 @@ export function AccountPanel() {
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [verifyNote, setVerifyNote] = React.useState<string | null>(null);
+
+  // LEG-2 — opening the Stripe portal from here, and the 14-day guarantee window.
+  const [openingPortal, setOpeningPortal] = React.useState(false);
+  const [portalError, setPortalError] = React.useState<string | null>(null);
+  const [refund, setRefund] = React.useState<RefundEligibility | null>(null);
+
+  // The guarantee probe must NEVER be able to break this page: the account panel
+  // holds the session, the email form and logout, and none of that may depend on
+  // a billing call. The client already swallows its own failures; the `.catch`
+  // here is the second lock.
+  //
+  // Keyed on the account ID, not on the account OBJECT. `fetchRefundEligibility`
+  // returns a FRESH object when it gives up on the network, so an effect that
+  // re-fires whenever the account identity changes would set new state, re-render,
+  // re-fire and probe forever. A primitive dependency cannot do that.
+  const accountId = account?.id ?? null;
+  React.useEffect(() => {
+    if (accountId === null) return;
+    let cancelled = false;
+    fetchRefundEligibility()
+      .then((r) => {
+        if (!cancelled) setRefund(r);
+      })
+      .catch(() => {
+        /* no guarantee row, nothing else changes */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accountId]);
+
+  async function onManageSubscription() {
+    setPortalError(null);
+    setOpeningPortal(true);
+    try {
+      const url = await openPortal();
+      window.location.href = url;
+    } catch (err) {
+      // 409 = no Stripe customer yet. There is nothing to manage, so the plan
+      // choice is the answer — not an error message about a portal.
+      if (err instanceof BillingError && err.status === 409) {
+        router.push(lh('/abonnement'));
+        return;
+      }
+      setPortalError(err instanceof BillingError ? err.message : t('manageError'));
+      setOpeningPortal(false);
+    }
+  }
 
   // Redirect to login ONLY on a confirmed logged-out state (probe returned 401).
   // A network/5xx failure (probeFailed) must NOT eject a possibly-valid user —
@@ -333,19 +403,52 @@ export function AccountPanel() {
           <span className="planbadge">{t('earlyAccessBadge')}</span>
         </div>
 
-        {/* Manage the subscription in Stripe. Two doors, both visible without
-            hunting: our own /abonnement page, and the Stripe portal login page
-            — the latter works even when our backend or the portal session call
-            does not, so cancelling is never blocked by our uptime. */}
+        {/* LEG-2 — ONE click to the Stripe portal, not two. Clause 8.1 of the
+            terms now says cancelling happens « depuis ton espace client, par le
+            bouton …, qui ouvre le portail de facturation hébergé par Stripe » :
+            this row mints the portal session itself instead of routing through
+            /abonnement first. An account with no Stripe customer yet (409) has
+            nothing to manage, so it lands on the plan choice rather than on an
+            error.
+
+            The row below stays: the Stripe login page works even when our
+            backend or this call does not, so cancelling is never blocked by our
+            own uptime. Same destination, a path that does not depend on us. */}
         <div className="setrow">
           <div className="sk">
             <b>{t('manageRow')}</b>
             <span>{t('manageValue')}</span>
           </div>
-          <Link href={lh('/abonnement')} className="btn">
-            {t('manageCta')}
-          </Link>
+          <button
+            type="button"
+            className="btn"
+            onClick={onManageSubscription}
+            disabled={openingPortal}
+            data-testid="manage-subscription"
+          >
+            {openingPortal ? t('manageBusy') : t('manageCta')}
+          </button>
         </div>
+        {portalError && <FormError message={portalError} />}
+
+        {/* LEG-2 — the 14-day annual guarantee, kept in sight HERE. Going
+            straight to the portal skips /abonnement, and the portal can cancel a
+            subscription but cannot hand back a payment: a customer still inside
+            the window would have cancelled instead of being refunded, losing
+            money they were owed. Shown only while the window is genuinely open. */}
+        {refund?.eligible && (
+          <div className="setrow" data-testid="refund-window-open">
+            <div className="sk">
+              <b>{tBilling('refund.title', { days: refund.guarantee_days })}</b>
+              <span>
+                {tBilling('refund.openUntil', { date: formatDeadline(refund.deadline, locale) })}
+              </span>
+            </div>
+            <Link href={lh('/abonnement')} className="btn" data-testid="refund-window-cta">
+              {t('manageCta')}
+            </Link>
+          </div>
+        )}
 
         <div className="setrow">
           <div className="sk">

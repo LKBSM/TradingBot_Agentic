@@ -2019,6 +2019,8 @@
       "manageRow": "Manage the subscription",
       "manageValue": "Plan, payment method, invoices, cancellation.",
       "manageCta": "Open",
+      "manageBusy": "Opening…",
+      "manageError": "The portal could not open. Try again, or use the Stripe customer portal below.",
       "portalRow": "Stripe customer portal",
       "portalValue": "Direct access via a link sent to the email you paid with.",
       "portalCta": "Open the portal",

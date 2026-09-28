@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@/components/test-utils';
+import { render, waitFor, within } from '@/components/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LegalDocument } from '../LegalDocument';
@@ -36,6 +36,11 @@ const TERMS_MD = [
   '',
 ].join('\n');
 
+/**
+ * Queries are scoped to the rendered container, never to `screen`: with several
+ * suites in one run the document can already hold another copy of a legal text,
+ * and a global query would resolve against it.
+ */
 function mockDocument(markdown = TERMS_MD) {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: true,
@@ -60,9 +65,9 @@ afterEach(() => {
 describe('LEG-2 — the refund clause is reachable by its anchor', () => {
   it('gives the clause the id the public links point at', async () => {
     mockDocument();
-    render(<LegalDocument doc="terms" />);
+    const { container } = render(<LegalDocument doc="terms" />);
 
-    const heading = await screen.findByText('8. Résiliation et remboursement');
+    const heading = await within(container).findByText('8. Résiliation et remboursement');
     expect(heading.id).toBe('remboursement');
     // The declaration itself never reaches the reader.
     expect(heading.textContent).not.toContain('{#');
@@ -84,19 +89,19 @@ describe('LEG-2 — the refund clause is reachable by its anchor', () => {
 
   it('scrolls nowhere when the URL carries no hash', async () => {
     mockDocument();
-    render(<LegalDocument doc="terms" />);
+    const { container } = render(<LegalDocument doc="terms" />);
 
-    await screen.findByText('8. Résiliation et remboursement');
+    await within(container).findByText('8. Résiliation et remboursement');
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 
   it('survives a hash pointing at a clause that does not exist', async () => {
     window.location.hash = '#clause-inventee';
     mockDocument();
-    render(<LegalDocument doc="terms" />);
+    const { container } = render(<LegalDocument doc="terms" />);
 
     // The document still renders; nothing throws, nothing scrolls.
-    await screen.findByText('8. Résiliation et remboursement');
+    await within(container).findByText('8. Résiliation et remboursement');
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 });

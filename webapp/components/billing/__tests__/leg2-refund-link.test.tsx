@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, waitFor, within } from '@testing-library/react';
 import { fireEvent } from '@testing-library/dom';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -78,14 +78,19 @@ vi.mock('next/navigation', () => ({
 
 import { SubscriptionPanel } from '../SubscriptionPanel';
 
+/**
+ * The panel, with every query scoped to its own container: other suites mount
+ * this same component, and a `screen` query would not tell the copies apart.
+ */
 function renderPanel() {
-  return render(<SubscriptionPanel />, {
+  const { container } = render(<SubscriptionPanel />, {
     wrapper: ({ children }) => (
       <NextIntlClientProvider locale="fr" messages={fr}>
         {children}
       </NextIntlClientProvider>
     ),
   });
+  return within(container);
 }
 
 beforeEach(() => {
@@ -96,9 +101,9 @@ beforeEach(() => {
 describe('LEG-2 — the refund clause is linked where the payment happens', () => {
   it('links to /conditions#remboursement from the plan-choice screen', async () => {
     fetchSubscription.mockResolvedValue(NO_SUBSCRIPTION);
-    renderPanel();
+    const panel = renderPanel();
 
-    const link = await screen.findByRole('link', {
+    const link = await panel.findByRole('link', {
       name: fr.billing.refundPolicyLink,
     });
     expect(link).toHaveAttribute('href', '/conditions#remboursement');
@@ -109,9 +114,9 @@ describe('LEG-2 — « Gérer mon abonnement » opens the Stripe portal', () => 
   it('asks the backend for a portal session and follows its URL', async () => {
     fetchSubscription.mockResolvedValue(ACTIVE_ANNUAL);
     openPortal.mockResolvedValue('https://billing.stripe.test/session/abc');
-    renderPanel();
+    const panel = renderPanel();
 
-    fireEvent.click(await screen.findByRole('button', { name: fr.billing.manage }));
+    fireEvent.click(await panel.findByRole('button', { name: fr.billing.manage }));
 
     // The portal session is minted server-side (POST /api/billing/portal — see
     // `api-client-portal.test.ts` for the endpoint, and tests/test_account_billing.py
@@ -123,10 +128,10 @@ describe('LEG-2 — « Gérer mon abonnement » opens the Stripe portal', () => 
   it('says so, rather than failing silently, when the portal cannot open', async () => {
     fetchSubscription.mockResolvedValue(ACTIVE_ANNUAL);
     openPortal.mockRejectedValue(new Error('boom'));
-    renderPanel();
+    const panel = renderPanel();
 
-    fireEvent.click(await screen.findByRole('button', { name: fr.billing.manage }));
+    fireEvent.click(await panel.findByRole('button', { name: fr.billing.manage }));
 
-    expect(await screen.findByText(fr.billing.errorPortal)).toBeInTheDocument();
+    expect(await panel.findByText(fr.billing.errorPortal)).toBeInTheDocument();
   });
 });

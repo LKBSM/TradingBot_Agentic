@@ -2056,6 +2056,8 @@
       "manageRow": "Gérer l'abonnement",
       "manageValue": "Formule, moyen de paiement, factures, résiliation.",
       "manageCta": "Ouvrir",
+      "manageBusy": "Ouverture…",
+      "manageError": "Le portail n'a pas pu s'ouvrir. Réessaie, ou passe par le portail client Stripe ci-dessous.",
       "portalRow": "Portail client Stripe",
       "portalValue": "Accès direct par un lien envoyé au courriel utilisé pour le paiement.",
       "portalCta": "Ouvrir le portail",

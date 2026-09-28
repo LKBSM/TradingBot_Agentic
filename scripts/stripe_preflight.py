@@ -15,7 +15,10 @@ sont possibles, toutes SILENCIEUSES jusqu'au premier client :
 4. le webhook n'est pas abonné à tous les événements dont le mur d'accès a
    besoin → certains paiements n'ouvrent jamais rien ;
 5. ``config/pricing.json`` lui-même annonce un montant qui n'a pas été décidé →
-   Stripe et le site sont d'accord, sur le mauvais prix.
+   Stripe et le site sont d'accord, sur le mauvais prix ;
+6. le portail client n'autorise pas l'annulation, ou l'applique immédiatement →
+   la clause 8 des conditions devient une fausse déclaration, et le client qui
+   voulait partir n'a aucun bouton pour le faire.
 
 Ce script lit Stripe et l'environnement, et rend un verdict par ligne. Il
 n'écrit RIEN, ni chez Stripe ni en base. Il n'affiche jamais une clé.
@@ -45,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
@@ -72,6 +76,13 @@ GO_LIVE_CENTS = {"MONTHLY": 3999, "ANNUAL": 35988}
 CORRECT_WEBHOOK_PATH = "/api/billing/webhook"
 #: Le point d'entrée retiré — s'il est configuré chez Stripe, c'est une panne.
 RETIRED_WEBHOOK_PATH = "/api/v1/billing/webhook"
+
+#: Le fichier du webapp qui code en dur l'URL de la page de connexion du portail
+#: client (le lien de secours affiché sur /compte). Une URL appartenant au compte
+#: de TEST y resterait invisible : elle s'ouvre, elle n'envoie simplement jamais
+#: de courriel au client live.
+PORTAL_LINK_FILE = "webapp/lib/billing/portal.ts"
+_PORTAL_URL_RE = re.compile(r"https://billing\.stripe\.com/p/login/[A-Za-z0-9_-]+")
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 
@@ -274,6 +285,138 @@ def check_webhooks(stripe: Any) -> None:
             record(PASS, f"{url} couvre les {len(ACCOUNT_SUBSCRIPTION_EVENTS)} événements nécessaires.")
 
 
+def _hardcoded_login_url():
+    """L'URL du portail écrite en dur dans le webapp, ou None si introuvable."""
+    try:
+        text = (_REPO_ROOT / PORTAL_LINK_FILE).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = _PORTAL_URL_RE.search(text)
+    return match.group(0) if match else None
+
+
+def check_portal(stripe: Any) -> None:
+    """Le portail client tient-il la promesse écrite dans les conditions ?
+
+    La clause 8 dit deux choses vérifiables ici, et vérifiables NULLE PART dans
+    le code : que la résiliation se fait « par le bouton …, qui ouvre le portail
+    de facturation hébergé par Stripe », et qu'elle « prend effet à la fin de la
+    période déjà payée ». Les deux dépendent d'une configuration qui vit dans le
+    tableau de bord Stripe :
+
+    * un portail qui n'offre pas l'annulation transforme la clause en fausse
+      déclaration — et le client qui veut partir n'a aucun bouton ;
+    * un portail qui annule IMMÉDIATEMENT retire l'accès que la clause promet de
+      conserver jusqu'à la fin de la période payée.
+
+    ``create_billing_portal_session`` ne passe aucun ``configuration``, donc
+    c'est la configuration PAR DÉFAUT du compte qui s'applique : c'est elle qui
+    est inspectée.
+    """
+    try:
+        configs = list(
+            stripe.billing_portal.Configuration.list(limit=100).auto_paging_iter()
+        )
+    except Exception as exc:  # noqa: BLE001
+        record(WARN, f"Impossible de lire la configuration du portail client : {exc}")
+        return
+
+    if not configs:
+        record(
+            FAIL,
+            "Aucune configuration de portail client chez Stripe — « Gérer mon abonnement » "
+            "n'ouvrirait rien, alors que la clause 8 en fait le chemin de résiliation.",
+        )
+        return
+
+    default = next((c for c in configs if c.get("is_default")), None)
+    if default is None:
+        record(
+            WARN,
+            "Aucune configuration de portail marquée par défaut — j'inspecte la première. "
+            "Le code n'en impose aucune, donc c'est la configuration par défaut du compte "
+            "qui servira.",
+        )
+        default = configs[0]
+
+    if default.get("active") is False:
+        record(FAIL, "La configuration de portail par défaut est inactive chez Stripe.")
+
+    features = default.get("features") or {}
+    cancel = features.get("subscription_cancel") or {}
+
+    if not cancel.get("enabled"):
+        record(
+            FAIL,
+            "Le portail client n'autorise PAS l'annulation (features.subscription_cancel). "
+            "La clause 8.1 promet le contraire : active-la dans Stripe "
+            "(Billing → Customer portal → Cancel subscriptions).",
+        )
+    else:
+        mode = cancel.get("mode")
+        if mode == "at_period_end":
+            record(
+                PASS,
+                "Le portail autorise l'annulation, effective en fin de période — "
+                "exactement ce que dit la clause 8.1.",
+            )
+        elif mode == "immediately":
+            record(
+                FAIL,
+                "Le portail annule IMMÉDIATEMENT, alors que la clause 8.1 promet l'accès "
+                "jusqu'à la fin de la période déjà payée. Passe le mode à « at_period_end », "
+                "ou change la clause.",
+            )
+        else:
+            record(
+                WARN,
+                f"Le portail autorise l'annulation, mode « {mode} » non reconnu — vérifie à "
+                f"la main qu'il laisse l'accès jusqu'à la fin de la période payée.",
+            )
+
+    # Ce que /compte annonce du portail : « Formule, moyen de paiement, factures,
+    # résiliation. » Les trois premiers ne sont pas dans le contrat, mais une
+    # promesse d'interface non tenue reste une promesse non tenue.
+    for feature, libelle in (
+        ("payment_method_update", "mettre à jour la carte"),
+        ("invoice_history", "télécharger les factures"),
+    ):
+        if not (features.get(feature) or {}).get("enabled"):
+            record(
+                WARN,
+                f"Le portail ne permet pas de {libelle} ({feature}), alors que /compte "
+                f"l'annonce.",
+            )
+
+    login = default.get("login_page") or {}
+    hardcoded = _hardcoded_login_url()
+    if not login.get("enabled"):
+        record(
+            FAIL if hardcoded else WARN,
+            "La page de connexion du portail est désactivée chez Stripe — le lien de secours "
+            f"de /compte ({PORTAL_LINK_FILE}) ne mène à rien, et c'est justement celui qui "
+            "doit marcher quand notre backend ne répond pas.",
+        )
+    elif hardcoded is None:
+        record(
+            WARN,
+            f"Page de connexion du portail active, mais aucune URL trouvée dans "
+            f"{PORTAL_LINK_FILE} — je ne peux pas vérifier que /compte pointe sur CE compte.",
+        )
+    elif str(login.get("url") or "").rstrip("/") != hardcoded.rstrip("/"):
+        record(
+            FAIL,
+            f"L'URL du portail codée dans {PORTAL_LINK_FILE} ne correspond pas à celle de ce "
+            f"compte Stripe ({login.get('url')}) — typiquement une URL du compte de TEST "
+            f"laissée dans le code.",
+        )
+    else:
+        record(
+            PASS,
+            "Le lien de secours de /compte pointe sur la page de connexion de ce compte.",
+        )
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Préflight Stripe avant d'encaisser de l'argent réel.")
     parser.add_argument(
@@ -307,6 +450,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     check_prices(stripe, key_is_live)
     print("-" * 74)
     check_webhooks(stripe)
+    print("-" * 74)
+    check_portal(stripe)
     print("=" * 74)
 
     fails = sum(1 for lvl, _ in _results if lvl == FAIL)
