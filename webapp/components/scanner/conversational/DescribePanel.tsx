@@ -61,13 +61,23 @@ export function DescribePanel({
   });
   const dictationCopy = useDictationCopy();
 
+  // QUATRE exemples, pas six. En grille 2 colonnes, six font TROIS rangées et le
+  // bas de la dernière tombait à 793,9 px sous Windows — pour une limite de pli à
+  // 800. Six pixels de marge : la rastérisation Linux (la CI) la faisait basculer
+  // à 829,6 px, et le dernier exemple passait sous le pli. La page n'avait jamais
+  // eu de réserve, elle tenait par chance sur la machine où elle a été mesurée.
+  // Une rangée de moins rend ~45 px et fait tenir la page PARTOUT, avec de l'air.
+  //
+  // Les deux retirés faisaient doublon avec le premier (un OB non testé, une
+  // structure haussière, une zone vierge). Les quatre conservés couvrent chacun
+  // un concept distinct — Order Block + unité supérieure, Fair Value Gap + CHOCH,
+  // liquidité + zone — et le dernier est la demande PRÉDICTIVE que le scanner
+  // refuse : c'est la démonstration de la ligne descriptif/prédictif, elle reste.
   const examples = [
     t('describe.examples.0'),
     t('describe.examples.1'),
     t('describe.examples.2'),
     t('describe.examples.3'),
-    t('describe.examples.4'),
-    t('describe.examples.5'),
   ];
 
   const canTranslate = text.trim().length > 0 && !isTranslating;

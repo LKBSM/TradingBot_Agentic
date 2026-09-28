@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import frMessages from '@/messages/fr.json';
 
 /**
  * UI-2 desktop pages — per-page smoke (rendered without error + key elements
@@ -43,7 +44,11 @@ test.describe('UI-2 — Connexion (static card + candle canvas)', () => {
 });
 
 test.describe('UI-2 — App shell + docked chat', () => {
-  test('renders the rail and the chat pedagogical disclaimer', async ({ page }) => {
+  test('renders the rail and the honesty disclaimer', async ({ page }) => {
+    // Le rail est une surface DESKTOP : sous 1280 la coquille bascule sur le
+    // plan mobile, qui n'en a pas. Sans cette ligne le test tournait aussi dans
+    // le projet iPhone 12 et y cherchait un élément qui n'existe pas.
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/app');
 
     // Shell rail (data-independent — part of the product shell).
@@ -51,8 +56,11 @@ test.describe('UI-2 — App shell + docked chat', () => {
       page.getByRole('complementary', { name: /combinaisons disponibles/i }),
     ).toBeVisible();
 
-    // Docked M.I.A chat renders regardless of the reading feed; its honesty
-    // disclaimer must be present.
-    await expect(page.getByText(/pédagogique/i).first()).toBeVisible();
+    // La mention d'honnêteté. Elle visait `/pédagogique/`, que UI-3 (290b8cf,
+    // 2026-08-26) a retirée du chat comme doublon : elle ne vit plus qu'UNE fois,
+    // dans la coquille. C'est cet exemplaire-là que le produit montre.
+    await expect(
+      page.getByText(frMessages.legal.disclaimer.chart, { exact: false }).first(),
+    ).toBeVisible();
   });
 });

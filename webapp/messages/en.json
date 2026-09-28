@@ -3281,9 +3281,7 @@
         "0": "An Order Block never tested, in an uptrend, with the higher unit agreeing",
         "1": "Price returns into a Fair Value Gap tested once, after a recent CHOCH",
         "2": "A liquidity pocket was just taken and price entered a zone",
-        "3": "An untested OB when the RSI is oversold",
-        "4": "Tell me where gold price is heading today",
-        "5": "Market in expansion, bullish structure, fresh zone at price"
+        "3": "Tell me where gold price is heading today"
       }
     },
     "dictation": {
