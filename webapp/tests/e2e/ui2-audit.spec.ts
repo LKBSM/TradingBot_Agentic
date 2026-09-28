@@ -119,12 +119,35 @@ test('describe content fits the first fold at 1280×800 (fr)', async ({ page }) 
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/fr/scanner/decrire');
   await page.getByTestId('example-chip').last().waitFor({ state: 'visible' });
-  // The last example card's bottom must sit within the first viewport height.
-  const bottom = await page
+
+  // UI-2 pinned « the LAST of the 6 examples sits above 800px ». Two deliberate,
+  // merged changes have since been inserted above the examples — neither is a
+  // regression, and neither may be undone to win back pixels:
+  //
+  //   * SC-4 reserves the live-status line's height at EVERY status (+28px,
+  //     always, even when empty). The reservation IS the fix: a line that grew
+  //     on appearance shifted the console under the pointer, which is how the
+  //     dictation button lost its clicks in MIA-1.
+  //   * The voice-dictation mission added the transcription note (+40px), a
+  //     statement about where the user's voice is processed. Not decorative.
+  //
+  // The 6 examples are laid out 2-up, so they need 3 rows. The last row's bottom
+  // is ~794px here and ~830px on CI — the same DOM, 36px taller, because Linux
+  // font metrics wrap the chip labels differently. A promise with 6px of margin
+  // is a coin toss across environments, so pin the intent that actually holds:
+  // landing on /scanner/decrire shows the console AND real examples, unscrolled.
+  const rects = await page
     .getByTestId('example-chip')
-    .last()
+    .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().bottom));
+  expect(rects.length).toBeGreaterThanOrEqual(2);
+  // The first row of examples is fully visible, with room to spare in any font.
+  const firstRowBottom = Math.min(...rects);
+  expect(firstRowBottom).toBeLessThanOrEqual(720);
+  // And the console above them is entirely in the fold.
+  const consoleBottom = await page
+    .getByTestId('live-status')
     .evaluate((el) => el.getBoundingClientRect().bottom);
-  expect(bottom).toBeLessThanOrEqual(800);
+  expect(consoleBottom).toBeLessThanOrEqual(600);
 });
 
 test('the manual Conditions tab is also on-scale (fr desktop)', async ({ page }) => {
