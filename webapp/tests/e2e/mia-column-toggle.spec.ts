@@ -87,7 +87,12 @@ test.describe('M.I.A disposition toggle — desktop 1280×800', () => {
     // note render identically, and the header now offers "dock to column".
     await fab.click();
     await expect(page.getByText('M.I.A Agent', { exact: true })).toBeVisible();
-    await expect(page.getByText(/pédagogique/i).first()).toBeVisible();
+    // UI-3 (commit 290b8cf) a retiré la ligne « Analyse pédagogique » comme
+    // DOUBLON de la ligne de conformité (CLN-1 §5 : un seul avertissement par
+    // page). Le mot « pédagogique » n'est donc plus rendu ; la note d'honnêteté
+    // du chat est « …répond à des questions sur la lecture algorithmique. ».
+    // Même garantie, autre formulation.
+    await expect(page.getByText(/lecture algorithmique/i).first()).toBeVisible();
     const dockBtn = page.getByRole('button', { name: DOCK });
     await expect(dockBtn).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/c-bubble-open.png` });

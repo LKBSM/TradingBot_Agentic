@@ -95,18 +95,26 @@ for (const vp of VIEWPORTS) {
       // A deterministic 404 is NOT auto-retried (retrying blindly is futile); the
       // placeholder names the cause and offers a manual retry. Clicking it re-pulls
       // WITHOUT reloading the page, and the chart paints.
-      let chartCalls = 0;
+      // On bascule sur un DRAPEAU, pas sur un compteur d'appels.
+      //
+      // Le compteur (`chartCalls <= 2`) supposait DEUX requêtes au chargement :
+      // c'est vrai sous `next dev`, où `reactStrictMode` monte les composants
+      // deux fois et double l'effet — mais faux dans un build de production,
+      // qui n'en émet qu'une. En production le clic « Réessayer » tombait donc
+      // sur le 2ᵉ appel, encore en 404, et le graphique ne peignait jamais.
+      // D'où un test vert en local et rouge en intégration continue.
+      //
+      // Le drapeau exprime l'intention réelle — « la source échoue, puis elle
+      // guérit » — sans rien supposer du nombre de montages de React.
+      let chartFails = true;
       await page.route('**/api/candles**', (route) => {
         const isChart = route.request().url().includes('limit=400');
-        if (isChart) {
-          chartCalls += 1;
-          if (chartCalls <= 2) {
-            return route.fulfill({
-              status: 404,
-              contentType: 'application/json',
-              body: JSON.stringify({ detail: 'no candles for this combo yet' }),
-            });
-          }
+        if (isChart && chartFails) {
+          return route.fulfill({
+            status: 404,
+            contentType: 'application/json',
+            body: JSON.stringify({ detail: 'no candles for this combo yet' }),
+          });
         }
         return okCandles(route);
       });
@@ -116,6 +124,7 @@ for (const vp of VIEWPORTS) {
       // Honest placeholder + a retry that does NOT reload the page.
       const retry = page.getByRole('button', { name: /réessayer/i }).last();
       await expect(retry).toBeVisible({ timeout: 15_000 });
+      chartFails = false; // la source guérit juste avant le clic
       await retry.click();
 
       await expect(page.locator('canvas').first()).toBeVisible({ timeout: 15_000 });

@@ -44,6 +44,9 @@ test.describe('UI-2 — Connexion (static card + candle canvas)', () => {
 
 test.describe('UI-2 — App shell + docked chat', () => {
   test('renders the rail and the chat pedagogical disclaimer', async ({ page }) => {
+    // Le rail est masqué sous 768px et /app n'a pas de `MobileSpaceNav` : ce
+    // cas éprouve le châssis DE BUREAU et doit donc fixer sa fenêtre.
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/app');
 
     // Shell rail (data-independent — part of the product shell).
@@ -51,8 +54,15 @@ test.describe('UI-2 — App shell + docked chat', () => {
       page.getByRole('complementary', { name: /combinaisons disponibles/i }),
     ).toBeVisible();
 
-    // Docked M.I.A chat renders regardless of the reading feed; its honesty
-    // disclaimer must be present.
-    await expect(page.getByText(/pédagogique/i).first()).toBeVisible();
+    // L'avertissement d'honnêteté doit être là. UI-3 (commit 290b8cf) a retiré
+    // la ligne « Analyse pédagogique » de la barre de chat comme DOUBLON de la
+    // ligne de conformité — cohérent avec CLN-1 §5, « un seul avertissement par
+    // page ». Le mot « pédagogique » n'est donc plus rendu sur /app ; la
+    // formulation en vigueur, verrouillée par cln-1-disclaimers.spec.ts, est
+    // « Lecture algorithmique éducative ». La garantie est la même, seul le mot
+    // a changé.
+    await expect(
+      page.getByText(/Lecture algorithmique éducative/i).first(),
+    ).toBeVisible();
   });
 });
