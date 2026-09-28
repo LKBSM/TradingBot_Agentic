@@ -204,6 +204,10 @@ describe('LEG-1 — clauses that must never quietly disappear', () => {
   it('the cancellation clause reproduces the imposed wording VERBATIM', () => {
     // This clause was dictated word for word and must not be hardened, softened
     // or reworded — so it is compared in full, not by fragments.
+    //
+    // LEG-2 added sub-clauses 8.1…8.7 UNDERNEATH it. The dictated sentence is
+    // therefore no longer the whole of clause 8, but it must still OPEN it, and
+    // still be there word for word: everything added below only details it.
     const IMPOSED =
       "Tu peux résilier à tout moment, aussi simplement que tu t'es abonné, depuis " +
       "ton espace client. Au mensuel, l'accès reste ouvert jusqu'à la fin de la " +
@@ -211,9 +215,17 @@ describe('LEG-1 — clauses that must never quietly disappear', () => {
       'offrons une garantie de 14 jours à compter du paiement. Si tu résides au ' +
       "Québec, les droits que t'accorde la Loi sur la protection du consommateur " +
       "s'appliquent intégralement et priment sur ce qui précède.";
-    const section = readDoc('terms', 'fr').split('## 8.')[1]?.split('## 9.')[0] ?? '';
-    const body = section.replace(/\s+/g, ' ').trim();
-    expect(body.slice(body.indexOf('Tu peux'))).toBe(IMPOSED);
+    const full = readDoc('terms', 'fr');
+    const section = full
+      .slice(full.indexOf('\n## 8.'), full.indexOf('\n## 9.'))
+      .replace(/\s+/g, ' ')
+      .trim();
+    const opening = section.slice(section.indexOf('Tu peux'));
+    expect(opening.startsWith(IMPOSED), 'la phrase dictée a été modifiée').toBe(true);
+    // Nothing but the heading may come before it.
+    expect(section.slice(0, section.indexOf('Tu peux')).trim()).toBe(
+      '## 8. Résiliation et remboursement {#remboursement}',
+    );
   });
 
   it('the price and the currency are stated, and match the shipped pricing', async () => {
@@ -289,4 +301,102 @@ describe('LEG-1 — consent screen copy', () => {
       expect(billing.error.length).toBeGreaterThan(10);
     });
   }
+});
+
+// =============================================================================
+// LEG-2 — the cancellation/refund clause: reachable, and true
+// =============================================================================
+
+/**
+ * The languages the TERMS are published in — read straight from disk, not from
+ * `LEGAL_LOCALES` above.
+ *
+ * The interface ships French and English only (founder decision, 2026-09-27),
+ * but `src/api/routes/legal.py` still serves the Spanish document
+ * (`LEGAL_LANGS = ("fr", "en", "es")`). A Spanish reader can therefore still be
+ * handed that contract, so clause 8 has to be complete in it too — which the
+ * guards below hold, whatever the UI's locale list does next.
+ */
+const PUBLISHED_TERMS = ['fr', 'en', 'es'] as const;
+
+function terms(locale: string): string {
+  return readFileSync(
+    path.join(LEGAL_DIR, `conditions-utilisation.${locale}.md`),
+    'utf-8',
+  );
+}
+
+/** Clause 8 of the terms in `locale`, whitespace-flattened. */
+function clause8(locale: string): string {
+  const body = terms(locale);
+  return body
+    .slice(body.indexOf('\n## 8.'), body.indexOf('\n## 9.'))
+    .replace(/\s+/g, ' ');
+}
+
+describe('LEG-2 — clause 8 is reachable by the same anchor everywhere', () => {
+  it('every published language carries {#remboursement} on clause 8', () => {
+    // The footer link, the one under the pricing button and the one on
+    // /abonnement are a SINGLE href for every locale, so the anchor cannot be
+    // translated along with the heading: that would be three dead links.
+    for (const locale of PUBLISHED_TERMS) {
+      const heading = terms(locale)
+        .split('\n')
+        .find((line) => line.startsWith('## 8.'));
+      expect(heading, `terms.${locale}`).toContain('{#remboursement}');
+    }
+  });
+
+  it('the sub-clauses 8.1 → 8.7 exist in every published language', () => {
+    for (const locale of PUBLISHED_TERMS) {
+      const subs = [...terms(locale).matchAll(/^### (8\.\d)/gm)].map((m) => m[1]);
+      expect(subs, `terms.${locale}`).toEqual([
+        '8.1', '8.2', '8.3', '8.4', '8.5', '8.6', '8.7',
+      ]);
+    }
+  });
+
+  it('the stated guarantee is the one the code actually honours', () => {
+    // src/billing/refund_guarantee.py is the rule behind the sentence: 14 days,
+    // ANNUAL only. Widen the promise in the text without widening the code and a
+    // monthly customer is told they can have their money back, then refused.
+    const rule = readFileSync(
+      path.join(REPO_ROOT, 'src', 'billing', 'refund_guarantee.py'),
+      'utf-8',
+    );
+    expect(rule).toMatch(/GUARANTEE_DAYS = 14\b/);
+    expect(rule).toContain('REASON_NOT_ANNUAL');
+
+    expect(clause8('fr')).toContain("Le mensuel n'est pas couvert par cette garantie");
+    expect(clause8('en')).toContain('The monthly plan is not covered by this guarantee');
+    expect(clause8('es')).toContain('El plan mensual no está cubierto por esta garantía');
+  });
+
+  it('clause 8 names the button that actually exists in the interface', () => {
+    // The clause tells the customer to click « Gérer mon abonnement ». If that
+    // label is renamed in the bundle, the instruction sends them looking for a
+    // button that is not there. Spanish is checked against a literal: the UI no
+    // longer ships a Spanish bundle to compare with, only the document.
+    expect(clause8('fr')).toContain((fr as { billing: { manage: string } }).billing.manage);
+    expect(clause8('en')).toContain((en as { billing: { manage: string } }).billing.manage);
+    expect(clause8('es')).toContain('Gestionar mi suscripción');
+  });
+
+  it('clause 8 avoids the three words the mission bars', () => {
+    // « signal », « performance », « résultat » and their translations: the
+    // refund clause has no business borrowing the vocabulary of a promise about
+    // markets. (Clause 1 says « aucun signal de trading » — that denial is
+    // wanted, which is why this guard is scoped to clause 8.)
+    const BARRED: Record<string, string[]> = {
+      fr: ['signal', 'signaux', 'performance', 'résultat'],
+      en: ['signal', 'performance', 'result'],
+      es: ['señal', 'rendimiento', 'resultado'],
+    };
+    for (const locale of PUBLISHED_TERMS) {
+      const clause = clause8(locale).toLowerCase();
+      for (const word of BARRED[locale]!) {
+        expect(clause.includes(word), `terms.${locale} : « ${word} »`).toBe(false);
+      }
+    }
+  });
 });

@@ -935,6 +935,7 @@
       "feature8": "Annulation en un clic",
       "subscribeDisabledTitle": "Inscription disponible après l'intégration backend",
       "subscribeButton": "S'abonner",
+      "refundLink": "Annulation et remboursement",
       "reassurance1": "<strong>Aucune carte piégée.</strong> Annulation en un clic depuis votre compte, sans relance ni questionnaire de rétention.",
       "reassurance2": "<strong>Sans engagement de durée.</strong> L'offre mensuelle se résilie à tout moment ; l'annuelle reste active jusqu'à la fin de la période payée.",
       "reassurance3": "<strong>Vos données restent vôtres.</strong> Lectures et conversations privées, jamais revendues, jamais croisées à des fins publicitaires.",
@@ -1739,6 +1740,7 @@
     },
     "legal": {
       "terms": "Conditions d'utilisation",
+      "refund": "Remboursement",
       "privacy": "Confidentialité",
       "contact": "Contact"
     },
@@ -1899,6 +1901,7 @@
     "bestValue": "Meilleure offre",
     "savePerYear": "Économise {amount} {currency} par an",
     "securedByStripe": "Paiement sécurisé par Stripe. Aucune donnée de carte n'est conservée chez nous.",
+    "refundPolicyLink": "Résiliation, garantie de 14 jours et remboursement",
     "legalRenew": "Renouvellement automatique, résiliable à tout moment.",
     "legalTool": "Outil d'information et d'éducation — ni conseil en investissement, ni signal de trading.",
     "legalRisk": "Le trading comporte un risque de perte.",
@@ -2053,6 +2056,8 @@
       "manageRow": "Gérer l'abonnement",
       "manageValue": "Formule, moyen de paiement, factures, résiliation.",
       "manageCta": "Ouvrir",
+      "manageBusy": "Ouverture…",
+      "manageError": "Le portail n'a pas pu s'ouvrir. Réessaie, ou passe par le portail client Stripe ci-dessous.",
       "portalRow": "Portail client Stripe",
       "portalValue": "Accès direct par un lien envoyé au courriel utilisé pour le paiement.",
       "portalCta": "Ouvrir le portail",

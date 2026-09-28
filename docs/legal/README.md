@@ -5,7 +5,9 @@ reformulés par le code : `src/api/routes/legal.py` les sert **tels quels** et s
 contente de choisir la langue et d'estampiller la version.
 
 > ⚠️ **Non validés par un juriste.** Rédigés en interne (mission LEG-1,
-> 2026-09-13 ; clause territoire et garantie de remboursement, 2026-09-14). Révision professionnelle à faire avant montée en volume — voir
+> 2026-09-13 ; clause territoire et garantie de remboursement, 2026-09-14 ;
+> prix 39,99 / 359,88 USD et clause 8 détaillée — annulation, remboursement,
+> contestation bancaire —, 2026-09-27). Révision professionnelle à faire avant montée en volume — voir
 > `docs/audits/AUDIT-leg-1.md`.
 
 ## Les fichiers
@@ -34,11 +36,37 @@ dans une langue dont on peut répondre.
    (structure identique entre langues, vocabulaire interdit, clauses qui ne
    doivent pas disparaître, prix cohérent avec `config/pricing.json`).
 
+## Ancrer une clause
+
+Un titre peut porter une ancre explicite, en fin de ligne :
+
+```markdown
+## 8. Résiliation et remboursement {#remboursement}
+```
+
+Le rendu en fait l'`id` du titre et **retire les accolades du texte affiché**,
+ce qui rend la clause atteignable de l'extérieur (`/conditions#remboursement` :
+pied de page, page de prix, écran d'abonnement).
+
+Deux règles :
+
+1. **La même ancre dans les trois langues.** Les liens de l'interface sont un
+   seul `href` pour les neuf locales ; traduire l'ancre avec le titre casse
+   l'anglais et l'espagnol. C'est précisément pourquoi l'ancre est explicite au
+   lieu d'être dérivée du titre.
+2. **Une ancre publiée ne se renomme pas.** Elle circule dans des courriels et
+   des liens partagés. Un test refuse un lien du pied de page dont l'ancre
+   n'existe dans aucun document (`webapp/tests/claims-cleanup.test.ts`).
+
+Sans accolades, un titre reçoit quand même un `id` dérivé de son texte
+(`### 8.4 Si tu résides au Québec` → `8-4-si-tu-resides-au-quebec`) : pratique
+pour un lien interne, mais il bouge dès que le libellé change.
+
 ## Ce que le rendu accepte
 
 Le rendu web (`webapp/lib/legal/render-markdown.tsx`) gère titres, listes à
-puces, citations, gras/italique et filets — **pas les tableaux**. Une liste à
-puces à la place d'un tableau, donc.
+puces, citations, gras/italique, filets et ancres de titre — **pas les
+tableaux**. Une liste à puces à la place d'un tableau, donc.
 
 Le premier bloc de citation de chaque document est **lu par le client** : il
 indique quelle langue fait foi. Ne pas y remettre de note de process interne.

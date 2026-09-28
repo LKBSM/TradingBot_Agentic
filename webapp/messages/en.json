@@ -935,6 +935,7 @@
       "feature8": "One-click cancellation",
       "subscribeDisabledTitle": "Sign-up available after backend integration",
       "subscribeButton": "Subscribe",
+      "refundLink": "Cancellation and refunds",
       "reassurance1": "<strong>No card trap.</strong> Cancel in one click from your account, with no follow-up calls or retention questionnaire.",
       "reassurance2": "<strong>No fixed-term commitment.</strong> The monthly plan can be canceled anytime; the annual plan stays active until the end of the paid period.",
       "reassurance3": "<strong>Your data stays yours.</strong> Readings and conversations are private, never resold, never cross-referenced for advertising.",
@@ -1739,6 +1740,7 @@
     },
     "legal": {
       "terms": "Terms of use",
+      "refund": "Refunds",
       "privacy": "Privacy",
       "contact": "Contact"
     },
@@ -1899,6 +1901,7 @@
     "bestValue": "Best value",
     "savePerYear": "Save {amount} {currency} per year",
     "securedByStripe": "Payment secured by Stripe. No card data is kept on our servers.",
+    "refundPolicyLink": "Cancellation, 14-day guarantee and refunds",
     "legalRenew": "Automatic renewal, cancel anytime.",
     "legalTool": "An information and education tool — not investment advice, not trading signals.",
     "legalRisk": "Trading carries a risk of loss.",
@@ -2016,6 +2019,8 @@
       "manageRow": "Manage the subscription",
       "manageValue": "Plan, payment method, invoices, cancellation.",
       "manageCta": "Open",
+      "manageBusy": "Opening…",
+      "manageError": "The portal could not open. Try again, or use the Stripe customer portal below.",
       "portalRow": "Stripe customer portal",
       "portalValue": "Direct access via a link sent to the email you paid with.",
       "portalCta": "Open the portal",

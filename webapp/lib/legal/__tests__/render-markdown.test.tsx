@@ -122,3 +122,61 @@ describe('renderLegalMarkdown — the real published documents', () => {
     expect(bold).toContain('United States');
   });
 });
+
+/**
+ * LEG-2 — a clause has to be linkable from outside the document. The footer and
+ * the line next to the payment button both point at `/conditions#remboursement`,
+ * which only works if the heading carries that exact id — and if the `{#…}` that
+ * declares it never shows up as text on the page.
+ */
+describe('renderLegalMarkdown — heading anchors', () => {
+  it('takes an explicit {#ancre} as the id and keeps it out of the text', () => {
+    const html = dom('## 8. Résiliation et remboursement {#remboursement}');
+    const h2 = html.querySelector('h2');
+    expect(h2?.id).toBe('remboursement');
+    expect(h2?.textContent).toBe('8. Résiliation et remboursement');
+    expect(html.textContent).not.toContain('{#');
+  });
+
+  it('derives an accent-free id when no anchor is given', () => {
+    const html = dom('### 8.4 Si tu résides au Québec');
+    expect(html.querySelector('h3')?.id).toBe('8-4-si-tu-resides-au-quebec');
+  });
+
+  it('strips the inline markers instead of putting them in the id', () => {
+    expect(dom('## **Prix** et facturation').querySelector('h2')?.id).toBe(
+      'prix-et-facturation',
+    );
+  });
+
+  it('leaves a linked heading room instead of gluing it to the top edge', () => {
+    // A hash jump lands the heading at the very top of the viewport; the scroll
+    // margin is what keeps its first line readable.
+    expect(
+      dom('## 8. Titre {#remboursement}').querySelector('h2')?.className,
+    ).toContain('scroll-mt-');
+  });
+
+  it('the published terms expose #remboursement in all three languages', async () => {
+    const { readFileSync } = await import('node:fs');
+    const path = await import('node:path');
+    for (const locale of ['fr', 'en', 'es']) {
+      const file = path.resolve(
+        __dirname, '..', '..', '..', '..', 'docs', 'legal',
+        `conditions-utilisation.${locale}.md`,
+      );
+      const html = dom(readFileSync(file, 'utf-8'));
+      // Ids are collected by hand rather than with a `#id` selector: the three
+      // documents are rendered into the same jsdom document, and nwsapi resolves
+      // an id selector through `document.getElementById`, which answers with the
+      // FIRST match in the page (the French one) and then finds it outside this
+      // container.
+      const ids = Array.from(html.querySelectorAll('h1,h2,h3,h4,h5,h6')).map(
+        (h) => h.id,
+      );
+      expect(ids, locale).toContain('remboursement');
+      // The braces of every anchor must be gone from the rendered text.
+      expect(html.textContent ?? '', locale).not.toContain('{#');
+    }
+  });
+});

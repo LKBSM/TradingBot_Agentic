@@ -92,7 +92,7 @@ notice **30 days before each renewal**.
 If we change the price, we tell you by email before the new price applies to you,
 and you may cancel before that date.
 
-## 8. Cancellation and refund
+## 8. Cancellation and refund {#remboursement}
 
 You can cancel at any time, as simply as you subscribed, from your customer area.
 On the monthly plan, access stays open until the end of the period you paid for;
@@ -100,6 +100,72 @@ there is no pro-rata refund. On the annual plan, we offer a 14-day guarantee fro
 the date of payment. If you reside in Quebec, the rights granted to you by the
 Consumer Protection Act (*Loi sur la protection du consommateur*) apply in full
 and prevail over the foregoing.
+
+### 8.1 Cancelling your subscription
+
+Cancellation happens in your customer area, through the **"Manage my
+subscription"** button, which opens the billing portal hosted by Stripe. No
+exchange with us is required.
+
+It takes effect **at the end of the period already paid for**: you keep access
+until that date, and no further amount is charged afterwards. Your customer area
+then shows the date access ends and the absence of renewal. While the
+subscription is active, it also shows the amount and the date of the next charge
+(clause 7).
+
+### 8.2 The 14-day guarantee, on the annual plan
+
+On the annual plan, you have **14 days from the payment** to ask for that payment
+to be refunded in full. While the window is open, the request takes **one click**
+in your customer area, which shows you the deadline; it is processed immediately,
+with no reason to give.
+
+Every annual payment opens its own 14-day window, renewals included.
+
+A refund ends access to the paid features **immediately**.
+
+### 8.3 On the monthly plan
+
+The monthly plan is not covered by this guarantee: you keep access until the end
+of the month already paid for, and cancelling stops the next charge. That is the
+counterpart of a one-month commitment, cancellable at any time.
+
+### 8.4 If you reside in Quebec
+
+The *Loi sur la protection du consommateur* prevails over the paragraphs above.
+It allows you, in particular, to end your subscription at any time, including
+part-way through an annual plan. In that case we refund the **unused portion** of
+the plan, calculated pro rata over the remaining months, less whatever the law
+allows us to keep. Write to us: that refund is handled by hand, it is not
+automated in the customer area.
+
+### 8.5 Asking for a refund
+
+- Within the 14-day window on the annual plan: one click in your customer area
+  (8.2).
+- In every other case: write to **contact@mia.markets** from the email address
+  attached to your account, stating the date of the payment concerned. We reply
+  **within 2 business days**.
+
+A billing mistake on our side is corrected and refunded whatever the plan: that
+is not a commercial gesture, it is an amount that was never owed to us.
+
+A refund that is granted goes back to the **original payment method**, within
+**15 days**. Depending on your bank, a few more days may pass before the amount
+appears on your statement.
+
+### 8.6 Disputing a charge with your bank
+
+Write to us before disputing a payment with your bank: a billing question is
+usually settled faster by email. While a dispute is open, access to the account
+is **suspended** until it is resolved — that is a technical consequence of the
+dispute, not a penalty.
+
+### 8.7 Price change
+
+A price change never applies to a period already paid for. We tell you by email
+before it takes effect, and you may cancel before that date, at no cost
+(clause 7).
 
 ## 9. Availability and accuracy
 
