@@ -120,30 +120,32 @@ test('describe content fits the first fold at 1280×800 (fr)', async ({ page }) 
   await page.goto('/fr/scanner/decrire');
   await page.getByTestId('example-chip').last().waitFor({ state: 'visible' });
 
-  // UI-2 pinned « the LAST of the 6 examples sits above 800px ». Two deliberate,
-  // merged changes have since been inserted above the examples — neither is a
-  // regression, and neither may be undone to win back pixels:
+  // UI-2 exigeait « le DERNIER exemple au-dessus de 800px ». La promesse avait
+  // été perdue puis rendue — l'histoire compte, parce que c'est la PAGE qui a
+  // été réparée, pas l'affirmation qui a été assouplie :
   //
-  //   * SC-4 reserves the live-status line's height at EVERY status (+28px,
-  //     always, even when empty). The reservation IS the fix: a line that grew
-  //     on appearance shifted the console under the pointer, which is how the
-  //     dictation button lost its clicks in MIA-1.
-  //   * The voice-dictation mission added the transcription note (+40px), a
-  //     statement about where the user's voice is processed. Not decorative.
+  //   * SC-4 réserve la hauteur de la ligne de statut à TOUS les états (+28px,
+  //     même vide). La réservation EST le correctif : une ligne qui grandit à
+  //     l'apparition décalait la console sous le pointeur — c'est ainsi que le
+  //     bouton de dictée perdait ses clics dans MIA-1. Intouchable.
+  //   * La dictée vocale a ajouté la note de transcription (+40px). Intouchable
+  //     aussi : elle dit où la voix de l'utilisateur est traitée.
+  //   * Six exemples en grille 2 colonnes font TROIS rangées. Le bas tombait à
+  //     793,9px sous Windows pour un pli à 800 — six pixels — et à 829,6px sur
+  //     la CI, où la rastérisation Linux replie les libellés autrement. La page
+  //     n'avait jamais eu de réserve : elle tenait par chance sur la machine où
+  //     elle avait été mesurée.
   //
-  // The 6 examples are laid out 2-up, so they need 3 rows. The last row's bottom
-  // is ~794px here and ~830px on CI — the same DOM, 36px taller, because Linux
-  // font metrics wrap the chip labels differently. A promise with 6px of margin
-  // is a coin toss across environments, so pin the intent that actually holds:
-  // landing on /scanner/decrire shows the console AND real examples, unscrolled.
+  // Deux exemples faisaient doublon avec le premier ; les retirer rend une
+  // rangée entière (~45px) et fait tenir la page PARTOUT, avec de l'air. On peut
+  // donc réaffirmer la promesse d'origine au lieu de la rabaisser.
   const rects = await page
     .getByTestId('example-chip')
     .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().bottom));
   expect(rects.length).toBeGreaterThanOrEqual(2);
-  // The first row of examples is fully visible, with room to spare in any font.
-  const firstRowBottom = Math.min(...rects);
-  expect(firstRowBottom).toBeLessThanOrEqual(720);
-  // And the console above them is entirely in the fold.
+  // La promesse d'UI-2, telle quelle : le DERNIER exemple tient dans le pli.
+  expect(Math.max(...rects)).toBeLessThanOrEqual(800);
+  // Et la console au-dessus y tient entièrement, avec de la marge.
   const consoleBottom = await page
     .getByTestId('live-status')
     .evaluate((el) => el.getBoundingClientRect().bottom);
