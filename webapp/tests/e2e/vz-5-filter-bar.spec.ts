@@ -181,7 +181,14 @@ test('VZ-5 — pinning from the /zones dropdown lists the market ONCE (commit A)
   const eur = dropdown.getByText(frMessages.calendar.market.EURUSD, { exact: true });
   await expect(eur).toHaveCount(1);
 
-  await dropdown.getByRole('button', { name: /Épingler Euro \/ Dollar/i }).click();
+  // Le nom du bouton vient de `app.sidebar.pinAria` = « Épingler {combo} », et le
+  // combo suit `calendar.market.*` depuis #240 : « EUR/USD », plus « Euro /
+  // Dollar (EUR/USD) ». Ce motif était le dernier libellé figé de ce fichier —
+  // il avait échappé à la première passe en étant caché dans une expression
+  // régulière, barre oblique échappée.
+  await dropdown
+    .getByRole('button', { name: `Épingler ${frMessages.calendar.market.EURUSD}`, exact: true })
+    .click();
 
   // It moved INTO « Épinglés » — it was not added on top of the full list.
   await expect(dropdown.getByText('Épinglés', { exact: true })).toBeVisible();

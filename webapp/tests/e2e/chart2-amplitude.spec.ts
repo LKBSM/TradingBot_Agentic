@@ -78,9 +78,25 @@ async function panToStart(page: Page) {
   const region = page.getByRole('application', { name: /Graphique/i });
   await region.focus();
   for (let i = 0; i < 4; i += 1) await page.keyboard.press('-');
-  for (let i = 0; i < 60; i += 1) {
+
+  // On pousse JUSQU'À la butée, au lieu d'un nombre d'appuis fixe. Les 60 appuis
+  // précédents suffisaient à 1280 px mais pas à 390 px en CI : le test n'y
+  // atteignait jamais le début des données et cherchait un message qui n'était
+  // pas encore affiché. Le nombre d'appuis nécessaires dépend de la largeur, donc
+  // le figer était une hypothèse sur une seule taille d'écran.
+  //
+  // On s'arrête dès que le graphique DIT qu'il est au bout — ou dit que la page
+  // d'historique a échoué, ce que le troisième test de ce fichier provoque
+  // exprès. Le plafond garde le test borné s'il n'arrive jamais ni à l'un ni à
+  // l'autre.
+  const atStart = page.getByText(/Début des données disponibles/i);
+  const loadFailed = page.getByText(/Historique indisponible/i);
+  for (let i = 0; i < 240; i += 1) {
     await page.keyboard.press('ArrowLeft');
-    await page.waitForTimeout(60);
+    await page.waitForTimeout(40);
+    if (i % 10 === 9) {
+      if ((await atStart.count()) > 0 || (await loadFailed.count()) > 0) return;
+    }
   }
 }
 

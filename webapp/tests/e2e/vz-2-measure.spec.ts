@@ -47,6 +47,20 @@ async function mock(page: Page) {
 test('measure visible cards + single scroll container @1280x800', async ({ page }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 1280, height: 800 });
+
+  // La cible « 4 cartes visibles » suppose la colonne M.I.A REPLIÉE — la feuille
+  // de style le dit noir sur blanc : « At 1280×800 (no chat column) the cards
+  // column is ~640px → two cards ». Or la colonne est OUVERTE par défaut
+  // (`mia.app.chat-column-open`, défaut vrai). Le test ne fixait pas cet état :
+  // il héritait de ce que l'environnement faisait, passait chez moi (colonne
+  // absente, conteneur à 1008 px → 2 colonnes → 4 cartes) et échouait en CI
+  // (colonne présente, conteneur sous les 600 px de la requête de conteneur →
+  // UNE colonne → 2 cartes). Il passait donc localement pour une mauvaise raison.
+  //
+  // On pose l'état que VZ-2 a conçu, au lieu de le subir.
+  await page.addInitScript(() => {
+    window.localStorage.setItem('mia.app.chat-column-open', '0');
+  });
   await mock(page);
   await page.goto('/zones?instrument=XAUUSD&timeframe=M15', { waitUntil: 'domcontentloaded' });
   await dismissCookieBanner(page);
